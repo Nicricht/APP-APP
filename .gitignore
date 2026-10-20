@@ -1,0 +1,41 @@
+# --- Compilacion ---
+/build
+/app/build
+.gradle
+.kotlin
+/captures
+.externalNativeBuild
+.cxx
+
+# --- Configuracion local (no va al repo) ---
+/local.properties
+local.properties
+
+# --- IDE: Android Studio / IntelliJ ---
+# Android Studio usa IntelliJ por debajo, por eso la carpeta .idea.
+# Se mantiene en el equipo, pero no se versiona: es config de cada maquina.
+.idea/
+*.iml
+
+# --- Material del caso (no se publica) ---
+# Enunciado, MER y anexos: material de la institucion.
+# Respuestas: entrega evaluada, no debe quedar publica.
+/Caso_DSY1105_SEGUROS_BPO/
+
+# --- Firma y secretos (preventivo) ---
+*.jks
+*.keystore
+*.p12
+*.pem
+keystore.properties
+google-services.json
+.env
+.env.*
+
+# --- Artefactos y sistema ---
+*.apk
+*.aab
+*.ap_
+*.dex
+.DS_Store
+Thumbs.db
