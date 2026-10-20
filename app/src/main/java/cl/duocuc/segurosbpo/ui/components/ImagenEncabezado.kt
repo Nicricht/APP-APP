@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.theme.Blanco
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  ImagenEncabezado.kt  —  IMAGEN DE res/drawable + TEXTO ENCIMA
@@ -90,7 +90,7 @@ fun ImagenEncabezado(
 @Preview(showBackground = true)
 @Composable
 private fun ImagenEncabezadoPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         ImagenEncabezado(
             imagen = R.drawable.banner_registro,
             descripcion = "",

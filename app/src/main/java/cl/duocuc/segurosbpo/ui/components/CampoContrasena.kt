@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.style.EstiloCampo
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  CampoContrasena.kt  —  Campo con puntos (••••) y botón "ojo".
@@ -79,7 +79,7 @@ fun CampoContrasena(
 @Preview(showBackground = true)
 @Composable
 private fun CampoContrasenaPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         CampoContrasena(
             valor = "secreto",
             onValorCambia = {},

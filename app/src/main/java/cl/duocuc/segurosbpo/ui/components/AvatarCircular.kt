@@ -17,7 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  AvatarCircular.kt  —  Imagen recortada en círculo con borde.
@@ -52,7 +52,7 @@ fun AvatarCircular(
 @Preview(showBackground = true)
 @Composable
 private fun AvatarCircularPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         AvatarCircular(imagen = R.drawable.avatar_usuario, descripcion = "", modifier = Modifier.padding(16.dp))
     }
 }

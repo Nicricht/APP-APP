@@ -52,7 +52,7 @@ private val Formas = Shapes(
 )
 
 @Composable
-fun MiRegistroTheme(
+fun SegurosBpoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

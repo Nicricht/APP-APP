@@ -7,14 +7,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MiRegistroTheme {
+            SegurosBpoTheme {
                 FormularioScreen()
             }
         }
@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         FormularioScreen()
     }
 }

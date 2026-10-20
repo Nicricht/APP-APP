@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.style.estiloAltoBoton
 import cl.duocuc.segurosbpo.ui.style.EstilosBotones
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  BotonPrincipal.kt  —  COMPONENTE REUTILIZABLE
@@ -70,7 +70,7 @@ fun BotonPrincipal(
 @Preview(showBackground = true)
 @Composable
 private fun BotonPrincipalPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         Column(Modifier.padding(16.dp)) {
             BotonPrincipal(texto = "Registrarme", onClick = {}, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.size(8.dp))

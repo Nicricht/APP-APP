@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.style.EstiloTarjeta
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  TarjetaSeccion.kt  —  CONTENEDOR CARD CON TÍTULO + "SLOT"
@@ -61,7 +61,7 @@ fun TarjetaSeccion(
 @Preview(showBackground = true)
 @Composable
 private fun TarjetaSeccionPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         TarjetaSeccion(titulo = "Sobre mí", modifier = Modifier.padding(16.dp)) {
             Text("Cualquier contenido puede ir aquí dentro.")
         }

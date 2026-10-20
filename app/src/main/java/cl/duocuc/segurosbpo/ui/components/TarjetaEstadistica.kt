@@ -17,7 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.style.EstiloTarjeta
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  TarjetaEstadistica.kt  —  Número grande + etiqueta (ej. "128 Seguidores").
@@ -60,7 +60,7 @@ fun TarjetaEstadistica(
 @Preview(showBackground = true)
 @Composable
 private fun TarjetaEstadisticaPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TarjetaEstadistica("128", "Seguidores", Modifier.weight(1f))
             TarjetaEstadistica("96", "Siguiendo", Modifier.weight(1f))

@@ -9,7 +9,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.style.estiloAltoBoton
 import cl.duocuc.segurosbpo.ui.style.EstilosBotones
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  BotonSecundario.kt  —  Acción de menor importancia (Limpiar, Cancelar).
@@ -37,7 +37,7 @@ fun BotonSecundario(
 @Preview(showBackground = true)
 @Composable
 private fun BotonSecundarioPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         BotonSecundario(texto = "Limpiar", onClick = {}, modifier = Modifier.padding(16.dp))
     }
 }

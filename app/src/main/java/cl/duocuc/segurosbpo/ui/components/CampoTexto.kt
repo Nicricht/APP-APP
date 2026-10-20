@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.style.EstiloCampo
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  CampoTexto.kt  —  CAMPO DE TEXTO REUTILIZABLE (el <input> de HTML)
@@ -71,7 +71,7 @@ fun CampoTexto(
 @Preview(showBackground = true)
 @Composable
 private fun CampoTextoPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         CampoTexto(
             valor = "ana@",
             onValorCambia = {},

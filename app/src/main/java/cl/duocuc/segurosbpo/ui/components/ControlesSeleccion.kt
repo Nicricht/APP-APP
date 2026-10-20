@@ -20,7 +20,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  ControlesSeleccion.kt  —  Checkbox, Switch y RadioButton con texto.
@@ -120,7 +120,7 @@ fun <T> GrupoRadio(
 @Preview(showBackground = true)
 @Composable
 private fun ControlesSeleccionPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         Column(Modifier.padding(16.dp)) {
             CasillaConTexto(texto = "Acepto los términos", marcado = true, onCambio = {})
             InterruptorConTexto(texto = "Recibir novedades", activado = false, onCambio = {})

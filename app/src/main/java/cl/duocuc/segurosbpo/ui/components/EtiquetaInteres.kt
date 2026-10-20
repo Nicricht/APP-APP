@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.theme.Dimens
-import cl.duocuc.segurosbpo.ui.theme.MiRegistroTheme
+import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
 // =====================================================================
 //  EtiquetaInteres.kt  —  "Chip" o etiqueta con forma de píldora.
@@ -42,7 +42,7 @@ fun EtiquetaInteres(
 @Preview(showBackground = true)
 @Composable
 private fun EtiquetaInteresPreview() {
-    MiRegistroTheme {
+    SegurosBpoTheme {
         EtiquetaInteres(texto = "Kotlin", modifier = Modifier.padding(16.dp))
     }
 }
