@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MiRegistro"
+rootProject.name = "SegurosBPO"
 include(":app")
  
