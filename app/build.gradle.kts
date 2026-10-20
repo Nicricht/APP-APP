@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "cl.duocuc.miregistro"
+    namespace = "cl.duocuc.segurosbpo"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "cl.duocuc.miregistro"
+        applicationId = "cl.duocuc.segurosbpo"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
