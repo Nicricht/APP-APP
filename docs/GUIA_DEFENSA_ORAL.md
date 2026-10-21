@@ -165,3 +165,16 @@ Si te preguntan por un método concreto, localiza el nombre y explica una línea
 - [ ] Tienen a mano la [lista final de la pauta](CONTROL_FINAL_100_PUNTOS.md) y el enlace a [GitHub Actions](https://github.com/Nicricht/APP-APP/actions).
 
 La mejor defensa es mostrar una función funcionando y explicar con sencillez por qué ese archivo la hace posible.
+
+
+## 8. POO y animaciones, ejemplos concretos
+
+**Herencia y polimorfismo ya existentes:** abre `data/SiniestroDbHelper.kt` y muestra `class SiniestroDbHelper(...) : SQLiteOpenHelper(...)`. Los métodos `override fun onCreate` y `override fun onUpgrade` son implementaciones propias de métodos definidos por la clase base. Cuando Android abre o actualiza la base de datos, utiliza la implementación de nuestro helper. Esto es sobrescritura de métodos y despacho polimórfico del framework. Otro ejemplo es `SiniestrosViewModel : AndroidViewModel` y su `override fun onCleared()`.
+
+**Límite que debes reconocer:** la aplicación usa herencia y sobrescritura de las clases de Android. No tiene aún una jerarquía específica de siniestros con métodos polimórficos propios; si la pauta exige ese caso particular, debe explicitarse y programarse solo si aporta una función real.
+
+**Primera animación:** en `FormularioScreen.kt`, al registrar un siniestro válido aparece la confirmación mediante `AnimatedVisibility` con entrada gradual y expansión vertical.
+
+**Segunda animación:** en `MisSiniestrosScreen.kt`, si escribes una búsqueda que no encuentra casos, aparece gradualmente el mensaje de lista vacía usando `AnimatedVisibility`, `fadeIn` y `fadeOut`. No hay nuevas pantallas ni bibliotecas externas.
+
+**Prueba de la segunda animación:** busca un número inexistente, observa el aviso, borra el filtro y comprueba que vuelve a aparecer la lista; mostrar el comportamiento en el emulador es mejor que describirlo únicamente.
