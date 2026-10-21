@@ -5,19 +5,19 @@ import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.TipoSiniestro
+import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class FormularioViewModel : ViewModel() {
-    //state private y mutable
+
     private val _uiState = MutableStateFlow(FormularioUiState())
-    //publica / solo lectura
+
     val uiState: StateFlow<FormularioUiState> = _uiState.asStateFlow()
 
-    //eventos de los campos
-    //S-02: identificacion simulada, el asegurado se elige de una lista
+
     fun onAseguradoSeleccionado(asegurado: Asegurado){
         _uiState.update { it.copy(asegurado = asegurado, reporteExitoso = false) }
     }
@@ -39,44 +39,34 @@ class FormularioViewModel : ViewModel() {
     }
 
     fun onTipoSeleccionado(tipo: TipoSiniestro){
-        //si el siniestro es de hogar, la pregunta por terceros no corresponde
+
         val terceros = if (tipo.esVehiculo) _uiState.value.huboTerceros else false
         _uiState.update { it.copy(tipoSiniestro = tipo, huboTerceros = terceros, reporteExitoso = false) }
     }
 
     fun onTercerosCambia(valor: Boolean){
-        _uiState.update { it.copy(huboTerceros = valor) }
+        _uiState.update { it.copy(huboTerceros = valor, reporteExitoso = false) }
     }
 
     fun onDatosCorrectosCambia(valor: Boolean){
-        _uiState.update { it.copy(datosCorrectos = valor, errorDatos = null) }
+        _uiState.update { it.copy(datosCorrectos = valor, errorDatos = null, reporteExitoso = false) }
     }
 
-    fun onRegistrar(){
+    fun onRegistrar(): Boolean {
         val estado = _uiState.value
-        //validaciones de campos
-        //la fecha se escribe dia-mes-año (ej: 29-09-2026)
-        val errorFecha = if(estado.fechaOcurrencia.length < 10 || !estado.fechaOcurrencia.contains("-"))
-            "Escribe la fecha como dia-mes-año, por ejemplo 29-09-2026" else null
+        if (estado.reporteExitoso) return false
 
-        val errorComuna = if (estado.comuna.isBlank()) "El campo es obligatorio" else null
 
-        val errorDescripcion = if (estado.descripcion.isBlank()) "Cuentanos brevemente que paso" else null
-
-        //RN-18: no se reportan siniestros nuevos de una compañia que ya no gestionamos
-        val errorCompania = if (!estado.compania.activa)
-            "Ya no gestionamos siniestros nuevos de esta compañia" else null
+        val errorFecha = ValidadorSiniestro.errorFecha(estado.fechaOcurrencia)
+        val errorComuna = ValidadorSiniestro.errorComuna(estado.comuna)
+        val errorDescripcion = ValidadorSiniestro.errorDescripcion(estado.descripcion)
+        val errorCompania = ValidadorSiniestro.errorCompania(estado.compania)
 
         val errorDatos = if(!estado.datosCorrectos) "Debes confirmar que los datos son correctos" else null
 
         val hayErrores = listOf(
             errorFecha, errorComuna, errorDescripcion, errorCompania, errorDatos
         ).any{it != null}
-
-        //RN-06 y RF-03: el numero se entrega recien cuando el reporte queda registrado
-        val numero = if (hayErrores) "" else "SIN-26-00" + estado.correlativo
-        //el siguiente reporte lleva el numero que sigue
-        val siguiente = if (hayErrores) estado.correlativo else estado.correlativo + 1
 
         _uiState.update {
             it.copy(
@@ -85,14 +75,22 @@ class FormularioViewModel : ViewModel() {
                 errorDescripcion = errorDescripcion,
                 errorCompania = errorCompania,
                 errorDatos = errorDatos,
-                reporteExitoso = !hayErrores,
-                numeroSiniestro = numero,
-                correlativo = siguiente
+                reporteExitoso = false,
+                numeroSiniestro = ""
             )
         }
+        return !hayErrores
+    }
+
+    fun confirmarRegistro(numero: String) {
+        _uiState.update { it.copy(reporteExitoso = true, numeroSiniestro = numero) }
+    }
+
+    fun seleccionarAsegurado(asegurado: Asegurado) {
+        _uiState.update { it.copy(asegurado = asegurado) }
     }
 
     fun onLimpiar(){
-        _uiState.value = FormularioUiState()
+        _uiState.value = FormularioUiState(asegurado = _uiState.value.asegurado)
     }
 }
