@@ -1,5 +1,10 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -260,14 +265,20 @@ fun FormularioContent(
                 }
 
                 //mensaje de exito con el numero de siniestro (RF-03)
-                if(uiState.reporteExitoso){
-                    MensajeExito(numero = uiState.numeroSiniestro)
-                    BotonPrincipal(
-                        texto = "Ver mis siniestros",
-                        onClick = onVerMisSiniestros,
-                        icono = R.drawable.ic_check,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                AnimatedVisibility(
+                    visible = uiState.reporteExitoso,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        MensajeExito(numero = uiState.numeroSiniestro)
+                        BotonPrincipal(
+                            texto = "Ver mis siniestros",
+                            onClick = onVerMisSiniestros,
+                            icono = R.drawable.ic_check,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 Spacer(Modifier.height(Dimens.espacioGrande))
             }
