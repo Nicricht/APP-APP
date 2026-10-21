@@ -6,6 +6,9 @@ sealed class Ruta(val ruta: String) {
     data object Detalle : Ruta("detalle/{id}") {
         fun crear(id: Long) = "detalle/$id"
     }
+    data object Historial : Ruta("historial/{id}") {
+        fun crear(id: Long) = "historial/$id"
+    }
     data object Evidencias : Ruta("evidencias/{id}") {
         fun crear(id: Long) = "evidencias/$id"
     }

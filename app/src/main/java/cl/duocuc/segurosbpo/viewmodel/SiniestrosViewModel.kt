@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.model.Evidencia
+import cl.duocuc.segurosbpo.model.Gestion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.AndroidViewModel
@@ -31,6 +32,8 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
     val busqueda = _busqueda.asStateFlow()
     private val _evidencias = MutableStateFlow<List<Evidencia>>(emptyList())
     val evidencias = _evidencias.asStateFlow()
+    private val _gestiones = MutableStateFlow<List<Gestion>>(emptyList())
+    val gestiones = _gestiones.asStateFlow()
 
     fun buscar(texto: String) {
         _busqueda.value = texto
@@ -39,6 +42,7 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
 
     fun seleccionarAsegurado(nuevo: Asegurado) {
         _evidencias.value = emptyList()
+        _gestiones.value = emptyList()
         _busqueda.value = ""
         _asegurado.value = nuevo
         preferencias.edit().putString("asegurado", nuevo.name).apply()
@@ -67,6 +71,10 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
     suspend fun cargarImagen(siniestroId: Long, evidenciaId: Long): Bitmap? {
         val propietario = _asegurado.value
         return withContext(Dispatchers.IO) { db.obtenerImagen(evidenciaId, siniestroId, propietario) }
+    }
+
+    fun refrescarGestiones(id: Long) {
+        _gestiones.value = db.listarGestiones(id, _asegurado.value)
     }
 
     fun refrescarEvidencias(id: Long) {

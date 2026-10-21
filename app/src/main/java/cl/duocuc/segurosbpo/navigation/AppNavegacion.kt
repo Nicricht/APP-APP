@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EvidenciasScreen
+import cl.duocuc.segurosbpo.ui.screens.HistorialSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
@@ -24,6 +25,7 @@ fun AppNavegacion() {
     val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
     val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
     val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
+    val gestiones by siniestrosVm.gestiones.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = Ruta.MisSiniestros.ruta) {
         composable(Ruta.MisSiniestros.ruta) {
@@ -56,7 +58,20 @@ fun AppNavegacion() {
                 siniestro = siniestrosVm.obtener(id),
                 onVolver = { navController.navigateUp() },
                 onEditar = { navController.navigate(Ruta.Editar.crear(id)) },
-                onEvidencias = { navController.navigate(Ruta.Evidencias.crear(id)) }
+                onEvidencias = { navController.navigate(Ruta.Evidencias.crear(id)) },
+                onHistorial = { navController.navigate(Ruta.Historial.crear(id)) }
+            )
+        }
+        composable(
+            route = Ruta.Historial.ruta,
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { entrada ->
+            val id = entrada.arguments?.getLong("id") ?: 0L
+            HistorialSiniestroScreen(
+                siniestro = siniestrosVm.obtener(id),
+                gestiones = gestiones,
+                onCargar = { siniestrosVm.refrescarGestiones(id) },
+                onVolver = { navController.navigateUp() }
             )
         }
         composable(
