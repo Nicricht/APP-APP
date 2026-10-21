@@ -340,6 +340,85 @@ class SiniestroDbHelper(context: Context) :
         return resultado
     }
 
+    /** El liquidador ve sus movimientos visibles e internos. */
+    fun listarGestionesAsignadas(siniestroId: Long, liquidador: Liquidador): List<Gestion> {
+        val resultado = mutableListOf<Gestion>()
+        readableDatabase.rawQuery("""
+            SELECT g.id, g.siniestro_id, g.fecha, g.responsable,
+                   g.descripcion, g.visible_asegurado
+            FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
+            WHERE s.id = ? AND s.liquidador = ?
+            ORDER BY g.id DESC
+        """.trimIndent(), arrayOf(siniestroId.toString(), liquidador.name)).use { c ->
+            while (c.moveToNext()) {
+                resultado.add(Gestion(c.getLong(0), c.getLong(1),
+                    c.getString(2), c.getString(3), c.getString(4),
+                    c.getInt(5) == 1))
+            }
+        }
+        return resultado
+    }
+
+    fun registrarGestionAsignada(siniestroId: Long, liquidador: Liquidador,
+        descripcion: String, visible: Boolean
+    ) {
+        val error = ReglasEtapa.validarGestion(descripcion)
+        require(error == null) { error ?: "Descripción inválida" }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val caso = db.rawQuery(
+                "SELECT etapa FROM siniestros WHERE id = ? AND liquidador = ?",
+                arrayOf(siniestroId.toString(), liquidador.name)
+            ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
+            require(caso != null) { "El caso no está asignado a este liquidador" }
+            require(caso != EtapaSiniestro.CERRADO.name) { "No se modifica un caso cerrado" }
+            insertarGestion(db, siniestroId, liquidador.nombre, descripcion.trim(), visible)
+            val valores = ContentValues().apply { put("ultima_actualizacion", fechaActual()) }
+            db.update("siniestros", valores, "id = ? AND liquidador = ?",
+                arrayOf(siniestroId.toString(), liquidador.name))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun avanzarAsignado(siniestroId: Long, liquidador: Liquidador,
+        resultado: String, mensajeCierre: String
+    ) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val actual = obtenerAsignado(siniestroId, liquidador)
+                ?: throw IllegalArgumentException("El caso no está asignado a este liquidador")
+            // Los documentos adjuntados no implican solicitudes pendientes.
+            // El módulo de solicitudes está pendiente: no inventar documentos solicitados.
+            val siguiente = ReglasEtapa.siguiente(actual.etapa)
+                ?: throw IllegalArgumentException("Un siniestro cerrado no puede reabrirse")
+            val error = ReglasEtapa.validar(actual.etapa, siguiente, 0, resultado, mensajeCierre)
+            require(error == null) { error ?: "Transición inválida" }
+            val valores = ContentValues().apply {
+                put("etapa", siguiente.name)
+                put("ultima_actualizacion", fechaActual())
+                if (siguiente == EtapaSiniestro.CERRADO) {
+                    put("resultado_cierre", resultado)
+                    put("mensaje_cierre", mensajeCierre.trim())
+                }
+            }
+            val filas = db.update("siniestros", valores,
+                "id = ? AND liquidador = ? AND etapa = ?",
+                arrayOf(siniestroId.toString(), liquidador.name, actual.etapa.name))
+            require(filas == 1) { "El estado del siniestro cambió. Actualiza la pantalla" }
+            val nota = if (siguiente == EtapaSiniestro.CERRADO)
+                "Caso cerrado: " + resultado + ". " + mensajeCierre.trim()
+                else "Etapa actualizada a " + siguiente.etiqueta
+            insertarGestion(db, siniestroId, liquidador.nombre, nota, true)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     /** Lista metadatos únicamente si el asegurado es dueño del caso. */
     fun listarEvidencias(siniestroId: Long, asegurado: Asegurado): List<Evidencia> {
         val resultado = mutableListOf<Evidencia>()
