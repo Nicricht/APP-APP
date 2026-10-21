@@ -6,7 +6,9 @@ plugins {
 android {
     namespace = "cl.duocuc.segurosbpo"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 2
+        }
     }
 
     defaultConfig {
@@ -37,6 +39,7 @@ android {
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
+    implementation("androidx.compose.animation:animation")
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
@@ -51,7 +54,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    //Librerias para el manejo de ciclo e vida de ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
+    implementation("androidx.navigation:navigation-compose:2.10.2")
 }

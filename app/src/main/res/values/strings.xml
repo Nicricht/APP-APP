@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mi Siniestro</string>
-    <!-- Pantalla de Formulario: reportar un siniestro (RF-02 y RF-03) -->
     <string name="titulo_formulario">Reportar un siniestro</string>
     <string name="banner_titulo">Cuéntanos qué pasó</string>
     <string name="baner_subtitulo">Son 5 datos. Te entregamos tu número al terminar</string>
@@ -20,23 +19,19 @@
     <string name="opcion_datos_correctos">Confirmo que los datos que entregué son correctos</string>
     <string name="btn_registrar">Reportar</string>
     <string name="btn_limpiar">Limpiar</string>
-    <!-- %1$s % - var 1 - posicion $ - separacion s - tipo de dato (esto es para indicar que en esta posicion va una variable) -->
     <string name="reporte_exitoso">Listo. Tu siniestro quedó registrado con el número %1$s</string>
     <string name="proximo_paso_recibido">Estamos revisando tu reporte para asignarlo a un liquidador. No necesitas hacer nada por ahora.</string>
 
-    <!-- Pantalla de Perfil -->
     <string name="titulo_perfil">Mi perfil</string>
     <string name="seccion_sobre_mi">Sobre mi</string>
     <string name="seccion_intereses">Intereses</string>
     <string name="btn_seguir">Seguir</string>
     <string name="btn_siguiendo">Siguiendo</string>
 
-    <!-- Descripcion para accecibilidad (TallBack) -->
     <string name="cd_banner">Ilustracion de u nformulario</string>
     <string name="cd_portada">Paisaje de montañas al atardecer</string>
     <string name="cd_avatar">Foto del perfil</string>
     <string name="cd_mostrar_contraseña">Mostrar contraseña</string>
     <string name="cd_ocultar_contraseña">Ocultar Contraseña</string>
-
 
 </resources>
