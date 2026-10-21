@@ -14,6 +14,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,6 +34,8 @@ import cl.duocuc.segurosbpo.model.Siniestro
 fun MisSiniestrosScreen(
     asegurado: Asegurado,
     siniestros: List<Siniestro>,
+    busqueda: String,
+    onBuscar: (String) -> Unit,
     onCambiarAsegurado: (Asegurado) -> Unit,
     onReportar: () -> Unit,
     onVerDetalle: (Long) -> Unit
@@ -70,11 +73,19 @@ fun MisSiniestrosScreen(
                 TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
                 Button(onClick = onReportar) { Text("Reportar") }
             }
+            OutlinedTextField(
+                value = busqueda,
+                onValueChange = onBuscar,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Buscar siniestro") },
+                placeholder = { Text("Número, compañía, tipo o comuna") },
+                singleLine = true
+            )
             if (siniestros.isEmpty()) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp)) {
-                        Text("Todavía no tienes siniestros registrados")
-                        Text("Puedes reportar uno para comenzar su seguimiento.")
+                        Text(if (busqueda.isBlank()) "Todavía no tienes siniestros registrados" else "No hay siniestros con ese criterio")
+                        Text(if (busqueda.isBlank()) "Puedes reportar uno para comenzar su seguimiento." else "Prueba con otro número, compañía o tipo.")
                     }
                 }
             } else {

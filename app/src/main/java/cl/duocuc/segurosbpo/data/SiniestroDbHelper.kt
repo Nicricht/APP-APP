@@ -105,10 +105,19 @@ class SiniestroDbHelper(context: Context) :
         }
     }
 
-    fun listar(asegurado: Asegurado): List<Siniestro> {
+    fun listar(asegurado: Asegurado, busqueda: String = ""): List<Siniestro> {
         val resultado = mutableListOf<Siniestro>()
+        val textoBuscado = busqueda.trim()
+        val patron = "%${textoBuscado.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")}%"
+        val columnas = listOf("numero", "compania", "tipo", "comuna", "etapa")
+        val condicion = if (textoBuscado.isBlank()) "asegurado = ?" else
+            "asegurado = ? AND (" + columnas.joinToString(" OR ") {
+                "$it LIKE ? ESCAPE '\\'"
+            } + ")"
+        val argumentos = if (textoBuscado.isBlank()) arrayOf(asegurado.name)
+            else arrayOf(asegurado.name, *Array(columnas.size) { patron })
         readableDatabase.query(
-            "siniestros", null, "asegurado = ?", arrayOf(asegurado.name),
+            "siniestros", null, condicion, argumentos,
             null, null, "id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) {

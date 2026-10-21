@@ -22,6 +22,7 @@ fun AppNavegacion() {
     val siniestrosVm: SiniestrosViewModel = viewModel()
     val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
     val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
+    val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
     val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = Ruta.MisSiniestros.ruta) {
@@ -29,6 +30,8 @@ fun AppNavegacion() {
             MisSiniestrosScreen(
                 asegurado = asegurado,
                 siniestros = siniestros,
+                busqueda = busqueda,
+                onBuscar = siniestrosVm::buscar,
                 onCambiarAsegurado = siniestrosVm::seleccionarAsegurado,
                 onReportar = { navController.navigate(Ruta.Reportar.ruta) },
                 onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) }

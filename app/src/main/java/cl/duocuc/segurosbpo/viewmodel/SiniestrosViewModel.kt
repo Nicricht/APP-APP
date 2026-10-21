@@ -27,18 +27,26 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
     val asegurado = _asegurado.asStateFlow()
     private val _siniestros = MutableStateFlow(db.listar(inicial))
     val siniestros = _siniestros.asStateFlow()
+    private val _busqueda = MutableStateFlow("")
+    val busqueda = _busqueda.asStateFlow()
     private val _evidencias = MutableStateFlow<List<Evidencia>>(emptyList())
     val evidencias = _evidencias.asStateFlow()
 
+    fun buscar(texto: String) {
+        _busqueda.value = texto
+        refrescar()
+    }
+
     fun seleccionarAsegurado(nuevo: Asegurado) {
         _evidencias.value = emptyList()
+        _busqueda.value = ""
         _asegurado.value = nuevo
         preferencias.edit().putString("asegurado", nuevo.name).apply()
         refrescar()
     }
 
     fun refrescar() {
-        _siniestros.value = db.listar(_asegurado.value)
+        _siniestros.value = db.listar(_asegurado.value, _busqueda.value)
     }
 
     fun registrar(estado: FormularioUiState): String {
