@@ -3,6 +3,7 @@ package cl.duocuc.segurosbpo.data
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.database.Cursor
 import android.database.sqlite.SQLiteOpenHelper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -11,6 +12,8 @@ import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Gestion
+import cl.duocuc.segurosbpo.model.Liquidador
+import cl.duocuc.segurosbpo.model.ReglasEtapa
 import cl.duocuc.segurosbpo.model.ValidadorEvidencia
 import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.Siniestro
@@ -21,7 +24,7 @@ import java.util.Locale
 
 /** SQLite local como UsuarioDbHelper del profesor, adaptado a siniestros. */
 class SiniestroDbHelper(context: Context) :
-    SQLiteOpenHelper(context, "seguros_bpo.db", null, 3) {
+    SQLiteOpenHelper(context, "seguros_bpo.db", null, 4) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -37,6 +40,9 @@ class SiniestroDbHelper(context: Context) :
                 descripcion TEXT NOT NULL,
                 hubo_terceros INTEGER NOT NULL,
                 etapa TEXT NOT NULL,
+                liquidador TEXT,
+                resultado_cierre TEXT,
+                mensaje_cierre TEXT,
                 ultima_actualizacion TEXT NOT NULL
             )
         """.trimIndent())
@@ -88,6 +94,10 @@ class SiniestroDbHelper(context: Context) :
                 put("descripcion", ejemplo.descripcion)
                 put("hubo_terceros", 0)
                 put("etapa", ejemplo.etapa.name)
+                if (ejemplo.etapa != EtapaSiniestro.RECIBIDO) {
+                    put("liquidador", if (ejemplo.tipo.esVehiculo) Liquidador.VEHICULOS.name
+                        else Liquidador.HOGAR.name)
+                }
                 put("ultima_actualizacion", ahora)
             }
             val id = db.insertOrThrow("siniestros", null, valores)
@@ -159,6 +169,18 @@ class SiniestroDbHelper(context: Context) :
                 }
             }
         }
+        if (oldVersion < 4) {
+            db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador TEXT")
+            db.execSQL("ALTER TABLE siniestros ADD COLUMN resultado_cierre TEXT")
+            db.execSQL("ALTER TABLE siniestros ADD COLUMN mensaje_cierre TEXT")
+            // Asignación sintética de casos ya en proceso para probar el perfil liquidador.
+            db.execSQL("""
+                UPDATE siniestros SET liquidador = CASE
+                    WHEN tipo IN ('CHOQUE', 'ROBO_VEHICULO', 'CRISTALES') THEN 'VEHICULOS'
+                    ELSE 'HOGAR' END
+                WHERE etapa <> 'RECIBIDO'
+            """.trimIndent())
+        }
     }
 
     private fun fechaActual(): String =
@@ -181,6 +203,7 @@ class SiniestroDbHelper(context: Context) :
                 put("descripcion", formulario.descripcion.trim())
                 put("hubo_terceros", if (formulario.huboTerceros) 1 else 0)
                 put("etapa", EtapaSiniestro.RECIBIDO.name)
+                putNull("liquidador")
                 put("ultima_actualizacion", ahora)
             }
             val id = db.insertOrThrow("siniestros", null, valores)
@@ -200,6 +223,39 @@ class SiniestroDbHelper(context: Context) :
         }
     }
 
+    private fun convertir(cursor: Cursor): Siniestro {
+        fun texto(col: String) = cursor.getString(cursor.getColumnIndexOrThrow(col))
+        fun opcional(col: String): String? {
+            val indice = cursor.getColumnIndexOrThrow(col)
+            return if (cursor.isNull(indice)) null else cursor.getString(indice)
+        }
+        return Siniestro(
+            cursor.getLong(cursor.getColumnIndexOrThrow("id")),
+            texto("numero"), Asegurado.valueOf(texto("asegurado")),
+            Compania.valueOf(texto("compania")), TipoSiniestro.valueOf(texto("tipo")),
+            texto("fecha_ocurrencia"), texto("fecha_reporte"), texto("comuna"),
+            texto("descripcion"), cursor.getInt(cursor.getColumnIndexOrThrow("hubo_terceros")) == 1,
+            EtapaSiniestro.valueOf(texto("etapa")), texto("ultima_actualizacion"),
+            opcional("liquidador")?.let { Liquidador.valueOf(it) },
+            opcional("resultado_cierre"), opcional("mensaje_cierre")
+        )
+    }
+
+    fun listarAsignados(liquidador: Liquidador): List<Siniestro> {
+        val casos = mutableListOf<Siniestro>()
+        readableDatabase.query(
+            "siniestros", null, "liquidador = ?", arrayOf(liquidador.name),
+            null, null, "id DESC"
+        ).use { c -> while (c.moveToNext()) casos.add(convertir(c)) }
+        return casos
+    }
+
+    fun obtenerAsignado(id: Long, liquidador: Liquidador): Siniestro? =
+        readableDatabase.query(
+            "siniestros", null, "id = ? AND liquidador = ?",
+            arrayOf(id.toString(), liquidador.name), null, null, null
+        ).use { c -> if (c.moveToFirst()) convertir(c) else null }
+
     fun listar(asegurado: Asegurado, busqueda: String = ""): List<Siniestro> {
         val resultado = mutableListOf<Siniestro>()
         val textoBuscado = busqueda.trim()
@@ -216,19 +272,7 @@ class SiniestroDbHelper(context: Context) :
             null, null, "id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) {
-                fun texto(col: String) = cursor.getString(cursor.getColumnIndexOrThrow(col))
-                resultado.add(
-                    Siniestro(
-                        cursor.getLong(cursor.getColumnIndexOrThrow("id")),
-                        texto("numero"), Asegurado.valueOf(texto("asegurado")),
-                        Compania.valueOf(texto("compania")),
-                        TipoSiniestro.valueOf(texto("tipo")),
-                        texto("fecha_ocurrencia"), texto("fecha_reporte"),
-                        texto("comuna"), texto("descripcion"),
-                        cursor.getInt(cursor.getColumnIndexOrThrow("hubo_terceros")) == 1,
-                        EtapaSiniestro.valueOf(texto("etapa")), texto("ultima_actualizacion")
-                    )
-                )
+                resultado.add(convertir(cursor))
             }
         }
         return resultado

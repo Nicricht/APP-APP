@@ -19,5 +19,8 @@ data class Siniestro(
     val descripcion: String,
     val huboTerceros: Boolean,
     val etapa: EtapaSiniestro,
-    val ultimaActualizacion: String
+    val ultimaActualizacion: String,
+    val liquidadorAsignado: Liquidador? = null,
+    val resultadoCierre: String? = null,
+    val mensajeCierre: String? = null
 )
