@@ -96,3 +96,20 @@ Trabajar desde una rama independiente y no sobrescribir sin revisar las nuevas p
 - **No hay backend**, Retrofit, API REST, ni microservicios. Es un proyecto Android local para la evaluación actual.
 
 **Nota:** Las comprobaciones automatizadas verifican compilación y pruebas unitarias. No sustituyen pruebas instrumentadas en Android ni la evidencia de trabajo grupal de GitHub/Trello.
+
+## Etapa 3: historial y liquidador local
+
+- **SQLite v3:** tabla `gestiones`, relación con siniestros y registro al reportar, corregir la descripción o adjuntar evidencia. Una migración conserva los registros anteriores y anota que no hay movimientos previos disponibles, sin inventarlos.
+- **HistorialSiniestroScreen:** muestra fecha, descripción y responsable de gestiones visibles del asegurado.
+- **SQLite v4:** liquidador ficticio asignado y resultado/mensaje de cierre, con migración sin borrar datos.
+- **CasosLiquidadorScreen:** equipos ficticios Vehículos y Hogar, casos asignados, registro de gestiones visibles/internas y avance de etapa.
+- **ReglasEtapaTest:** pruebas de secuencia, cierre, mensajes y gestión obligatoria.
+- **DetalleSiniestroScreen:** responsable asignado, resultado y cierre cuando existen.
+
+**Pendientes importantes:** confirmar GitHub Actions del último commit; probar la app en Android Studio, cámara, permisos y migraciones; documentar evidencias de GitHub/Trello de ambos integrantes.
+
+**Limitaciones explícitas:** no hay login real; casos nuevos permanecen sin asignar. La asignación de analista es deseable y no está realizada. No existe aún una tabla de solicitudes de documentos pendientes, así que RN-09 no está verificado de extremo a extremo. No hay backend, Retrofit ni microservicios, reservados para la tercera evaluación.
+
+**Prueba manual del nuevo flujo:** entrar a historial de un caso, reportar y adjuntar un documento para comprobar entradas; entrar a Liquidador, seleccionar equipo, registrar una gestión visible y otra interna, avanzar etapa, y verificar en la vista de asegurado que solamente aparece la gestión visible.
+
+Ver resultados actuales en [GitHub Actions](https://github.com/Nicricht/APP-APP/actions).
