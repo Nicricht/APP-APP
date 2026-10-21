@@ -14,10 +14,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Integración Android real: SQLiteOpenHelper, varias tablas, migración y permisos lógicos.
- * Requiere emulador/dispositivo; los test de JVM no sustituyen estas pruebas.
- */
+
 @RunWith(AndroidJUnit4::class)
 class SiniestroDbIntegrationTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
