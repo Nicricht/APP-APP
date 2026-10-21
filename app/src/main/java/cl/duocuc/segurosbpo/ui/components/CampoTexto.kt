@@ -35,20 +35,20 @@ fun CampoTexto(
         value = valor,
         onValueChange = onValorCambia,
         modifier = modifier.fillMaxWidth(),
-        label = { Text(etiqueta) },                       // texto flotante (como <label>)
-        leadingIcon = {                                   // ícono a la izquierda
+        label = { Text(etiqueta) },
+        leadingIcon = {
             Icon(
                 painter = painterResource(id = icono),
                 contentDescription = null,
                 modifier = Modifier.size(Dimens.tamanoIcono)
             )
         },
-        isError = error != null,                          // borde rojo si hay error
-        supportingText = { if (error != null) Text(error) }, // texto de ayuda bajo el campo
-        singleLine = true,                                // una sola línea
+        isError = error != null,
+        supportingText = { if (error != null) Text(error) },
+        singleLine = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = tipoTeclado,
-            imeAction = ImeAction.Next                    // botón "Siguiente" en el teclado
+            imeAction = ImeAction.Next
         ),
         shape = EstiloCampo.forma,
         colors = EstiloCampo.colores()
