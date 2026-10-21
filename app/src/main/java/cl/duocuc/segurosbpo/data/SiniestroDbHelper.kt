@@ -237,18 +237,25 @@ class SiniestroDbHelper(context: Context) :
     fun obtener(id: Long, asegurado: Asegurado): Siniestro? =
         listar(asegurado).firstOrNull { it.id == id }
 
-    /** Por ahora, la corrección se limita a la descripción de un caso recibido. */
+    /** Las correcciones se registran sin eliminar la evidencia de cambios. */
     fun actualizarDescripcion(id: Long, asegurado: Asegurado, descripcion: String): Boolean {
         if (descripcion.isBlank()) return false
-        val valores = ContentValues().apply {
-            put("descripcion", descripcion.trim())
-            put("ultima_actualizacion", fechaActual())
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val valores = ContentValues().apply {
+                put("descripcion", descripcion.trim())
+                put("ultima_actualizacion", fechaActual())
+            }
+            val ok = db.update("siniestros", valores,
+                "id = ? AND asegurado = ? AND etapa = ?",
+                arrayOf(id.toString(), asegurado.name, EtapaSiniestro.RECIBIDO.name)) > 0
+            if (ok) insertarGestion(db, id, "Asegurado", "Descripción corregida", true)
+            db.setTransactionSuccessful()
+            return ok
+        } finally {
+            db.endTransaction()
         }
-        return writableDatabase.update(
-            "siniestros", valores,
-            "id = ? AND asegurado = ? AND etapa = ?",
-            arrayOf(id.toString(), asegurado.name, EtapaSiniestro.RECIBIDO.name)
-        ) > 0
     }
 
     /** Permite ver la imagen asociada al caso, pero nunca devuelve un documento de otro usuario. */
@@ -268,6 +275,25 @@ class SiniestroDbHelper(context: Context) :
         }
         reducir.inSampleSize = escala
         return BitmapFactory.decodeByteArray(contenido, 0, contenido.size, reducir)
+    }
+
+    /** La consulta filtra por propietario y excluye las gestiones internas. */
+    fun listarGestiones(siniestroId: Long, asegurado: Asegurado): List<Gestion> {
+        val resultado = mutableListOf<Gestion>()
+        readableDatabase.rawQuery("""
+            SELECT g.id, g.siniestro_id, g.fecha, g.responsable,
+                   g.descripcion, g.visible_asegurado
+            FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
+            WHERE s.id = ? AND s.asegurado = ? AND g.visible_asegurado = 1
+            ORDER BY g.id DESC
+        """.trimIndent(), arrayOf(siniestroId.toString(), asegurado.name)).use { c ->
+            while (c.moveToNext()) {
+                resultado.add(Gestion(c.getLong(0), c.getLong(1),
+                    c.getString(2), c.getString(3), c.getString(4),
+                    c.getInt(5) == 1))
+            }
+        }
+        return resultado
     }
 
     /** Lista metadatos únicamente si el asegurado es dueño del caso. */
@@ -322,6 +348,8 @@ class SiniestroDbHelper(context: Context) :
                 put("fecha_registro", fechaActual())
             }
             db.insertOrThrow("evidencias", null, valores)
+            insertarGestion(db, siniestroId, "Asegurado",
+                "Documento adjuntado: " + tipoDocumento.trim(), true)
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
