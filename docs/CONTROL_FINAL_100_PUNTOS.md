@@ -14,7 +14,7 @@ Este documento cruza la **pauta de siete criterios y 100 puntos** proporcionada 
 | Interfaz, estructura y navegación | **15** | `ui/screens/`, `navigation/AppNavegacion.kt`, `navigation/Rutas.kt`; pruebas Compose en `qa` | **Parcialmente comprobado.** Falta revisar tamaño de pantalla, accesibilidad, retroceso y recorrido visual completo. |
 | Formularios y validaciones visuales | **15** | Reporte, edición de descripción, gestión de liquidador, cierre y adjuntos con mensajes | **Parcial.** Faltan solicitudes de documentos y pruebas visuales de todos los errores. |
 | Validaciones centralizadas y reactividad | **10** | `FormularioUiState`, `FormularioViewModel`, `SiniestrosViewModel`, `ValidadorSiniestro`, `ValidadorEvidencia`, `ReglasEtapa` | **Avanzado, no certificado al máximo.** Probar transiciones y revisar reglas pendientes. |
-| Animaciones funcionales | **10** | `AnimatedVisibility`, `fadeIn`, `expandVertically` para registro exitoso | **Parcial.** Una animación funcional no demuestra todas las situaciones solicitadas por la pauta. |
+| Animaciones funcionales | **10** | `AnimatedVisibility`, `fadeIn`, `expandVertically` para registro exitoso; `fadeIn`/`fadeOut` en lista sin resultados | **Parcial.** Dos animaciones funcionales implementadas. Falta demostrarlas en dispositivo y contrastar el nivel máximo de la pauta. |
 | Clases, herencia y polimorfismo | **15** | `data class`, `enum class`, `ViewModel`, `AndroidViewModel`, `SQLiteOpenHelper`, métodos `override` | **Riesgo alto.** Hay herencia del framework; no se ha verificado un ejemplo explícito de polimorfismo entre tipos propios del negocio. No atribuirlo al proyecto del profesor si él no lo implementó. |
 | GitHub, Trello y colaboración | **20** | Repositorio, ramas, commits, documentación, issues y CI en GitHub | **Pendiente de evidencia humana.** Acreditar tareas y contribuciones reales de **ambos** integrantes y tablero Trello. No inventar autores ni commits. |
 | Dos recursos nativos del teléfono | **15** | Cámara mediante `TakePicturePreview` y selector de imágenes con `GetContent`, más PDFs y SQLite | **Código y algunos flujos probados.** Falta evidencia de captura real, selección y denegación de permisos en el teléfono/emulador. |
@@ -30,7 +30,7 @@ Este documento cruza la **pauta de siete criterios y 100 puntos** proporcionada 
 - [x] Se usan rutas de Navigation Compose y retorno entre pantallas.
 - [x] Se usa Material 3 y hay componentes reutilizables como `CampoTexto`, `BotonPrincipal` y `TarjetaSeccion`.
 - [x] Existen pruebas automatizadas básicas de navegación en la rama `qa`.
-- [ ] Comprobar que todas las pantallas son legibles en un dispositivo pequeño, especialmente los tres controles horizontales de `MisSiniestrosScreen`.
+- [ ] Comprobar que todas las pantallas son legibles en un dispositivo pequeño; la acción Liquidador ya se separó de la fila de Cambio de asegurado/Reportar.
 - [ ] Verificar que al entrar y volver no aparezcan datos de otro asegurado.
 - [ ] Probar orientación, teclado, scroll, textos largos y accesibilidad con lector de pantalla.
 - [ ] Obtener capturas legibles de lista, registro, detalle, historial, documentos y liquidador.
@@ -61,7 +61,7 @@ Este documento cruza la **pauta de siete criterios y 100 puntos** proporcionada 
 
 - [x] La confirmación exitosa del registro aparece con `AnimatedVisibility`.
 - [ ] Demostrar en el dispositivo que la animación es visible y no molesta.
-- [ ] Evaluar una segunda animación sencilla y justificada solo si es necesaria para cumplir el nivel superior, sin incorporar otra arquitectura.
+- [x] Segunda animación sencilla con `AnimatedVisibility` para el mensaje de búsqueda vacía, reutilizando Compose Animation.
 - [ ] Respetar configuraciones de accesibilidad y no usar animaciones decorativas excesivas.
 
 ### E. Clases, herencia y polimorfismo · 15 puntos

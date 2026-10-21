@@ -1,5 +1,8 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -73,8 +76,8 @@ fun MisSiniestrosScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
                 Button(onClick = onReportar) { Text("Reportar") }
-                TextButton(onClick = onGestionar) { Text("Liquidador") }
             }
+            TextButton(onClick = onGestionar) { Text("Liquidador") }
             OutlinedTextField(
                 value = busqueda,
                 onValueChange = onBuscar,
@@ -83,14 +86,19 @@ fun MisSiniestrosScreen(
                 placeholder = { Text("Número, compañía, tipo o comuna") },
                 singleLine = true
             )
-            if (siniestros.isEmpty()) {
+            AnimatedVisibility(
+                visible = siniestros.isEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp)) {
                         Text(if (busqueda.isBlank()) "Todavía no tienes siniestros registrados" else "No hay siniestros con ese criterio")
                         Text(if (busqueda.isBlank()) "Puedes reportar uno para comenzar su seguimiento." else "Prueba con otro número, compañía o tipo.")
                     }
                 }
-            } else {
+            }
+            if (siniestros.isNotEmpty()) {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(siniestros, key = { it.id }) { siniestro ->
                         Card(onClick = { onVerDetalle(siniestro.id) }, modifier = Modifier.fillMaxWidth()) {
