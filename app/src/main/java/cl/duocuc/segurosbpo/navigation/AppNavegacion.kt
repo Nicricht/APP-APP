@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import cl.duocuc.segurosbpo.ui.screens.CasosLiquidadorScreen
 import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EvidenciasScreen
 import cl.duocuc.segurosbpo.ui.screens.HistorialSiniestroScreen
@@ -26,6 +27,9 @@ fun AppNavegacion() {
     val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
     val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
     val gestiones by siniestrosVm.gestiones.collectAsStateWithLifecycle()
+    val liquidador by siniestrosVm.liquidador.collectAsStateWithLifecycle()
+    val casosLiquidador by siniestrosVm.casosLiquidador.collectAsStateWithLifecycle()
+    val gestionesLiquidador by siniestrosVm.gestionesLiquidador.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = Ruta.MisSiniestros.ruta) {
         composable(Ruta.MisSiniestros.ruta) {
@@ -36,7 +40,20 @@ fun AppNavegacion() {
                 onBuscar = siniestrosVm::buscar,
                 onCambiarAsegurado = siniestrosVm::seleccionarAsegurado,
                 onReportar = { navController.navigate(Ruta.Reportar.ruta) },
+                onGestionar = { navController.navigate(Ruta.Liquidador.ruta) },
                 onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) }
+            )
+        }
+        composable(Ruta.Liquidador.ruta) {
+            CasosLiquidadorScreen(
+                liquidador = liquidador,
+                casos = casosLiquidador,
+                gestiones = gestionesLiquidador,
+                onSeleccionarLiquidador = siniestrosVm::seleccionarLiquidador,
+                onCargarGestiones = siniestrosVm::cargarGestionesLiquidador,
+                onRegistrarGestion = siniestrosVm::registrarGestionLiquidador,
+                onAvanzar = siniestrosVm::avanzarLiquidador,
+                onVolver = { navController.navigateUp() }
             )
         }
         composable(Ruta.Reportar.ruta) {

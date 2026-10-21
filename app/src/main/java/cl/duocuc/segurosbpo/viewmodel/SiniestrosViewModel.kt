@@ -6,6 +6,7 @@ import android.net.Uri
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Gestion
+import cl.duocuc.segurosbpo.model.Liquidador
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.AndroidViewModel
@@ -34,6 +35,49 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
     val evidencias = _evidencias.asStateFlow()
     private val _gestiones = MutableStateFlow<List<Gestion>>(emptyList())
     val gestiones = _gestiones.asStateFlow()
+    private val _liquidador = MutableStateFlow(Liquidador.VEHICULOS)
+    val liquidador = _liquidador.asStateFlow()
+    private val _casosLiquidador = MutableStateFlow(db.listarAsignados(Liquidador.VEHICULOS))
+    val casosLiquidador = _casosLiquidador.asStateFlow()
+    private val _gestionesLiquidador = MutableStateFlow<List<Gestion>>(emptyList())
+    val gestionesLiquidador = _gestionesLiquidador.asStateFlow()
+
+    fun seleccionarLiquidador(nuevo: Liquidador) {
+        _liquidador.value = nuevo
+        _gestionesLiquidador.value = emptyList()
+        refrescarAsignados()
+    }
+
+    fun refrescarAsignados() {
+        _casosLiquidador.value = db.listarAsignados(_liquidador.value)
+    }
+
+    fun cargarGestionesLiquidador(id: Long) {
+        _gestionesLiquidador.value = db.listarGestionesAsignadas(id, _liquidador.value)
+    }
+
+    fun registrarGestionLiquidador(id: Long, descripcion: String, visible: Boolean): String? {
+        val error = runCatching {
+            db.registrarGestionAsignada(id, _liquidador.value, descripcion, visible)
+        }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar la gestión" }
+        if (error == null) {
+            refrescarAsignados()
+            cargarGestionesLiquidador(id)
+        }
+        return error
+    }
+
+    fun avanzarLiquidador(id: Long, resultado: String, mensaje: String): String? {
+        val error = runCatching {
+            db.avanzarAsignado(id, _liquidador.value, resultado, mensaje)
+        }.exceptionOrNull()?.let { it.message ?: "No se pudo avanzar de etapa" }
+        if (error == null) {
+            refrescarAsignados()
+            cargarGestionesLiquidador(id)
+            refrescar()
+        }
+        return error
+    }
 
     fun buscar(texto: String) {
         _busqueda.value = texto

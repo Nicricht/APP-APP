@@ -38,6 +38,7 @@ fun MisSiniestrosScreen(
     onBuscar: (String) -> Unit,
     onCambiarAsegurado: (Asegurado) -> Unit,
     onReportar: () -> Unit,
+    onGestionar: () -> Unit,
     onVerDetalle: (Long) -> Unit
 ) {
     var mostrarUsuarios by remember { mutableStateOf(false) }
@@ -72,6 +73,7 @@ fun MisSiniestrosScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
                 Button(onClick = onReportar) { Text("Reportar") }
+                TextButton(onClick = onGestionar) { Text("Liquidador") }
             }
             OutlinedTextField(
                 value = busqueda,
