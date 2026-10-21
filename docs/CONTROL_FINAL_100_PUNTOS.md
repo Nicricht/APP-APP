@@ -78,7 +78,7 @@ Este documento cruza la **pauta de siete criterios y 100 puntos** proporcionada 
 - [x] Repositorio `Nicricht/APP-APP` y ramas `main`/`qa`.
 - [x] GitHub Actions compila `main` y comprueba pruebas ampliadas en `qa`.
 - [x] Hay un issue abierto relacionado con cámara/galería: [Issue #2](https://github.com/Nicricht/APP-APP/issues/2).
-- [ ] Verificar y documentar **commits auténticos de ambos estudiantes**; las operaciones de un asistente no demuestran por sí solas la contribución individual.
+- [ ] Verificar y documentar **commits auténticos de ambos estudiantes**; los cambios incorporados no demuestran por sí solos la contribución individual.
 - [ ] Mostrar tablero Trello real, con tareas asignadas a cada integrante, avance y tareas finalizadas.
 - [ ] Relacionar tarjetas Trello, issues o commits con funcionalidades visibles.
 - [ ] Cerrar el Issue #2 solo después de probar cámara y galería de verdad.
