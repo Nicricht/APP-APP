@@ -10,6 +10,7 @@ import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Evidencia
+import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.ValidadorEvidencia
 import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.Siniestro
@@ -20,7 +21,7 @@ import java.util.Locale
 
 /** SQLite local como UsuarioDbHelper del profesor, adaptado a siniestros. */
 class SiniestroDbHelper(context: Context) :
-    SQLiteOpenHelper(context, "seguros_bpo.db", null, 2) {
+    SQLiteOpenHelper(context, "seguros_bpo.db", null, 3) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -41,6 +42,7 @@ class SiniestroDbHelper(context: Context) :
         """.trimIndent())
         db.execSQL("CREATE INDEX idx_siniestros_asegurado ON siniestros(asegurado)")
         crearTablaEvidencias(db)
+        crearTablaGestiones(db)
         cargarSiniestrosEjemplo(db)
     }
 
@@ -91,6 +93,7 @@ class SiniestroDbHelper(context: Context) :
             val id = db.insertOrThrow("siniestros", null, valores)
             val numero = "SIN-$anio-${(id + 4860).toString().padStart(6, '0')}"
             db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf(numero, id))
+            insertarGestion(db, id, "Ejemplo académico", "Caso ficticio disponible en etapa: " + ejemplo.etapa.etiqueta, true)
         }
     }
 
@@ -111,6 +114,34 @@ class SiniestroDbHelper(context: Context) :
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_evidencia_caso ON evidencias(siniestro_id)")
     }
 
+    private fun crearTablaGestiones(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS gestiones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                siniestro_id INTEGER NOT NULL,
+                fecha TEXT NOT NULL,
+                responsable TEXT NOT NULL,
+                descripcion TEXT NOT NULL,
+                visible_asegurado INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY(siniestro_id) REFERENCES siniestros(id) ON DELETE CASCADE
+            )
+        """.trimIndent())
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_gestiones_caso ON gestiones(siniestro_id, id)")
+    }
+
+    private fun insertarGestion(db: SQLiteDatabase, siniestroId: Long,
+        responsable: String, descripcion: String, visible: Boolean
+    ) {
+        val valores = ContentValues().apply {
+            put("siniestro_id", siniestroId)
+            put("fecha", fechaActual())
+            put("responsable", responsable)
+            put("descripcion", descripcion)
+            put("visible_asegurado", if (visible) 1 else 0)
+        }
+        db.insertOrThrow("gestiones", null, valores)
+    }
+
     override fun onConfigure(db: SQLiteDatabase) {
         db.setForeignKeyConstraintsEnabled(true)
     }
@@ -118,6 +149,16 @@ class SiniestroDbHelper(context: Context) :
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         // Versión 1 -> 2: conservar los siniestros existentes y agregar documentos.
         if (oldVersion < 2) crearTablaEvidencias(db)
+        if (oldVersion < 3) {
+            crearTablaGestiones(db)
+            // Los movimientos previos no estaban guardados en las versiones antiguas.
+            db.rawQuery("SELECT id FROM siniestros", null).use { cursor ->
+                while (cursor.moveToNext()) {
+                    insertarGestion(db, cursor.getLong(0), "Sistema",
+                        "Caso incorporado al historial local. No hay gestiones anteriores disponibles.", true)
+                }
+            }
+        }
     }
 
     private fun fechaActual(): String =
@@ -146,6 +187,7 @@ class SiniestroDbHelper(context: Context) :
             val anio = SimpleDateFormat("yy", Locale.ROOT).format(Date())
             val numero = "SIN-$anio-${(id + 4860).toString().padStart(6, '0')}"
             db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf(numero, id))
+            insertarGestion(db, id, "Asegurado", "Reporte registrado con número " + numero, true)
             db.setTransactionSuccessful()
             return Siniestro(
                 id, numero, formulario.asegurado, formulario.compania,
