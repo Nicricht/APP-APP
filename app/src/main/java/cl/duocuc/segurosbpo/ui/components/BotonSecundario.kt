@@ -23,7 +23,7 @@ fun BotonSecundario(
         modifier = modifier.estiloAltoBoton(),
         shape = EstilosBotones.forma,
         colors = EstilosBotones.coloresSecundarios(),
-        border = EstilosBotones.bordeSecundario(),       // border: 2px solid
+        border = EstilosBotones.bordeSecundario(),
         contentPadding = EstilosBotones.relleno
     ) {
         Text(text = texto)
