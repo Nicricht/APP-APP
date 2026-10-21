@@ -3,9 +3,6 @@ on:
   workflow_dispatch:
   push:
     branches: [qa]
-    paths:
-      - '.github/workflows/android-instrumented.yml'
-      - 'app/src/androidTest/**'
 permissions:
   contents: read
 jobs:
