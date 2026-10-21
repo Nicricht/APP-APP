@@ -18,14 +18,14 @@ import cl.duocuc.segurosbpo.ui.theme.GrisDeshabilitado
 import cl.duocuc.segurosbpo.ui.theme.Primario
 
 object EstilosBotones {
-    val forma: Shape = RoundedCornerShape(Dimens.radioBoton) //border-radius
-    val relleno = PaddingValues(horizontal = 20.dp, vertical = 12.dp) //padding
+    val forma: Shape = RoundedCornerShape(Dimens.radioBoton)
+    val relleno = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
 
 
     @Composable
     fun colorPrincipal(): ButtonColors = ButtonDefaults.buttonColors(
-        containerColor = Primario, //background-color
-        contentColor = Blanco, //color
+        containerColor = Primario,
+        contentColor = Blanco,
         disabledContainerColor = GrisDeshabilitado,
         disabledContentColor = Blanco
     )
