@@ -38,3 +38,11 @@ jobs:
         run: chmod +x gradlew
       - name: Compilar y ejecutar pruebas unitarias
         run: ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
+
+      - name: Publicar APK de depuración
+        uses: actions/upload-artifact@v4
+        with:
+          name: SegurosBPO-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
