@@ -45,8 +45,8 @@ fun ImagenEncabezado(
 
         Image(
             painter = painterResource(id = imagen),
-            contentDescription = descripcion,          // accesibilidad
-            contentScale = ContentScale.Crop,          // object-fit: cover
+            contentDescription = descripcion,
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -58,7 +58,7 @@ fun ImagenEncabezado(
 
         Column(
             modifier = Modifier
-                .align(Alignment.BottomStart)          // position:absolute; bottom:0; left:0
+                .align(Alignment.BottomStart)
                 .padding(Dimens.espacioPantalla)
         ) {
             Text(text = titulo, style = MaterialTheme.typography.titleLarge, color = Blanco)

@@ -20,7 +20,7 @@ fun EtiquetaInteres(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(50),                        // 50 % = píldora
+        shape = RoundedCornerShape(50),
         color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
         contentColor = MaterialTheme.colorScheme.secondary
     ) {

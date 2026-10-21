@@ -60,7 +60,7 @@ fun InterruptorConTexto(
             .toggleable(value = activado, onValueChange = onCambio, role = Role.Switch)
             .padding(vertical = Dimens.espacioMini),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween  // texto a la izquierda, switch a la derecha
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = texto, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         Switch(checked = activado, onCheckedChange = null)

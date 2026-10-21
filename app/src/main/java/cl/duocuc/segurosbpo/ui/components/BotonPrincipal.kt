@@ -31,18 +31,18 @@ fun BotonPrincipal(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.estiloAltoBoton(),          // height: 52dp
+        modifier = modifier.estiloAltoBoton(),
         enabled = habilitado,
-        shape = EstilosBotones.forma,                     // border-radius
-        colors = EstilosBotones.colorPrincipal(),       // background / color
-        elevation = EstilosBotones.elevacion(),           // box-shadow
-        contentPadding = EstilosBotones.relleno           // padding
+        shape = EstilosBotones.forma,
+        colors = EstilosBotones.colorPrincipal(),
+        elevation = EstilosBotones.elevacion(),
+        contentPadding = EstilosBotones.relleno
     ) {
 
         if (icono != null) {
             Icon(
                 painter = painterResource(id = icono),
-                contentDescription = null,              // decorativo: el texto ya describe
+                contentDescription = null,
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))

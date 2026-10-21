@@ -45,7 +45,7 @@ fun CampoContrasena(
                 modifier = Modifier.size(Dimens.tamanoIcono)
             )
         },
-        trailingIcon = {                                   // ícono a la DERECHA, presionable
+        trailingIcon = {
             IconButton(onClick = onAlternarVisible) {
                 Icon(
                     painter = painterResource(

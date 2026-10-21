@@ -31,14 +31,14 @@ fun TarjetaSeccion(
     ) {
         Column(
             modifier = Modifier.padding(Dimens.espacioMedio),
-            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico) // gap entre hijos
+            verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
         ) {
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            contenido()   // <- aquí se dibuja lo que venga entre llaves
+            contenido()
         }
     }
 }

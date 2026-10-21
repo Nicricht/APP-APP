@@ -35,7 +35,7 @@ fun TarjetaEstadistica(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = Dimens.espacioMedio),
-            horizontalAlignment = Alignment.CenterHorizontally // text-align: center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = valor,
