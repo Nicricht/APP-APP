@@ -1,3 +1,5 @@
+> **ALCANCE DE LA EVALUACIÓN ACTUAL:** En esta fase desarrollamos únicamente la aplicación Android local al estilo de **MiRegistroAvatar**, usando Kotlin, Compose, MVVM, navegación y SQLite. **Spring Boot, Retrofit, API REST y microservicios son para la tercera evaluación**, no se implementan ahora. Ver [estado de la etapa 1](docs/ETAPA_1_ANDROID.md).
+
 # GUÍA MAESTRA DEL PROYECTO APP-APP
 ## DSY1105 · Desarrollo de Aplicaciones Móviles · Seguimiento de siniestros BPO
 
