@@ -1,6 +1,5 @@
 package cl.duocuc.segurosbpo.model
 
-/** Validaciones de avance del caso, fuera de las pantallas. */
 object ReglasEtapa {
     fun siguiente(actual: EtapaSiniestro): EtapaSiniestro? = when (actual) {
         EtapaSiniestro.RECIBIDO -> EtapaSiniestro.EVALUACION
