@@ -1,7 +1,7 @@
 name: Android Kotlin QA
 on:
   push:
-    branches: [main, feature/android-local-mvvm]
+    branches: [qa]
     paths:
       - 'app/**'
       - 'gradle/**'
