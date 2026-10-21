@@ -38,7 +38,7 @@ import cl.duocuc.segurosbpo.model.ReglasEtapa
 import cl.duocuc.segurosbpo.model.Siniestro
 import kotlinx.coroutines.launch
 
-/** Pantalla académica: perfil ficticio de liquidador, inspirado en UsuariosScreen del profesor. */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CasosLiquidadorScreen(
