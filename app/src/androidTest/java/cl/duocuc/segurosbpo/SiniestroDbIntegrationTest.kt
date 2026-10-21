@@ -1,5 +1,6 @@
 package cl.duocuc.segurosbpo
 
+import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import cl.duocuc.segurosbpo.data.ArchivoEvidencia
@@ -122,4 +123,47 @@ class SiniestroDbIntegrationTest {
         assertTrue(error.isFailure)
         assertTrue(db.listarEvidencias(caso.id, Asegurado.HECTOR).isEmpty())
     }
+    @Test
+    fun migraDesdeBaseV1SinPerderSiniestro() {
+        context.openOrCreateDatabase(nombreDb, Context.MODE_PRIVATE, null).use { antigua ->
+            antigua.execSQL("""
+                CREATE TABLE siniestros (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    numero TEXT NOT NULL UNIQUE,
+                    asegurado TEXT NOT NULL,
+                    compania TEXT NOT NULL,
+                    tipo TEXT NOT NULL,
+                    fecha_ocurrencia TEXT NOT NULL,
+                    fecha_reporte TEXT NOT NULL,
+                    comuna TEXT NOT NULL,
+                    descripcion TEXT NOT NULL,
+                    hubo_terceros INTEGER NOT NULL,
+                    etapa TEXT NOT NULL,
+                    ultima_actualizacion TEXT NOT NULL
+                )
+            """.trimIndent())
+            antigua.execSQL("""
+                INSERT INTO siniestros
+                (numero, asegurado, compania, tipo, fecha_ocurrencia,
+                 fecha_reporte, comuna, descripcion, hubo_terceros,
+                 etapa, ultima_actualizacion)
+                VALUES
+                ('SIN-26-004861', 'JORGE', 'LITORAL', 'DANO_AGUA',
+                 '18-10-2026', '20-10-2026', 'Maipu',
+                 'Registro creado antes de la migracion', 0,
+                 'EVALUACION', '20-10-2026 10:00')
+            """.trimIndent())
+            antigua.version = 1
+        }
+
+        val registro = db.listar(Asegurado.JORGE).single()
+        assertEquals("SIN-26-004861", registro.numero)
+        assertEquals("Registro creado antes de la migracion", registro.descripcion)
+        assertEquals(Liquidador.HOGAR, registro.liquidadorAsignado)
+        assertTrue(db.listarGestiones(registro.id, Asegurado.JORGE)
+            .any { it.descripcion.contains("incorporado al historial") })
+        assertTrue(db.listarEvidencias(registro.id, Asegurado.JORGE).isEmpty())
+        assertEquals(4, db.readableDatabase.version)
+    }
+
 }
