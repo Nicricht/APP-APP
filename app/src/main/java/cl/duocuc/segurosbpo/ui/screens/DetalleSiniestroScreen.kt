@@ -44,6 +44,11 @@ fun DetalleSiniestroScreen(siniestro: Siniestro?, onVolver: () -> Unit, onEditar
                         Text("Comuna: ${siniestro.comuna}")
                         Text("Descripción: ${siniestro.descripcion}")
                         Text("Última actualización: ${siniestro.ultimaActualizacion}")
+                        Text("Liquidador: " + (siniestro.liquidadorAsignado?.nombre ?: "Pendiente de asignación"))
+                        if (siniestro.etapa == EtapaSiniestro.CERRADO) {
+                            Text("Resultado: " + (siniestro.resultadoCierre ?: "No informado"))
+                            Text("Mensaje de cierre: " + (siniestro.mensajeCierre ?: "No disponible"))
+                        }
                     }
                 }
                 Text("¿Qué sigue?", style = MaterialTheme.typography.titleMedium)
