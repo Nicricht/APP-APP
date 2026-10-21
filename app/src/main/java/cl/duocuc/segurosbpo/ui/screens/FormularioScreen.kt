@@ -1,5 +1,10 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,9 +55,16 @@ import androidx.compose.runtime.getValue
 
 @Composable
 fun FormularioScreen(
+    aseguradoActual: Asegurado,
+    onRegistroExitoso: (FormularioUiState) -> String,
+    onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit,
     viewModel: FormularioViewModel = viewModel()
 ){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(aseguradoActual) {
+        viewModel.seleccionarAsegurado(aseguradoActual)
+    }
     FormularioContent(
         uiState = uiState,
         onAseguradoSeleccionado = viewModel::onAseguradoSeleccionado,
@@ -63,8 +75,15 @@ fun FormularioScreen(
         onTipoSeleccionado = viewModel::onTipoSeleccionado,
         onTercerosCambia = viewModel::onTercerosCambia,
         onDatosCorrectosCambia = viewModel::onDatosCorrectosCambia,
-        onRegistrar = viewModel::onRegistrar,
-        onLimpiar = viewModel::onLimpiar
+        onRegistrar = {
+            if (viewModel.onRegistrar()) {
+                val numero = onRegistroExitoso(viewModel.uiState.value)
+                viewModel.confirmarRegistro(numero)
+            }
+        },
+        onLimpiar = viewModel::onLimpiar,
+        onVolver = onVolver,
+        onVerMisSiniestros = onVerMisSiniestros
     )
 }
 
@@ -81,7 +100,9 @@ fun FormularioContent(
     onTercerosCambia: (Boolean) -> Unit,
     onDatosCorrectosCambia: (Boolean) -> Unit,
     onRegistrar: () -> Unit,
-    onLimpiar: () -> Unit
+    onLimpiar: () -> Unit,
+    onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit
 ){
     Scaffold(
         topBar = {
@@ -111,28 +132,24 @@ fun FormularioContent(
                 modifier = Modifier.padding(Dimens.espacioPantalla),
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
             ) {
-                //Card 1: Quien reporta
+                androidx.compose.material3.TextButton(onClick = onVolver) { Text("Volver a mis siniestros") }
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_datos)) {
                     Text(
                         text = stringResource(R.string.etiqueta_asegurado),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
-                    GrupoRadio(
-                        opciones = Asegurado.entries,
-                        seleccionada = uiState.asegurado,
-                        onSeleccionar = onAseguradoSeleccionado,
-                        textoDe = {it.etiqueta}
-                    )
+                    Text(uiState.asegurado.etiqueta, style = MaterialTheme.typography.titleMedium)
 
-                    //RNF-10: el RUT se muestra parcialmente oculto
+
                     Text(
                         text = stringResource(R.string.rut_asegurado, uiState.asegurado.rutOculto),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
-                //Card 2: Que paso
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_que_paso)) {
                     Text(
                         text = stringResource(R.string.etiqueta_compania),
@@ -175,7 +192,7 @@ fun FormularioContent(
                         error = uiState.errorDescripcion
                     )
 
-                    //solo para siniestros de vehiculo (Aclaracion N 4)
+
                     if (uiState.tipoSiniestro.esVehiculo) {
                         InterruptorConTexto(
                             texto = stringResource(R.string.opcion_terceros),
@@ -193,7 +210,7 @@ fun FormularioContent(
                     }
                 }
 
-                //Card 3: Donde y cuando
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_donde_cuando)) {
                     CampoTexto(
                         valor = uiState.fechaOcurrencia,
@@ -212,7 +229,7 @@ fun FormularioContent(
                     )
                 }
 
-                //confirmacion de los datos
+
                 Column {
                     CasillaConTexto(
                         texto = stringResource(R.string.opcion_datos_correctos),
@@ -231,7 +248,7 @@ fun FormularioContent(
                     }
                 }
 
-                //botones
+
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)) {
                     BotonSecundario(
                         texto = stringResource(R.string.btn_limpiar),
@@ -247,9 +264,21 @@ fun FormularioContent(
                     )
                 }
 
-                //mensaje de exito con el numero de siniestro (RF-03)
-                if(uiState.reporteExitoso){
-                    MensajeExito(numero = uiState.numeroSiniestro)
+
+                AnimatedVisibility(
+                    visible = uiState.reporteExitoso,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        MensajeExito(numero = uiState.numeroSiniestro)
+                        BotonPrincipal(
+                            texto = "Ver mis siniestros",
+                            onClick = onVerMisSiniestros,
+                            icono = R.drawable.ic_check,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 Spacer(Modifier.height(Dimens.espacioGrande))
             }
@@ -280,7 +309,7 @@ private fun  MensajeExito(numero: String){
                     modifier = Modifier.padding(start = Dimens.espacioChico)
                 )
             }
-            //Aclaracion N 2: que viene ahora para el asegurado
+
             Text(
                 text = stringResource(R.string.proximo_paso_recibido),
                 style = MaterialTheme.typography.bodyMedium,

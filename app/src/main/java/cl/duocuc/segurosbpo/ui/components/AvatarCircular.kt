@@ -19,17 +19,6 @@ import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  AvatarCircular.kt  —  Imagen recortada en círculo con borde.
-//  ---------------------------------------------------------------------
-//  En CSS:  img { width:120px; height:120px; border-radius:50%;
-//                 border:4px solid white; object-fit:cover; }
-//  ¡El ORDEN de los modificadores importa! (se aplican de arriba a abajo)
-//     size   -> tamaño
-//     shadow -> sombra circular
-//     clip   -> recorta en círculo
-//     border -> dibuja el borde encima del recorte
-// =====================================================================
 
 @Composable
 fun AvatarCircular(

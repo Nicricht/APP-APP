@@ -22,19 +22,7 @@ import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  ControlesSeleccion.kt  —  Checkbox, Switch y RadioButton con texto.
-//  ---------------------------------------------------------------------
-//  Los tres usan el contenedor ROW (fila): control a un lado, texto al otro.
-//     Row(verticalAlignment = Alignment.CenterVertically)  ~  display:flex; align-items:center
-//
-//  Truco de usabilidad: hacemos presionable TODA la fila (toggleable /
-//  selectable) y al control le pasamos onCheckedChange = null. Así el
-//  usuario puede tocar el texto y no solo el cuadradito.
-//  Un archivo puede tener VARIOS componentes pequeños relacionados.
-// =====================================================================
 
-/** Checkbox + texto (por ejemplo, aceptar términos). */
 @Composable
 fun CasillaConTexto(
     texto: String,
@@ -58,7 +46,7 @@ fun CasillaConTexto(
     }
 }
 
-/** Texto + Switch (interruptor encendido/apagado). */
+
 @Composable
 fun InterruptorConTexto(
     texto: String,
@@ -72,18 +60,14 @@ fun InterruptorConTexto(
             .toggleable(value = activado, onValueChange = onCambio, role = Role.Switch)
             .padding(vertical = Dimens.espacioMini),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween  // texto a la izquierda, switch a la derecha
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text = texto, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         Switch(checked = activado, onCheckedChange = null)
     }
 }
 
-/**
- * Grupo de RadioButton: se elige UNA opción entre varias.
- * Es genérico <T>: sirve para cualquier lista (aquí la usamos con un enum).
- * @param textoDe función que convierte cada opción en el texto a mostrar.
- */
+
 @Composable
 fun <T> GrupoRadio(
     opciones: List<T>,
@@ -92,7 +76,7 @@ fun <T> GrupoRadio(
     textoDe: (T) -> String,
     modifier: Modifier = Modifier
 ) {
-    // Column = contenedor vertical (una opción debajo de otra)
+
     Column(modifier = modifier.selectableGroup()) {
         opciones.forEach { opcion ->
             Row(
