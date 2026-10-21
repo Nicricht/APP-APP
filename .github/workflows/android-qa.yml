@@ -1,0 +1,48 @@
+name: Android Kotlin QA
+on:
+  push:
+    branches: [entrega-01, entrega-01-parte-1]
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - '.github/workflows/android-qa.yml'
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+permissions:
+  contents: read
+jobs:
+  android-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Instalar API Android
+        shell: bash
+        run: |
+          set -e
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
+          command -v sdkmanager
+          sdkmanager "platforms;android-37.2"
+      - name: Dar permisos a Gradle
+        run: chmod +x gradlew
+      - name: Compilar Android y ejecutar las pruebas unitarias
+        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
+
+      - name: Publicar APK de depuración
+        uses: actions/upload-artifact@v4
+        with:
+          name: SegurosBPO-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
