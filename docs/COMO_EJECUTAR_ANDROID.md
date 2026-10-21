@@ -39,3 +39,18 @@ Consultar [GitHub Actions](https://github.com/Nicricht/APP-APP/actions). Una eje
 - No afirmar cumplimiento de todos los criterios de la pauta sin evidencia del docente, el compañero y las pruebas en teléfono.
 
 La guía completa de requisitos se conserva en [README.md](../README.md). El registro de cambios está en [ETAPA_1_ANDROID.md](ETAPA_1_ANDROID.md).
+
+## Historial y rol liquidador local
+
+1. Desde **Mis siniestros**, abre un caso y entra a **Ver historial**. En los nuevos casos se registran el reporte, las correcciones y los documentos adjuntados.
+2. En la lista principal pulsa **Liquidador**; es una selección ficticia como los roles del proyecto del profesor, no un login real.
+3. Elige el equipo **Vehículos** o **Hogar**. Solo se listan sus casos asignados.
+4. Abre un caso en evaluación o liquidación. Escribe una gestión y marca si puede verla el asegurado; pulsa **Registrar gestión**.
+5. Comprueba que solo aparece en el historial del asegurado si se marcó como visible.
+6. Usa **Confirmar avance** para ir a la siguiente etapa. Si vas a cerrar, elige **Aprobado** o **Rechazado** y escribe el mensaje obligatorio.
+7. Vuelve a la vista del asegurado para revisar la nueva etapa, la última actualización y el resultado de cierre.
+8. Reabre la aplicación para comprobar que las gestiones y las etapas sobreviven al reinicio.
+
+**Base de datos:** SQLite está en versión 4. Se conservan las tablas y registros anteriores mediante migraciones incrementales. Los casos existentes sin gestión histórica reciben una anotación informativa, sin inventar eventos previos.
+
+**Advertencia:** los casos nuevos quedan «Recibido» sin liquidador, como indica el caso académico. La asignación por analista y las solicitudes de documentos pendientes no están implementadas. No dar por terminadas esas funciones ni el bloqueo RN-09 de punta a punta.
