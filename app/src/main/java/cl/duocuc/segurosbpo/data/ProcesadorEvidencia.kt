@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream
 
 data class ArchivoEvidencia(val nombre: String, val mime: String, val bytes: ByteArray)
 
-/** Como ConvertidorImagen del profesor, pero acepta imágenes y PDF de máximo 5 MB. */
+
 object ProcesadorEvidencia {
     fun desdeCamara(bitmap: Bitmap): ArchivoEvidencia {
         val salida = ByteArrayOutputStream()
@@ -47,7 +47,7 @@ object ProcesadorEvidencia {
             }
         }
         val bytes = salida.toByteArray()
-        // Comprobación mínima de contenido; no confiar únicamente en la extensión.
+
         val valido = when (mime) {
             "application/pdf" -> bytes.size >= 5 && bytes.copyOfRange(0, 5).contentEquals("%PDF-".toByteArray())
             "image/jpeg" -> bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte()

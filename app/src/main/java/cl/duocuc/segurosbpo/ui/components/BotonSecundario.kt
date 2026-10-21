@@ -11,10 +11,6 @@ import cl.duocuc.segurosbpo.ui.style.estiloAltoBoton
 import cl.duocuc.segurosbpo.ui.style.EstilosBotones
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  BotonSecundario.kt  —  Acción de menor importancia (Limpiar, Cancelar).
-//  Parte de OutlinedButton (solo borde) y aplica NUESTROS estilos.
-// =====================================================================
 
 @Composable
 fun BotonSecundario(

@@ -46,10 +46,7 @@ import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Siniestro
 import kotlinx.coroutines.launch
 
-/** Recursos del teléfono siguiendo el PerfilScreen del profesor.
- * La cámara usa el permiso CAMERA; GetContent permite elegir un archivo
- * específico sin pedir permiso de lectura de todas las fotos.
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EvidenciasScreen(

@@ -1,9 +1,6 @@
 package cl.duocuc.segurosbpo.model
 
-//catalogos del caso de siniestros (Anexo 9) - todos los datos son ficticios
 
-//los 8 asegurados del Anexo 9 (identificacion simulada, S-02)
-//el rutOculto es el que se muestra en pantalla (RNF-10)
 enum class Asegurado(val etiqueta: String, val rut: String, val rutOculto: String){
     CAMILA("Camila Rojas Fuentes", "15.842.371-5", "**.***.371-5"),
     JORGE("Jorge Pizarro Contreras", "9.418.552-1", "*.***.552-1"),
@@ -20,7 +17,7 @@ enum class Compania(val etiqueta: String, val activa: Boolean){
     LITORAL("Seguros Litoral", true),
     PATAGONIA("Aseguradora Patagonia Sur", true),
     VALLE_CENTRAL("Seguros Valle Central", true),
-    //RN-18: contrato terminado, se puede consultar pero no reportar
+
     PROTEGE("Protege Seguros (no disponible)", false)
 }
 
@@ -34,24 +31,24 @@ enum class TipoSiniestro(val etiqueta: String, val esVehiculo: Boolean){
 }
 
 data class FormularioUiState(
-    //quien reporta (se elige, no se escribe)
+
     val asegurado: Asegurado = Asegurado.CAMILA,
-    //variables para alamacenar informacion de campos de texto
+
     val fechaOcurrencia: String = "",
     val comuna: String = "",
     val descripcion: String = "",
-    //opciones que se eligen
+
     val compania: Compania = Compania.CORDILLERA,
     val tipoSiniestro: TipoSiniestro = TipoSiniestro.CHOQUE,
     val huboTerceros: Boolean = false,
     val datosCorrectos: Boolean = false,
-    //mensajes de error bajo cada campo
+
     val errorFecha: String? = null,
     val errorComuna: String? = null,
     val errorDescripcion: String? = null,
     val errorCompania: String? = null,
     val errorDatos: String? = null,
-    //resultado
+
     val reporteExitoso: Boolean = false,
     val numeroSiniestro: String = ""
 

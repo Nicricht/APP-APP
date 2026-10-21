@@ -133,7 +133,7 @@ fun FormularioContent(
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
             ) {
                 androidx.compose.material3.TextButton(onClick = onVolver) { Text("Volver a mis siniestros") }
-                //Card 1: Quien reporta
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_datos)) {
                     Text(
                         text = stringResource(R.string.etiqueta_asegurado),
@@ -142,14 +142,14 @@ fun FormularioContent(
 
                     Text(uiState.asegurado.etiqueta, style = MaterialTheme.typography.titleMedium)
 
-                    //RNF-10: el RUT se muestra parcialmente oculto
+
                     Text(
                         text = stringResource(R.string.rut_asegurado, uiState.asegurado.rutOculto),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
-                //Card 2: Que paso
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_que_paso)) {
                     Text(
                         text = stringResource(R.string.etiqueta_compania),
@@ -192,7 +192,7 @@ fun FormularioContent(
                         error = uiState.errorDescripcion
                     )
 
-                    //solo para siniestros de vehiculo (Aclaracion N 4)
+
                     if (uiState.tipoSiniestro.esVehiculo) {
                         InterruptorConTexto(
                             texto = stringResource(R.string.opcion_terceros),
@@ -210,7 +210,7 @@ fun FormularioContent(
                     }
                 }
 
-                //Card 3: Donde y cuando
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_donde_cuando)) {
                     CampoTexto(
                         valor = uiState.fechaOcurrencia,
@@ -229,7 +229,7 @@ fun FormularioContent(
                     )
                 }
 
-                //confirmacion de los datos
+
                 Column {
                     CasillaConTexto(
                         texto = stringResource(R.string.opcion_datos_correctos),
@@ -248,7 +248,7 @@ fun FormularioContent(
                     }
                 }
 
-                //botones
+
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)) {
                     BotonSecundario(
                         texto = stringResource(R.string.btn_limpiar),
@@ -264,7 +264,7 @@ fun FormularioContent(
                     )
                 }
 
-                //mensaje de exito con el numero de siniestro (RF-03)
+
                 AnimatedVisibility(
                     visible = uiState.reporteExitoso,
                     enter = fadeIn() + expandVertically(),
@@ -309,7 +309,7 @@ private fun  MensajeExito(numero: String){
                     modifier = Modifier.padding(start = Dimens.espacioChico)
                 )
             }
-            //Aclaracion N 2: que viene ahora para el asegurado
+
             Text(
                 text = stringResource(R.string.proximo_paso_recibido),
                 style = MaterialTheme.typography.bodyMedium,

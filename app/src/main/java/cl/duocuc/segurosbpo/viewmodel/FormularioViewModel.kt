@@ -12,13 +12,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class FormularioViewModel : ViewModel() {
-    //state private y mutable
+
     private val _uiState = MutableStateFlow(FormularioUiState())
-    //publica / solo lectura
+
     val uiState: StateFlow<FormularioUiState> = _uiState.asStateFlow()
 
-    //eventos de los campos
-    //S-02: identificacion simulada, el asegurado se elige de una lista
+
     fun onAseguradoSeleccionado(asegurado: Asegurado){
         _uiState.update { it.copy(asegurado = asegurado, reporteExitoso = false) }
     }
@@ -40,7 +39,7 @@ class FormularioViewModel : ViewModel() {
     }
 
     fun onTipoSeleccionado(tipo: TipoSiniestro){
-        //si el siniestro es de hogar, la pregunta por terceros no corresponde
+
         val terceros = if (tipo.esVehiculo) _uiState.value.huboTerceros else false
         _uiState.update { it.copy(tipoSiniestro = tipo, huboTerceros = terceros, reporteExitoso = false) }
     }
@@ -56,8 +55,8 @@ class FormularioViewModel : ViewModel() {
     fun onRegistrar(): Boolean {
         val estado = _uiState.value
         if (estado.reporteExitoso) return false
-        //validaciones de campos
-        //la fecha se escribe dia-mes-año (ej: 29-09-2026)
+
+
         val errorFecha = ValidadorSiniestro.errorFecha(estado.fechaOcurrencia)
         val errorComuna = ValidadorSiniestro.errorComuna(estado.comuna)
         val errorDescripcion = ValidadorSiniestro.errorDescripcion(estado.descripcion)

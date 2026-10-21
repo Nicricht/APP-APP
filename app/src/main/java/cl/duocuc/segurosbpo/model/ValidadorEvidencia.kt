@@ -1,6 +1,6 @@
 package cl.duocuc.segurosbpo.model
 
-/** Reglas de documentación para el MVP, independientes de Compose. */
+
 object ValidadorEvidencia {
     const val MAX_ARCHIVOS = 15
     const val MAX_BYTES = 5 * 1024 * 1024

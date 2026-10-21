@@ -22,7 +22,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** SQLite local como UsuarioDbHelper del profesor, adaptado a siniestros. */
+
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
@@ -54,10 +54,7 @@ class SiniestroDbHelper(
         cargarSiniestrosEjemplo(db)
     }
 
-    /**
-     * Datos ficticios de demostración, como los usuarios iniciales de MiRegistroAvatar.
-     * Solo se insertan al crear una base NUEVA, nunca en una actualización.
-     */
+    
     private fun cargarSiniestrosEjemplo(db: SQLiteDatabase) {
         data class Ejemplo(
             val asegurado: Asegurado,
@@ -159,11 +156,11 @@ class SiniestroDbHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Versión 1 -> 2: conservar los siniestros existentes y agregar documentos.
+
         if (oldVersion < 2) crearTablaEvidencias(db)
         if (oldVersion < 3) {
             crearTablaGestiones(db)
-            // Los movimientos previos no estaban guardados en las versiones antiguas.
+
             db.rawQuery("SELECT id FROM siniestros", null).use { cursor ->
                 while (cursor.moveToNext()) {
                     insertarGestion(db, cursor.getLong(0), "Sistema",
@@ -175,7 +172,7 @@ class SiniestroDbHelper(
             db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador TEXT")
             db.execSQL("ALTER TABLE siniestros ADD COLUMN resultado_cierre TEXT")
             db.execSQL("ALTER TABLE siniestros ADD COLUMN mensaje_cierre TEXT")
-            // Asignación sintética de casos ya en proceso para probar el perfil liquidador.
+
             db.execSQL("""
                 UPDATE siniestros SET liquidador = CASE
                     WHEN tipo IN ('CHOQUE', 'ROBO_VEHICULO', 'CRISTALES') THEN 'VEHICULOS'
@@ -188,7 +185,7 @@ class SiniestroDbHelper(
     private fun fechaActual(): String =
         SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
 
-    /** El correlativo nace del ID que SQLite ya guardó y no se reinicia al limpiar. */
+    
     fun registrar(formulario: FormularioUiState): Siniestro {
         val db = writableDatabase
         db.beginTransaction()
@@ -283,7 +280,7 @@ class SiniestroDbHelper(
     fun obtener(id: Long, asegurado: Asegurado): Siniestro? =
         listar(asegurado).firstOrNull { it.id == id }
 
-    /** Las correcciones se registran sin eliminar la evidencia de cambios. */
+    
     fun actualizarDescripcion(id: Long, asegurado: Asegurado, descripcion: String): Boolean {
         if (descripcion.isBlank()) return false
         val db = writableDatabase
@@ -304,7 +301,7 @@ class SiniestroDbHelper(
         }
     }
 
-    /** Permite ver la imagen asociada al caso, pero nunca devuelve un documento de otro usuario. */
+    
     fun obtenerImagen(evidenciaId: Long, siniestroId: Long, asegurado: Asegurado): Bitmap? {
         val contenido = readableDatabase.rawQuery("""
             SELECT e.contenido FROM evidencias e
@@ -323,7 +320,7 @@ class SiniestroDbHelper(
         return BitmapFactory.decodeByteArray(contenido, 0, contenido.size, reducir)
     }
 
-    /** La consulta filtra por propietario y excluye las gestiones internas. */
+    
     fun listarGestiones(siniestroId: Long, asegurado: Asegurado): List<Gestion> {
         val resultado = mutableListOf<Gestion>()
         readableDatabase.rawQuery("""
@@ -342,7 +339,7 @@ class SiniestroDbHelper(
         return resultado
     }
 
-    /** El liquidador ve sus movimientos visibles e internos. */
+    
     fun listarGestionesAsignadas(siniestroId: Long, liquidador: Liquidador): List<Gestion> {
         val resultado = mutableListOf<Gestion>()
         readableDatabase.rawQuery("""
@@ -393,8 +390,8 @@ class SiniestroDbHelper(
         try {
             val actual = obtenerAsignado(siniestroId, liquidador)
                 ?: throw IllegalArgumentException("El caso no está asignado a este liquidador")
-            // Los documentos adjuntados no implican solicitudes pendientes.
-            // El módulo de solicitudes está pendiente: no inventar documentos solicitados.
+
+
             val siguiente = ReglasEtapa.siguiente(actual.etapa)
                 ?: throw IllegalArgumentException("Un siniestro cerrado no puede reabrirse")
             val error = ReglasEtapa.validar(actual.etapa, siguiente, 0, resultado, mensajeCierre)
@@ -421,7 +418,7 @@ class SiniestroDbHelper(
         }
     }
 
-    /** Lista metadatos únicamente si el asegurado es dueño del caso. */
+    
     fun listarEvidencias(siniestroId: Long, asegurado: Asegurado): List<Evidencia> {
         val resultado = mutableListOf<Evidencia>()
         readableDatabase.rawQuery("""
@@ -441,7 +438,7 @@ class SiniestroDbHelper(
         return resultado
     }
 
-    /** Comprueba propiedad, etapa y límites en la misma transacción del guardado. */
+    
     fun guardarEvidencia(
         siniestroId: Long, asegurado: Asegurado, tipoDocumento: String,
         archivo: ArchivoEvidencia

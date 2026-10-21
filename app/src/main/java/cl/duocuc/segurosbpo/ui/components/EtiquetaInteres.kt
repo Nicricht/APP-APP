@@ -12,13 +12,6 @@ import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  EtiquetaInteres.kt  —  "Chip" o etiqueta con forma de píldora.
-//  ---------------------------------------------------------------------
-//  Surface = el contenedor más simple de Material: pinta un fondo con
-//  forma y color, y pone su contenido encima. (Card está hecha con Surface.)
-//  En CSS: <span class="chip"> con background, border-radius:50px y padding.
-// =====================================================================
 
 @Composable
 fun EtiquetaInteres(
