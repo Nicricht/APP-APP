@@ -1,9 +1,11 @@
 package cl.duocuc.segurosbpo
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import cl.duocuc.segurosbpo.data.ArchivoEvidencia
+import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.data.SiniestroDbHelper
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
@@ -166,4 +168,20 @@ class SiniestroDbIntegrationTest {
         assertEquals(4, db.readableDatabase.version)
     }
 
+
+    @Test
+    fun fotoConvertidaABytesSeGuardaYSePuedeVisualizar() {
+        val caso = db.registrar(reporte())
+        val imagen = Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_8888)
+        try {
+            val archivo = ProcesadorEvidencia.desdeCamara(imagen)
+            assertEquals("image/jpeg", archivo.mime)
+            db.guardarEvidencia(caso.id, Asegurado.CAMILA, "Daño del auto", archivo)
+            val evidencia = db.listarEvidencias(caso.id, Asegurado.CAMILA).single()
+            assertNotNull(db.obtenerImagen(evidencia.id, caso.id, Asegurado.CAMILA))
+            assertNull(db.obtenerImagen(evidencia.id, caso.id, Asegurado.JORGE))
+        } finally {
+            imagen.recycle()
+        }
+    }
 }
