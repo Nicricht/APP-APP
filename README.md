@@ -43,6 +43,8 @@ Las comprobaciones se pueden ver en [GitHub Actions](../../actions). La compilac
 
 ## Documentación
 
+- [Control final de los 100 puntos](docs/CONTROL_FINAL_100_PUNTOS.md).
+- [Guía para explicar el proyecto en la presentación](docs/GUIA_DEFENSA_ORAL.md).
 - [Guía completa del caso y pauta](docs/GUIA_MAESTRA_DSY1105.md).
 - [Estado de avance](docs/ETAPA_1_ANDROID.md).
 - [Cómo ejecutar el proyecto](docs/COMO_EJECUTAR_ANDROID.md).
