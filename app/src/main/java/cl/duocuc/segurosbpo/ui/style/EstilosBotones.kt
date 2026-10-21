@@ -18,32 +18,32 @@ import cl.duocuc.segurosbpo.ui.theme.GrisDeshabilitado
 import cl.duocuc.segurosbpo.ui.theme.Primario
 
 object EstilosBotones {
-    val forma: Shape = RoundedCornerShape(Dimens.radioBoton)
-    val relleno = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+    val forma: Shape = RoundedCornerShape(Dimens.radioBoton) //border-radius
+    val relleno = PaddingValues(horizontal = 20.dp, vertical = 12.dp) //padding
 
-
+    //botones principales: relleno morado, texto blanco
     @Composable
     fun colorPrincipal(): ButtonColors = ButtonDefaults.buttonColors(
-        containerColor = Primario,
-        contentColor = Blanco,
+        containerColor = Primario, //background-color
+        contentColor = Blanco, //color
         disabledContainerColor = GrisDeshabilitado,
         disabledContentColor = Blanco
     )
 
-
+    //botones secundarios: transparentes, texto primario del tema
     @Composable
     fun coloresSecundarios(): ButtonColors = ButtonDefaults.outlinedButtonColors(
         contentColor = MaterialTheme.colorScheme.primary
     )
 
-
+    //bordes de los botones secundarios
     @Composable
     fun bordeSecundario(): BorderStroke = BorderStroke(
         Dimens.bordeBoton,
         MaterialTheme.colorScheme.primary
     )
 
-
+    //sombra del boton principal (se hunde al presionar)
     @Composable
     fun elevacion(): ButtonElevation = ButtonDefaults.buttonElevation(
         defaultElevation = Dimens.elevacionBoton,
@@ -51,5 +51,6 @@ object EstilosBotones {
     )
 }
 
+//Clase CSS
 
 fun Modifier.estiloAltoBoton(): Modifier = this.height(Dimens.alturaBoton)

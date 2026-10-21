@@ -44,7 +44,7 @@ private val LightColorScheme = lightColorScheme(
 
 )
 
-
+//border-radius
 private val Formas = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
@@ -54,7 +54,7 @@ private val Formas = Shapes(
 @Composable
 fun SegurosBpoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-
+    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {

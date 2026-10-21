@@ -20,7 +20,20 @@ import cl.duocuc.segurosbpo.ui.style.EstiloCampo
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
+// =====================================================================
+//  CampoTexto.kt  —  CAMPO DE TEXTO REUTILIZABLE (el <input> de HTML)
+//  ---------------------------------------------------------------------
+//  IMPORTANTE: en Compose un campo NO guarda su propio texto.
+//   - "valor" es lo que se muestra (viene del estado del ViewModel).
+//   - "onValorCambia" avisa cada vez que el usuario escribe una letra.
+//  Si no actualizamos el estado en onValorCambia, el campo NO cambia.
+//  Esto se llama "estado elevado" (state hoisting).
+// =====================================================================
 
+/**
+ * @param error      mensaje de error bajo el campo; null = sin error.
+ * @param tipoTeclado Text, Email, Number, Phone... (cambia el teclado del celular)
+ */
 @Composable
 fun CampoTexto(
     valor: String,
@@ -35,20 +48,20 @@ fun CampoTexto(
         value = valor,
         onValueChange = onValorCambia,
         modifier = modifier.fillMaxWidth(),
-        label = { Text(etiqueta) },
-        leadingIcon = {
+        label = { Text(etiqueta) },                       // texto flotante (como <label>)
+        leadingIcon = {                                   // ícono a la izquierda
             Icon(
                 painter = painterResource(id = icono),
                 contentDescription = null,
                 modifier = Modifier.size(Dimens.tamanoIcono)
             )
         },
-        isError = error != null,
-        supportingText = { if (error != null) Text(error) },
-        singleLine = true,
+        isError = error != null,                          // borde rojo si hay error
+        supportingText = { if (error != null) Text(error) }, // texto de ayuda bajo el campo
+        singleLine = true,                                // una sola línea
         keyboardOptions = KeyboardOptions(
             keyboardType = tipoTeclado,
-            imeAction = ImeAction.Next
+            imeAction = ImeAction.Next                    // botón "Siguiente" en el teclado
         ),
         shape = EstiloCampo.forma,
         colors = EstiloCampo.colores()
