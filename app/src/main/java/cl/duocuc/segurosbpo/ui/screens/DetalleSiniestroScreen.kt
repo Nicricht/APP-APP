@@ -23,7 +23,7 @@ import cl.duocuc.segurosbpo.model.Siniestro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleSiniestroScreen(siniestro: Siniestro?, onVolver: () -> Unit, onEditar: () -> Unit) {
+fun DetalleSiniestroScreen(siniestro: Siniestro?, onVolver: () -> Unit, onEditar: () -> Unit, onEvidencias: () -> Unit) {
     Scaffold(topBar = { TopAppBar(title = { Text("Detalle del siniestro") }) }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState()).padding(16.dp),
@@ -54,6 +54,7 @@ fun DetalleSiniestroScreen(siniestro: Siniestro?, onVolver: () -> Unit, onEditar
                     EtapaSiniestro.CERRADO -> "Tu caso terminó. Revisa el resultado registrado."
                 }
                 Text(proximoPaso)
+                Button(onClick = onEvidencias) { Text("Documentos y evidencias") }
                 if (siniestro.etapa == EtapaSiniestro.RECIBIDO) {
                     Button(onClick = onEditar) { Text("Corregir descripción") }
                 }
