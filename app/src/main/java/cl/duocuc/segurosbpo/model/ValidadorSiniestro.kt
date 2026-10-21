@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Validaciones independientes de la pantalla Compose. */
+
 object ValidadorSiniestro {
     fun errorFecha(fecha: String, hoy: Date = Date()): String? {
         val formato = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).apply { isLenient = false }
