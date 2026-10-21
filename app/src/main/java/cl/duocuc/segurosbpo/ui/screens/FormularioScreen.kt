@@ -50,9 +50,16 @@ import androidx.compose.runtime.getValue
 
 @Composable
 fun FormularioScreen(
+    aseguradoActual: Asegurado,
+    onRegistroExitoso: (FormularioUiState) -> String,
+    onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit,
     viewModel: FormularioViewModel = viewModel()
 ){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(aseguradoActual) {
+        viewModel.seleccionarAsegurado(aseguradoActual)
+    }
     FormularioContent(
         uiState = uiState,
         onAseguradoSeleccionado = viewModel::onAseguradoSeleccionado,
@@ -63,8 +70,15 @@ fun FormularioScreen(
         onTipoSeleccionado = viewModel::onTipoSeleccionado,
         onTercerosCambia = viewModel::onTercerosCambia,
         onDatosCorrectosCambia = viewModel::onDatosCorrectosCambia,
-        onRegistrar = viewModel::onRegistrar,
-        onLimpiar = viewModel::onLimpiar
+        onRegistrar = {
+            if (viewModel.onRegistrar()) {
+                val numero = onRegistroExitoso(viewModel.uiState.value)
+                viewModel.confirmarRegistro(numero)
+            }
+        },
+        onLimpiar = viewModel::onLimpiar,
+        onVolver = onVolver,
+        onVerMisSiniestros = onVerMisSiniestros
     )
 }
 
@@ -81,7 +95,9 @@ fun FormularioContent(
     onTercerosCambia: (Boolean) -> Unit,
     onDatosCorrectosCambia: (Boolean) -> Unit,
     onRegistrar: () -> Unit,
-    onLimpiar: () -> Unit
+    onLimpiar: () -> Unit,
+    onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit
 ){
     Scaffold(
         topBar = {
@@ -111,6 +127,7 @@ fun FormularioContent(
                 modifier = Modifier.padding(Dimens.espacioPantalla),
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
             ) {
+                androidx.compose.material3.TextButton(onClick = onVolver) { Text("Volver a mis siniestros") }
                 //Card 1: Quien reporta
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_datos)) {
                     Text(
@@ -118,12 +135,7 @@ fun FormularioContent(
                         style = MaterialTheme.typography.bodyMedium
                     )
 
-                    GrupoRadio(
-                        opciones = Asegurado.entries,
-                        seleccionada = uiState.asegurado,
-                        onSeleccionar = onAseguradoSeleccionado,
-                        textoDe = {it.etiqueta}
-                    )
+                    Text(uiState.asegurado.etiqueta, style = MaterialTheme.typography.titleMedium)
 
                     //RNF-10: el RUT se muestra parcialmente oculto
                     Text(
@@ -250,6 +262,12 @@ fun FormularioContent(
                 //mensaje de exito con el numero de siniestro (RF-03)
                 if(uiState.reporteExitoso){
                     MensajeExito(numero = uiState.numeroSiniestro)
+                    BotonPrincipal(
+                        texto = "Ver mis siniestros",
+                        onClick = onVerMisSiniestros,
+                        icono = R.drawable.ic_check,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
                 Spacer(Modifier.height(Dimens.espacioGrande))
             }
