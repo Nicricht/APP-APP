@@ -23,8 +23,10 @@ import java.util.Date
 import java.util.Locale
 
 /** SQLite local como UsuarioDbHelper del profesor, adaptado a siniestros. */
-class SiniestroDbHelper(context: Context) :
-    SQLiteOpenHelper(context, "seguros_bpo.db", null, 4) {
+class SiniestroDbHelper(
+    context: Context,
+    databaseName: String = "seguros_bpo.db"
+) : SQLiteOpenHelper(context, databaseName, null, 4) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
