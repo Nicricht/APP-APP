@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
+import cl.duocuc.segurosbpo.ui.screens.EvidenciasScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
@@ -21,6 +22,7 @@ fun AppNavegacion() {
     val siniestrosVm: SiniestrosViewModel = viewModel()
     val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
     val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
+    val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = Ruta.MisSiniestros.ruta) {
         composable(Ruta.MisSiniestros.ruta) {
@@ -50,7 +52,23 @@ fun AppNavegacion() {
             DetalleSiniestroScreen(
                 siniestro = siniestrosVm.obtener(id),
                 onVolver = { navController.navigateUp() },
-                onEditar = { navController.navigate(Ruta.Editar.crear(id)) }
+                onEditar = { navController.navigate(Ruta.Editar.crear(id)) },
+                onEvidencias = { navController.navigate(Ruta.Evidencias.crear(id)) }
+            )
+        }
+        composable(
+            route = Ruta.Evidencias.ruta,
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { entrada ->
+            val id = entrada.arguments?.getLong("id") ?: 0L
+            EvidenciasScreen(
+                siniestro = siniestrosVm.obtener(id),
+                asegurado = asegurado,
+                evidencias = evidencias,
+                onVolver = { navController.navigateUp() },
+                onCargar = { siniestrosVm.refrescarEvidencias(id) },
+                onGuardarFoto = { tipo, bitmap -> siniestrosVm.guardarFoto(id, tipo, bitmap) },
+                onGuardarArchivo = { tipo, uri -> siniestrosVm.guardarArchivo(id, tipo, uri) }
             )
         }
         composable(
