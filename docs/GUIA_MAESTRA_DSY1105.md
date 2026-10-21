@@ -501,7 +501,7 @@ Según los anexos y el caso académico, no desarrollar en esta entrega:
 
 ---
 
-## 15. Instrucciones de continuidad para el equipo y cualquier asistente
+## 15. Instrucciones de continuidad para el equipo
 
 1. **Leer esta guía antes de implementar** y comprobar la rama/commits actuales.
 2. **No reiniciar ni sustituir trabajo del compañero.** Primero inspeccionar, luego proponer cambio mínimo.
