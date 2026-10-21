@@ -53,9 +53,7 @@ data class FormularioUiState(
     val errorDatos: String? = null,
     //resultado
     val reporteExitoso: Boolean = false,
-    val numeroSiniestro: String = "",
-    //RN-06: correlativo del numero de siniestro, sigue a los datos de ejemplo (SIN-26-004860)
-    val correlativo: Int = 4861
+    val numeroSiniestro: String = ""
 
 ){
 
