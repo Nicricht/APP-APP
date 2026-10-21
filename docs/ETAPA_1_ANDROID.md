@@ -81,3 +81,18 @@ Trabajar desde una rama independiente y no sobrescribir sin revisar las nuevas p
 - `ValidadorEvidenciaTest.kt`: casos límite de tamaño, formato, documento obligatorio, cantidad 15 y 16.
 - **Pendiente de validación:** ejecución en cámara real, navegación completa, permisos rechazados y almacenamiento persistente en emulador/teléfono. El resultado de QA automatizado debe verificarse antes de fusionar.
 - **No hacer todavía:** Retrofit, Spring Boot, microservicios, subida de archivos remota ni notificaciones push de la tercera evaluación.
+
+
+## Estado tras merge directo en main (21-10-2026)
+
+- Se realizó el merge Git de los cambios de cámara/galería/PDF y animación directamente a `main`, con **dos padres Git**, sin abrir una nueva PR.
+- Se modificó GitHub Actions para compilar `main`, ejecutar `:app:testDebugUnitTest` y subir el APK debug cuando termina correctamente.
+- Se agregó **búsqueda por número, compañía, tipo, comuna y etapa**, adaptando el listado/búsqueda de `UsuariosScreen` del profesor a siniestros.
+- Se agregó carga de **cinco siniestros demostrativos ficticios**, como la carga inicial de usuarios de `MiRegistroAvatar`. Incluyen las cuatro etapas y una compañía inactiva para demostrar lectura histórica. Se insertan **solo en nuevas instalaciones**, en `SQLiteOpenHelper.onCreate`; nunca se eliminan datos por una actualización.
+- Se añadió la **vista previa de fotos ya guardadas** en SQLite, siguiendo el ejemplo del avatar del profesor, con carga y reducción de imágenes para evitar exceso de memoria. Los PDF quedan registrados, pero todavía no tienen visor integrado.
+- Aprobación técnica del cambio de búsqueda: [GitHub Actions](https://github.com/Nicricht/APP-APP/actions/runs/39615013113).
+- Las verificaciones del precargado y de vista previa deben finalizar y quedar verdes antes de dar la compilación actual por certificada.
+- **Pendiente fuera del entorno CI:** probar cámara real, permisos denegados, archivos PDF, reinstalación, migración desde BD v1 y accesibilidad en emulador o teléfono.
+- **No hay backend**, Retrofit, API REST, ni microservicios. Es un proyecto Android local para la evaluación actual.
+
+**Nota:** Las comprobaciones automatizadas verifican compilación y pruebas unitarias. No sustituyen pruebas instrumentadas en Android ni la evidencia de trabajo grupal de GitHub/Trello.
