@@ -1,0 +1,49 @@
+name: Android instrumented QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/android-instrumented.yml'
+      - 'app/src/androidTest/**'
+permissions:
+  contents: read
+jobs:
+  pruebas-en-emulador:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Preparar SDK de compilación
+        shell: bash
+        run: |
+          set -e
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
+          sdkmanager "platforms;android-37.2"
+      - name: Habilitar aceleración KVM
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Integración SQLite y recorridos Compose en emulador Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_4
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest --no-daemon
+      - name: Guardar informes instrumentados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: informes-android-instrumentado
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+          retention-days: 14
