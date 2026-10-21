@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -44,5 +45,13 @@ class RecorridosPresentacionTest {
         composeRule.onNodeWithText("Evidencias guardadas: 0/15").assertExists()
         composeRule.onNodeWithText("Elegir de la galería").performScrollTo().performClick()
         composeRule.onNodeWithText("Indica el tipo de documento").assertExists()
+    }
+
+    @Test
+    fun unaBusquedaSinResultadosMuestraAviso() {
+        composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        composeRule.onNodeWithText("Buscar siniestro").performTextInput("CASO_QUE_NO_EXISTE_000")
+        composeRule.onNodeWithText("No hay siniestros con ese criterio").assertIsDisplayed()
+        composeRule.onNodeWithText("Prueba con otro número, compañía o tipo.").assertIsDisplayed()
     }
 }
