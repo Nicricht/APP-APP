@@ -64,6 +64,11 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
         return actualizado
     }
 
+    suspend fun cargarImagen(siniestroId: Long, evidenciaId: Long): Bitmap? {
+        val propietario = _asegurado.value
+        return withContext(Dispatchers.IO) { db.obtenerImagen(evidenciaId, siniestroId, propietario) }
+    }
+
     fun refrescarEvidencias(id: Long) {
         _evidencias.value = db.listarEvidencias(id, _asegurado.value)
     }

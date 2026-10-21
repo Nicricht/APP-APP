@@ -70,6 +70,7 @@ fun AppNavegacion() {
                 evidencias = evidencias,
                 onVolver = { navController.navigateUp() },
                 onCargar = { siniestrosVm.refrescarEvidencias(id) },
+                onCargarImagen = { evidenciaId -> siniestrosVm.cargarImagen(id, evidenciaId) },
                 onGuardarFoto = { tipo, bitmap -> siniestrosVm.guardarFoto(id, tipo, bitmap) },
                 onGuardarArchivo = { tipo, uri -> siniestrosVm.guardarArchivo(id, tipo, uri) }
             )

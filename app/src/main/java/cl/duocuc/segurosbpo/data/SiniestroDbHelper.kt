@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
@@ -205,6 +207,25 @@ class SiniestroDbHelper(context: Context) :
             "id = ? AND asegurado = ? AND etapa = ?",
             arrayOf(id.toString(), asegurado.name, EtapaSiniestro.RECIBIDO.name)
         ) > 0
+    }
+
+    /** Permite ver la imagen asociada al caso, pero nunca devuelve un documento de otro usuario. */
+    fun obtenerImagen(evidenciaId: Long, siniestroId: Long, asegurado: Asegurado): Bitmap? {
+        val contenido = readableDatabase.rawQuery("""
+            SELECT e.contenido FROM evidencias e
+            JOIN siniestros s ON s.id = e.siniestro_id
+            WHERE e.id = ? AND s.id = ? AND s.asegurado = ? AND e.mime LIKE 'image/%'
+        """.trimIndent(), arrayOf(evidenciaId.toString(), siniestroId.toString(), asegurado.name))
+            .use { c -> if (c.moveToFirst()) c.getBlob(0) else null } ?: return null
+        val opciones = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(contenido, 0, contenido.size, opciones)
+        val reducir = BitmapFactory.Options()
+        var escala = 1
+        while (opciones.outWidth / escala > 900 || opciones.outHeight / escala > 900) {
+            escala *= 2
+        }
+        reducir.inSampleSize = escala
+        return BitmapFactory.decodeByteArray(contenido, 0, contenido.size, reducir)
     }
 
     /** Lista metadatos únicamente si el asegurado es dueño del caso. */
