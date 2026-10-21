@@ -39,6 +39,57 @@ class SiniestroDbHelper(context: Context) :
         """.trimIndent())
         db.execSQL("CREATE INDEX idx_siniestros_asegurado ON siniestros(asegurado)")
         crearTablaEvidencias(db)
+        cargarSiniestrosEjemplo(db)
+    }
+
+    /**
+     * Datos ficticios de demostración, como los usuarios iniciales de MiRegistroAvatar.
+     * Solo se insertan al crear una base NUEVA, nunca en una actualización.
+     */
+    private fun cargarSiniestrosEjemplo(db: SQLiteDatabase) {
+        data class Ejemplo(
+            val asegurado: Asegurado,
+            val compania: Compania,
+            val tipo: TipoSiniestro,
+            val comuna: String,
+            val descripcion: String,
+            val etapa: EtapaSiniestro
+        )
+
+        val ejemplos = listOf(
+            Ejemplo(Asegurado.CAMILA, Compania.CORDILLERA, TipoSiniestro.CHOQUE,
+                "Quilicura", "Colisión leve en estacionamiento.", EtapaSiniestro.RECIBIDO),
+            Ejemplo(Asegurado.JORGE, Compania.LITORAL, TipoSiniestro.DANO_AGUA,
+                "Maipú", "Filtración de agua en la cocina.", EtapaSiniestro.EVALUACION),
+            Ejemplo(Asegurado.VALENTINA, Compania.PATAGONIA, TipoSiniestro.CRISTALES,
+                "Santiago", "Rotura de cristal lateral del vehículo.", EtapaSiniestro.LIQUIDACION),
+            Ejemplo(Asegurado.HECTOR, Compania.VALLE_CENTRAL, TipoSiniestro.ROBO_HOGAR,
+                "Conchalí", "Robo de objetos del hogar.", EtapaSiniestro.CERRADO),
+            Ejemplo(Asegurado.DANIELA, Compania.PROTEGE, TipoSiniestro.INCENDIO,
+                "Independencia", "Daños por incendio en vivienda.", EtapaSiniestro.EVALUACION)
+        )
+        val fechaOcurrencia = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT)
+            .format(Date(System.currentTimeMillis() - 5L * 24 * 60 * 60 * 1000))
+        val ahora = fechaActual()
+        val anio = SimpleDateFormat("yy", Locale.ROOT).format(Date())
+        ejemplos.forEach { ejemplo ->
+            val valores = ContentValues().apply {
+                put("numero", "TEMP-EJEMPLO-${ejemplo.asegurado.name}")
+                put("asegurado", ejemplo.asegurado.name)
+                put("compania", ejemplo.compania.name)
+                put("tipo", ejemplo.tipo.name)
+                put("fecha_ocurrencia", fechaOcurrencia)
+                put("fecha_reporte", ahora.take(10))
+                put("comuna", ejemplo.comuna)
+                put("descripcion", ejemplo.descripcion)
+                put("hubo_terceros", 0)
+                put("etapa", ejemplo.etapa.name)
+                put("ultima_actualizacion", ahora)
+            }
+            val id = db.insertOrThrow("siniestros", null, valores)
+            val numero = "SIN-$anio-${(id + 4860).toString().padStart(6, '0')}"
+            db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf(numero, id))
+        }
     }
 
     private fun crearTablaEvidencias(db: SQLiteDatabase) {
