@@ -65,7 +65,7 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
         val error = withContext(Dispatchers.IO) {
             runCatching {
                 db.guardarEvidencia(id, propietario, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap))
-            }.exceptionOrNull()?.message
+            }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar el documento" }
         }
         if (error == null) refrescarEvidencias(id)
         return error
@@ -77,7 +77,7 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
             runCatching {
                 val archivo = ProcesadorEvidencia.desdeSelector(getApplication(), uri)
                 db.guardarEvidencia(id, propietario, tipoDocumento, archivo)
-            }.exceptionOrNull()?.message
+            }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar el documento" }
         }
         if (error == null) refrescarEvidencias(id)
         return error
