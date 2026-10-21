@@ -33,7 +33,7 @@ jobs:
           set -e
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
           command -v sdkmanager
-          sdkmanager --channel=3 "platforms;android-37"
+          sdkmanager "platforms;android-36"
       - name: Dar permisos a Gradle
         run: chmod +x gradlew
       - name: Compilar y ejecutar pruebas unitarias
