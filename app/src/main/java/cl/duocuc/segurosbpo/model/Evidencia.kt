@@ -1,6 +1,6 @@
 package cl.duocuc.segurosbpo.model
 
-/** Archivo entregado por el asegurado. Los bytes se guardan en SQLite. */
+
 data class Evidencia(
     val id: Long,
     val siniestroId: Long,

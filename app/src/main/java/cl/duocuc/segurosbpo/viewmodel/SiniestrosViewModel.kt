@@ -17,7 +17,7 @@ import cl.duocuc.segurosbpo.model.Siniestro
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Lista y persistencia local siguiendo UsuariosViewModel de MiRegistroAvatar. */
+
 class SiniestrosViewModel(application: Application) : AndroidViewModel(application) {
     private val db = SiniestroDbHelper(application)
     private val preferencias = application.getSharedPreferences("sesion_demo", 0)
