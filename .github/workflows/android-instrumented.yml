@@ -2,7 +2,7 @@ name: Android instrumented QA
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [qa]
     paths:
       - '.github/workflows/android-instrumented.yml'
       - 'app/src/androidTest/**'
@@ -25,6 +25,8 @@ jobs:
           set -e
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
           sdkmanager "platforms;android-37.2"
+      - name: Permitir ejecutar Gradle
+        run: chmod +x gradlew
       - name: Habilitar aceleración KVM
         run: |
           if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
