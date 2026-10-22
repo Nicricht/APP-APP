@@ -119,11 +119,15 @@ private fun GraficoSituacion(resumen: ResumenCasos) {
             val barrido = 360f * progreso.value
             val barridoAbiertos = barrido * abiertos / resumen.total
             val grosor = 24.dp.toPx()
+            val esquina = Offset(grosor / 2f, grosor / 2f)
+            val area = Size(size.width - grosor, size.height - grosor)
             drawArc(
                 color = colorAbierto,
                 startAngle = -90f,
                 sweepAngle = barridoAbiertos,
                 useCenter = false,
+                topLeft = esquina,
+                size = area,
                 style = Stroke(width = grosor)
             )
             drawArc(
@@ -131,6 +135,8 @@ private fun GraficoSituacion(resumen: ResumenCasos) {
                 startAngle = -90f + barridoAbiertos,
                 sweepAngle = barrido - barridoAbiertos,
                 useCenter = false,
+                topLeft = esquina,
+                size = area,
                 style = Stroke(width = grosor)
             )
         }
