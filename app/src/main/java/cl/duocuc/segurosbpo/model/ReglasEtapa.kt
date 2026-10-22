@@ -24,11 +24,12 @@ object ReglasEtapa {
             return "Primero debes recibir los documentos pendientes"
         }
         if (destino == EtapaSiniestro.CERRADO) {
-            val permitidos = when (actual) {
-                EtapaSiniestro.RECIBIDO -> setOf("Desistido")
-                EtapaSiniestro.EVALUACION -> setOf("Rechazado", "Desistido")
-                EtapaSiniestro.LIQUIDACION -> setOf("Aprobado", "Rechazado")
-                EtapaSiniestro.CERRADO -> emptySet()
+            val permitidos = if (actual == EtapaSiniestro.RECIBIDO) {
+                setOf("Desistido")
+            } else if (actual == EtapaSiniestro.EVALUACION) {
+                setOf("Rechazado", "Desistido")
+            } else {
+                setOf("Aprobado", "Rechazado")
             }
             if (resultado !in permitidos) {
                 return "Resultado de cierre no permitido para esta etapa"
