@@ -316,7 +316,7 @@ class SiniestroDbHelper(
             else arrayOf(asegurado.name, *Array(columnas.size) { patron })
         readableDatabase.query(
             "siniestros", null, condicion, argumentos,
-            null, null, "id DESC"
+            null, null, "CASE WHEN etapa = 'CERRADO' THEN 1 ELSE 0 END, id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 resultado.add(convertir(cursor))
