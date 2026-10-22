@@ -48,6 +48,40 @@ jobs:
           profile: pixel_4
           disable-animations: true
           script: ./gradlew :app:createDebugAndroidTestCoverageReport --no-daemon
+      - name: Resumir cobertura instrumentada de líneas y ramas
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree
+          
+          informes = sorted(Path('app/build/reports/coverage/androidTest').rglob('*.xml'))
+          reportes = []
+          for ruta in informes:
+              raiz = ElementTree.parse(ruta).getroot()
+              if raiz.tag == 'report':
+                  reportes.append((ruta, raiz))
+          if not reportes:
+              raise SystemExit('No se encontró el informe XML de cobertura instrumentada')
+          ruta, raiz = reportes[0]
+          print(f'Informe instrumentado: {ruta}')
+          for tipo in ('LINE', 'BRANCH'):
+              contador = next((c for c in raiz.findall('counter') if c.get('type') == tipo), None)
+              if contador is None:
+                  raise SystemExit(f'Falta el contador {tipo}')
+              cubiertas = int(contador.get('covered', '0'))
+              perdidas = int(contador.get('missed', '0'))
+              total = cubiertas + perdidas
+              porcentaje = 100 * cubiertas / total if total else 100
+              print(f'{tipo}: {cubiertas}/{total} ({porcentaje:.2f}%)')
+          pendientes = []
+          for clase in raiz.findall('.//class'):
+              nombre = clase.get('name', '')
+              faltantes = {c.get('type'): int(c.get('missed', '0')) for c in clase.findall('counter')}
+              if faltantes.get('LINE', 0) or faltantes.get('BRANCH', 0):
+                  pendientes.append((faltantes.get('LINE', 0), faltantes.get('BRANCH', 0), nombre))
+          for lineas, ramas, nombre in sorted(pendientes, reverse=True)[:20]:
+              print(f'Pendiente: {nombre}: {lineas} líneas, {ramas} ramas')
+          PY
       - name: Guardar informes instrumentados
         if: always()
         uses: actions/upload-artifact@v4
