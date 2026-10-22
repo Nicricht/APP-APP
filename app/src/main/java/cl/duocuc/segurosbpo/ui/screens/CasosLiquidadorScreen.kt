@@ -94,7 +94,8 @@ fun CasosLiquidadorScreen(
             Text("Solo casos asignados a este equipo.")
             ResumenGraficosCasos(casos = casos, equipo = liquidador.equipo)
             if (casos.isEmpty()) Text("No hay casos asignados.")
-            casos.forEach { siniestro ->
+            if (caso == null) {
+                casos.forEach { siniestro ->
                 Card(onClick = { casoId = siniestro.id }, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(14.dp)) {
                         Text(siniestro.numero, style = MaterialTheme.typography.titleMedium)
@@ -102,8 +103,10 @@ fun CasosLiquidadorScreen(
                         Text("Etapa: " + siniestro.etapa.etiqueta)
                     }
                 }
+                }
             }
             if (caso != null) {
+                TextButton(onClick = { casoId = null }) { Text("Volver a la lista de casos") }
                 Text("Gestionar: " + caso.numero, style = MaterialTheme.typography.titleLarge)
                 Text("Etapa actual: " + caso.etapa.etiqueta)
                 if (caso.etapa == EtapaSiniestro.CERRADO) {
