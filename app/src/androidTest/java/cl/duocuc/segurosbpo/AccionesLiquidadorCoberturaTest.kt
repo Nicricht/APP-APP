@@ -8,7 +8,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
@@ -67,7 +66,6 @@ class AccionesLiquidadorCoberturaTest {
         rule.onNodeWithText("SIN-26-000062").performScrollTo().performClick()
         rule.onNodeWithText("Nombre del documento requerido").performTextInput("Boleta de reparación")
         rule.onNodeWithText("Indicaciones para el asegurado (opcional)").performTextInput("Presentar imagen")
-        Espresso.closeSoftKeyboard()
         rule.onNode(hasText("Solicitar documento") and hasClickAction())
             .assertIsEnabled()
             .performScrollTo()
@@ -98,7 +96,6 @@ class AccionesLiquidadorCoberturaTest {
         }
         rule.onNodeWithText("SIN-26-000062").performScrollTo().performClick()
         rule.onNodeWithText("Descripción de gestión").performTextInput("Gestión revisada")
-        Espresso.closeSoftKeyboard()
         rule.onNodeWithText("Registrar gestión").performScrollTo().performClick()
         assertEquals("62:Gestión revisada:true", gestion.get())
     }

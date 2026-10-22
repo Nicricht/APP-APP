@@ -11,7 +11,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,6 +22,7 @@ import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.TipoSiniestro
 import cl.duocuc.segurosbpo.ui.screens.EvidenciasScreen
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -63,7 +63,8 @@ class RecursosNativosIntentTest {
         }
         composeRule.onNodeWithText("Tipo de documento *").performTextInput("Fotografía")
         composeRule.onNodeWithText("Elegir de la galería").performScrollTo().performClick()
-        intended(hasAction(Intent.ACTION_GET_CONTENT))
+        composeRule.waitUntil(15000) { Intents.getIntents().any { it.action == Intent.ACTION_GET_CONTENT } }
+        assertEquals(1, Intents.getIntents().count { it.action == Intent.ACTION_GET_CONTENT })
         composeRule.onNodeWithText("Evidencias guardadas: 0/15").assertExists()
     }
 
@@ -88,7 +89,8 @@ class RecursosNativosIntentTest {
         }
         composeRule.onNodeWithText("Tipo de documento *").performTextInput("Foto del daño")
         composeRule.onNodeWithText("Tomar fotografía").performScrollTo().performClick()
-        intended(hasAction(MediaStore.ACTION_IMAGE_CAPTURE))
+        composeRule.waitUntil(15000) { Intents.getIntents().any { it.action == MediaStore.ACTION_IMAGE_CAPTURE } }
+        assertEquals(1, Intents.getIntents().count { it.action == MediaStore.ACTION_IMAGE_CAPTURE })
         composeRule.waitUntil(15000) { guardada.get() }
         assertTrue(guardada.get())
         bitmap.recycle()
