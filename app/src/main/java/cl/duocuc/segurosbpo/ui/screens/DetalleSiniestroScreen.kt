@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +41,14 @@ fun DetalleSiniestroScreen(siniestro: Siniestro?, onVolver: () -> Unit, onEditar
                         Text("Compañía: ${siniestro.compania.etiqueta}")
                         Text("Tipo: ${siniestro.tipo.etiqueta}")
                         Text("Ocurrencia: ${siniestro.fechaOcurrencia}")
+                        if (ValidadorSiniestro.reporteFueraDePlazo(
+                                siniestro.fechaOcurrencia, siniestro.fechaReporte
+                            )) {
+                            Text(
+                                "Reporte fuera de plazo (más de 30 días desde el siniestro)",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                         Text("Reporte: ${siniestro.fechaReporte}")
                         Text("Comuna: ${siniestro.comuna}")
                         Text("Descripción: ${siniestro.descripcion}")

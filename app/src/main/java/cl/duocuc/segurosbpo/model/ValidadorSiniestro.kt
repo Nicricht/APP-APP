@@ -3,6 +3,8 @@ package cl.duocuc.segurosbpo.model
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 
 
 object ValidadorSiniestro {
@@ -16,6 +18,22 @@ object ValidadorSiniestro {
             parsed.after(hoy) -> "La fecha no puede ser futura"
             else -> null
         }
+    }
+
+    fun reporteFueraDePlazo(fechaOcurrencia: String, fechaReporte: String): Boolean {
+        val formato = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).apply {
+            isLenient = false
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        fun convertir(fecha: String): Date? = try {
+            if (!Regex("\\d{2}-\\d{2}-\\d{4}").matches(fecha)) null
+            else formato.parse(fecha)
+        } catch (_: Exception) { null }
+
+        val ocurrencia = convertir(fechaOcurrencia) ?: return false
+        val reporte = convertir(fechaReporte) ?: return false
+        return reporte.time - ocurrencia.time > TimeUnit.DAYS.toMillis(30)
     }
 
     fun errorComuna(comuna: String): String? =
