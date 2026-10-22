@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import cl.duocuc.segurosbpo.model.Asegurado
+import cl.duocuc.segurosbpo.model.AvisoSiniestro
+import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Evidencia
@@ -26,7 +28,7 @@ import java.util.Locale
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
-) : SQLiteOpenHelper(context, databaseName, null, 4) {
+) : SQLiteOpenHelper(context, databaseName, null, 5) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -51,6 +53,8 @@ class SiniestroDbHelper(
         db.execSQL("CREATE INDEX idx_siniestros_asegurado ON siniestros(asegurado)")
         crearTablaEvidencias(db)
         crearTablaGestiones(db)
+        crearTablaSolicitudes(db)
+        crearTablaAvisos(db)
         cargarSiniestrosEjemplo(db)
     }
 
@@ -138,6 +142,46 @@ class SiniestroDbHelper(
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_gestiones_caso ON gestiones(siniestro_id, id)")
     }
 
+    private fun crearTablaSolicitudes(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS solicitudes_documentos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                siniestro_id INTEGER NOT NULL,
+                tipo TEXT NOT NULL,
+                comentario TEXT NOT NULL,
+                fecha_solicitud TEXT NOT NULL,
+                fecha_entrega TEXT,
+                evidencia_id INTEGER,
+                FOREIGN KEY(siniestro_id) REFERENCES siniestros(id) ON DELETE CASCADE,
+                FOREIGN KEY(evidencia_id) REFERENCES evidencias(id)
+            )
+        """.trimIndent())
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_solicitudes_caso ON solicitudes_documentos(siniestro_id, fecha_entrega)")
+    }
+
+    private fun crearTablaAvisos(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS avisos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                siniestro_id INTEGER NOT NULL,
+                mensaje TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                leido INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY(siniestro_id) REFERENCES siniestros(id) ON DELETE CASCADE
+            )
+        """.trimIndent())
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_avisos_caso ON avisos(siniestro_id, id)")
+    }
+
+    private fun insertarAviso(db: SQLiteDatabase, siniestroId: Long, mensaje: String) {
+        db.insertOrThrow("avisos", null, ContentValues().apply {
+            put("siniestro_id", siniestroId)
+            put("mensaje", mensaje)
+            put("fecha", fechaActual())
+            put("leido", 0)
+        })
+    }
+
     private fun insertarGestion(db: SQLiteDatabase, siniestroId: Long,
         responsable: String, descripcion: String, visible: Boolean
     ) {
@@ -179,6 +223,10 @@ class SiniestroDbHelper(
                     ELSE 'HOGAR' END
                 WHERE etapa <> 'RECIBIDO'
             """.trimIndent())
+        }
+        if (oldVersion < 5) {
+            crearTablaSolicitudes(db)
+            crearTablaAvisos(db)
         }
     }
 
@@ -394,7 +442,11 @@ class SiniestroDbHelper(
 
             val siguiente = ReglasEtapa.siguiente(actual.etapa)
                 ?: throw IllegalArgumentException("Un siniestro cerrado no puede reabrirse")
-            val error = ReglasEtapa.validar(actual.etapa, siguiente, 0, resultado, mensajeCierre)
+            val pendientes = db.rawQuery(
+                "SELECT COUNT(*) FROM solicitudes_documentos WHERE siniestro_id = ? AND fecha_entrega IS NULL",
+                arrayOf(siniestroId.toString())
+            ).use { c -> c.moveToFirst(); c.getInt(0) }
+            val error = ReglasEtapa.validar(actual.etapa, siguiente, pendientes, resultado, mensajeCierre)
             require(error == null) { error ?: "Transición inválida" }
             val valores = ContentValues().apply {
                 put("etapa", siguiente.name)
@@ -412,6 +464,7 @@ class SiniestroDbHelper(
                 "Caso cerrado: " + resultado + ". " + mensajeCierre.trim()
                 else "Etapa actualizada a " + siguiente.etiqueta
             insertarGestion(db, siniestroId, liquidador.nombre, nota, true)
+            insertarAviso(db, siniestroId, nota)
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()
@@ -419,6 +472,110 @@ class SiniestroDbHelper(
     }
 
     
+    fun listarSolicitudes(siniestroId: Long, asegurado: Asegurado): List<SolicitudDocumento> {
+        val resultado = mutableListOf<SolicitudDocumento>()
+        readableDatabase.rawQuery("""
+            SELECT d.id, d.siniestro_id, d.tipo, d.comentario, d.fecha_solicitud, d.fecha_entrega
+            FROM solicitudes_documentos d
+            JOIN siniestros s ON s.id = d.siniestro_id
+            WHERE s.id = ? AND s.asegurado = ?
+            ORDER BY d.id DESC
+        """.trimIndent(), arrayOf(siniestroId.toString(), asegurado.name)).use { c ->
+            while (c.moveToNext()) {
+                resultado.add(SolicitudDocumento(
+                    c.getLong(0), c.getLong(1), c.getString(2),
+                    c.getString(3), c.getString(4),
+                    if (c.isNull(5)) null else c.getString(5)
+                ))
+            }
+        }
+        return resultado
+    }
+
+    fun listarSolicitudesAsignadas(siniestroId: Long, liquidador: Liquidador): List<SolicitudDocumento> {
+        val resultado = mutableListOf<SolicitudDocumento>()
+        readableDatabase.rawQuery("""
+            SELECT d.id, d.siniestro_id, d.tipo, d.comentario, d.fecha_solicitud, d.fecha_entrega
+            FROM solicitudes_documentos d
+            JOIN siniestros s ON s.id = d.siniestro_id
+            WHERE s.id = ? AND s.liquidador = ?
+            ORDER BY d.id DESC
+        """.trimIndent(), arrayOf(siniestroId.toString(), liquidador.name)).use { c ->
+            while (c.moveToNext()) {
+                resultado.add(SolicitudDocumento(
+                    c.getLong(0), c.getLong(1), c.getString(2),
+                    c.getString(3), c.getString(4),
+                    if (c.isNull(5)) null else c.getString(5)
+                ))
+            }
+        }
+        return resultado
+    }
+
+    fun solicitarDocumento(siniestroId: Long, liquidador: Liquidador, tipo: String, comentario: String) {
+        val nombre = tipo.trim()
+        require(nombre.isNotEmpty() && nombre.length <= 100) { "Indica un documento de hasta 100 caracteres" }
+        require(comentario.length <= 500) { "El comentario no puede superar 500 caracteres" }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val caso = obtenerAsignado(siniestroId, liquidador)
+                ?: throw IllegalArgumentException("El caso no está asignado a este liquidador")
+            require(caso.etapa != EtapaSiniestro.CERRADO) { "El caso está cerrado" }
+            val duplicados = db.rawQuery("""
+                SELECT COUNT(*) FROM solicitudes_documentos
+                WHERE siniestro_id = ? AND tipo = ? COLLATE NOCASE AND fecha_entrega IS NULL
+            """.trimIndent(), arrayOf(siniestroId.toString(), nombre)).use { c ->
+                c.moveToFirst()
+                c.getInt(0)
+            }
+            require(duplicados == 0) { "Ese documento ya está pendiente" }
+            db.insertOrThrow("solicitudes_documentos", null, ContentValues().apply {
+                put("siniestro_id", siniestroId)
+                put("tipo", nombre)
+                put("comentario", comentario.trim())
+                put("fecha_solicitud", fechaActual())
+            })
+            val nota = "Documento solicitado: " + nombre
+            insertarGestion(db, siniestroId, liquidador.nombre, nota, true)
+            insertarAviso(db, siniestroId, "Necesitamos el documento: " + nombre)
+            db.update("siniestros", ContentValues().apply {
+                put("ultima_actualizacion", fechaActual())
+            }, "id = ?", arrayOf(siniestroId.toString()))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun listarAvisos(asegurado: Asegurado): List<AvisoSiniestro> {
+        val resultado = mutableListOf<AvisoSiniestro>()
+        readableDatabase.rawQuery("""
+            SELECT a.id, a.siniestro_id, s.numero, a.mensaje, a.fecha, a.leido
+            FROM avisos a JOIN siniestros s ON s.id = a.siniestro_id
+            WHERE s.asegurado = ?
+            ORDER BY a.id DESC
+        """.trimIndent(), arrayOf(asegurado.name)).use { c ->
+            while (c.moveToNext()) {
+                resultado.add(AvisoSiniestro(
+                    c.getLong(0), c.getLong(1), c.getString(2),
+                    c.getString(3), c.getString(4), c.getInt(5) == 1
+                ))
+            }
+        }
+        return resultado
+    }
+
+    fun marcarAvisoLeido(id: Long, asegurado: Asegurado): Boolean {
+        val filas = writableDatabase.execSQL("""
+            UPDATE avisos SET leido = 1
+            WHERE id = ? AND siniestro_id IN (
+                SELECT id FROM siniestros WHERE asegurado = ?
+            )
+        """.trimIndent(), arrayOf(id, asegurado.name))
+        return listarAvisos(asegurado).any { it.id == id && it.leido }
+    }
+
     fun listarEvidencias(siniestroId: Long, asegurado: Asegurado): List<Evidencia> {
         val resultado = mutableListOf<Evidencia>()
         readableDatabase.rawQuery("""
@@ -469,9 +626,28 @@ class SiniestroDbHelper(
                 put("contenido", archivo.bytes)
                 put("fecha_registro", fechaActual())
             }
-            db.insertOrThrow("evidencias", null, valores)
-            insertarGestion(db, siniestroId, "Asegurado",
-                "Documento adjuntado: " + tipoDocumento.trim(), true)
+            val evidenciaId = db.insertOrThrow("evidencias", null, valores)
+            val solicitudId = db.rawQuery("""
+                SELECT id FROM solicitudes_documentos
+                WHERE siniestro_id = ? AND tipo = ? COLLATE NOCASE AND fecha_entrega IS NULL
+                ORDER BY id LIMIT 1
+            """.trimIndent(), arrayOf(siniestroId.toString(), tipoDocumento.trim())).use { c ->
+                if (c.moveToFirst()) c.getLong(0) else null
+            }
+            if (solicitudId != null) {
+                db.update("solicitudes_documentos", ContentValues().apply {
+                    put("fecha_entrega", fechaActual())
+                    put("evidencia_id", evidenciaId)
+                }, "id = ?", arrayOf(solicitudId.toString()))
+                insertarGestion(db, siniestroId, "Asegurado",
+                    "Documento solicitado entregado localmente: " + tipoDocumento.trim(), true)
+            } else {
+                insertarGestion(db, siniestroId, "Asegurado",
+                    "Documento adjuntado: " + tipoDocumento.trim(), true)
+            }
+            db.update("siniestros", ContentValues().apply {
+                put("ultima_actualizacion", fechaActual())
+            }, "id = ?", arrayOf(siniestroId.toString()))
             db.setTransactionSuccessful()
         } finally {
             db.endTransaction()

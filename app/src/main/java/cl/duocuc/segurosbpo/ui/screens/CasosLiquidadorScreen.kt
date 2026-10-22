@@ -36,6 +36,7 @@ import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ReglasEtapa
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import kotlinx.coroutines.launch
 
@@ -46,6 +47,8 @@ fun CasosLiquidadorScreen(
     liquidador: Liquidador,
     casos: List<Siniestro>,
     gestiones: List<Gestion>,
+    solicitudes: List<SolicitudDocumento>,
+    onSolicitarDocumento: (Long, String, String) -> String?,
     onSeleccionarLiquidador: (Liquidador) -> Unit,
     onCargarGestiones: (Long) -> Unit,
     onRegistrarGestion: (Long, String, Boolean) -> String?,
@@ -56,6 +59,8 @@ fun CasosLiquidadorScreen(
     val scope = rememberCoroutineScope()
     var casoId by rememberSaveable(liquidador) { mutableStateOf<Long?>(null) }
     var descripcion by rememberSaveable(casoId) { mutableStateOf("") }
+    var tipoSolicitud by rememberSaveable(casoId) { mutableStateOf("") }
+    var comentarioSolicitud by rememberSaveable(casoId) { mutableStateOf("") }
     var visible by rememberSaveable(casoId) { mutableStateOf(true) }
     var resultado by rememberSaveable(casoId) { mutableStateOf("") }
     var mensajeCierre by rememberSaveable(casoId) { mutableStateOf("") }
@@ -128,6 +133,33 @@ fun CasosLiquidadorScreen(
                             if (error == null) descripcion = ""
                         }
                     ) { Text("Registrar gestión") }
+                    Text("Solicitar documento", style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = tipoSolicitud,
+                        onValueChange = { tipoSolicitud = it },
+                        label = { Text("Nombre del documento requerido") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = comentarioSolicitud,
+                        onValueChange = { comentarioSolicitud = it },
+                        label = { Text("Indicaciones para el asegurado (opcional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+                    Button(
+                        enabled = tipoSolicitud.isNotBlank() && tipoSolicitud.length <= 100 &&
+                            comentarioSolicitud.length <= 500,
+                        onClick = {
+                            val error = onSolicitarDocumento(caso.id, tipoSolicitud, comentarioSolicitud)
+                            mostrar(error ?: "Documento solicitado")
+                            if (error == null) {
+                                tipoSolicitud = ""
+                                comentarioSolicitud = ""
+                            }
+                        }
+                    ) { Text("Solicitar documento") }
                     val siguiente = ReglasEtapa.siguiente(caso.etapa)
                     if (siguiente != null && caso.etapa != EtapaSiniestro.RECIBIDO) {
                         Text("Siguiente etapa: " + siguiente.etiqueta)
@@ -149,8 +181,15 @@ fun CasosLiquidadorScreen(
                                 isError = mensajeCierre.isEmpty() && resultado.isNotEmpty()
                             )
                         }
+                        val pendientes = solicitudes.count { it.pendiente }
+                        if (siguiente == EtapaSiniestro.LIQUIDACION && pendientes > 0) {
+                            Text(
+                                "Faltan $pendientes documentos. Deben entregarse antes de avanzar.",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                         Button(
-                            enabled = ReglasEtapa.validar(caso.etapa, siguiente, 0,
+                            enabled = ReglasEtapa.validar(caso.etapa, siguiente, pendientes,
                                 resultado, mensajeCierre) == null,
                             onClick = {
                                 val error = onAvanzar(caso.id, resultado, mensajeCierre)
@@ -158,6 +197,17 @@ fun CasosLiquidadorScreen(
                                 if (error == null) { resultado = ""; mensajeCierre = "" }
                             }
                         ) { Text("Confirmar avance a " + siguiente.etiqueta) }
+                    }
+                }
+                Text("Documentos solicitados", style = MaterialTheme.typography.titleMedium)
+                if (solicitudes.isEmpty()) Text("No hay documentos solicitados.")
+                solicitudes.forEach { solicitud ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text(solicitud.tipo, style = MaterialTheme.typography.titleSmall)
+                            Text(if (solicitud.pendiente) "Pendiente" else "Entregado localmente")
+                            Text("Solicitado: " + solicitud.fechaSolicitud)
+                        }
                     }
                 }
                 Text("Historial de gestiones", style = MaterialTheme.typography.titleMedium)

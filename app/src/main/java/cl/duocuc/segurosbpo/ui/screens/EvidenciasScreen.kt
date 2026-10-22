@@ -44,6 +44,7 @@ import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import kotlinx.coroutines.launch
 
 
@@ -53,6 +54,7 @@ fun EvidenciasScreen(
     siniestro: Siniestro?,
     asegurado: Asegurado,
     evidencias: List<Evidencia>,
+    solicitudes: List<SolicitudDocumento>,
     onVolver: () -> Unit,
     onCargar: () -> Unit,
     onCargarImagen: suspend (Long) -> Bitmap?,
@@ -125,6 +127,26 @@ fun EvidenciasScreen(
             } else {
                 Text(siniestro.numero, style = MaterialTheme.typography.titleLarge)
                 Text("Evidencias guardadas: ${evidencias.size}/15")
+                Text("Documentos solicitados", style = MaterialTheme.typography.titleMedium)
+                if (solicitudes.isEmpty()) Text("No hay solicitudes de documentos por ahora.")
+                solicitudes.forEach { solicitud ->
+                    androidx.compose.material3.Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(solicitud.tipo, style = MaterialTheme.typography.titleSmall)
+                            Text(if (solicitud.pendiente) "Pendiente de entrega" else "Entregado localmente")
+                            Text("Solicitado: " + solicitud.fechaSolicitud, style = MaterialTheme.typography.bodySmall)
+                            if (solicitud.comentario.isNotBlank()) Text(solicitud.comentario)
+                            if (solicitud.pendiente && siniestro.etapa != EtapaSiniestro.CERRADO) {
+                                TextButton(onClick = { tipoDocumento = solicitud.tipo }) {
+                                    Text("Preparar entrega de este documento")
+                                }
+                            }
+                        }
+                    }
+                }
                 Text("Los documentos se guardan solo en este teléfono, sin enviar a una aseguradora.",
                     style = MaterialTheme.typography.bodySmall)
                 if (siniestro.etapa == EtapaSiniestro.CERRADO) {
