@@ -1,13 +1,7 @@
 package cl.duocuc.segurosbpo
 
-import android.content.ContentProvider
-import android.content.ContentValues
-import android.database.Cursor
-import android.database.MatrixCursor
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.ParcelFileDescriptor
-import android.provider.OpenableColumns
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
@@ -17,48 +11,26 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 
-class DocumentoProveedorCobertura : ContentProvider() {
-    companion object {
-        var contenido: ByteArray = byteArrayOf()
-        var formato = "application/pdf"
-        var nombre: String? = "archivo.pdf"
-    }
-
-    override fun onCreate(): Boolean = true
-
-    override fun getType(uri: Uri): String = formato
-
-    override fun query(
-        uri: Uri,
-        projection: Array<out String>?,
-        selection: String?,
-        selectionArgs: Array<out String>?,
-        sortOrder: String?
-    ): Cursor = MatrixCursor(arrayOf(OpenableColumns.DISPLAY_NAME)).apply {
-        addRow(arrayOf(nombre))
-    }
-
-    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
-        val archivo = File(requireNotNull(context).cacheDir, "qa_evidencia.bin")
-        archivo.writeBytes(contenido)
-        return ParcelFileDescriptor.open(archivo, ParcelFileDescriptor.MODE_READ_ONLY)
-    }
-
-    override fun insert(uri: Uri, values: ContentValues?): Uri? = null
-    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
-    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
-}
-
 @RunWith(AndroidJUnit4::class)
 class ProcesadorEvidenciaCoberturaTest {
     private val context = InstrumentationRegistry.getInstrumentation().context
-    private val uri = Uri.parse("content://cl.duocuc.segurosbpo.qa.archivos/documento")
 
     private fun procesar(mime: String, bytes: ByteArray, nombre: String? = "archivo"): Result<cl.duocuc.segurosbpo.data.ArchivoEvidencia> {
-        DocumentoProveedorCobertura.formato = mime
-        DocumentoProveedorCobertura.contenido = bytes
-        DocumentoProveedorCobertura.nombre = nombre
-        return runCatching { ProcesadorEvidencia.desdeSelector(context, uri) }
+        val identificador = System.nanoTime().toString()
+        val ruta = File(context.cacheDir, "qa_evidencia_" + identificador + ".bin")
+        ruta.writeBytes(bytes)
+        val constructor = Uri.Builder()
+            .scheme("content")
+            .authority("cl.duocuc.segurosbpo.qa.archivos")
+            .appendPath(identificador)
+            .appendQueryParameter("mime", mime)
+        if (nombre != null) constructor.appendQueryParameter("nombre", nombre)
+        val uri = constructor.build()
+        return try {
+            runCatching { ProcesadorEvidencia.desdeSelector(context, uri) }
+        } finally {
+            ruta.delete()
+        }
     }
 
     @Test fun aceptaPdfYCompruebaNombreDelDocumento() {
