@@ -70,6 +70,7 @@ fun AppNavegacion() {
                 onCargarGestiones = siniestrosVm::cargarGestionesLiquidador,
                 onRegistrarGestion = siniestrosVm::registrarGestionLiquidador,
                 onAvanzar = siniestrosVm::avanzarLiquidador,
+                onCerrarAnticipado = siniestrosVm::cerrarAnticipadoLiquidador,
                 onVolver = { navController.navigateUp() }
             )
         }

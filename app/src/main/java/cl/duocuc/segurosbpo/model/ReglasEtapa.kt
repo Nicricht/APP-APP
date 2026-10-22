@@ -8,17 +8,35 @@ object ReglasEtapa {
         EtapaSiniestro.CERRADO -> null
     }
 
-    fun validar(actual: EtapaSiniestro, destino: EtapaSiniestro,
-        pendientes: Int, resultado: String, mensajeCierre: String
+    fun validar(
+        actual: EtapaSiniestro,
+        destino: EtapaSiniestro,
+        pendientes: Int,
+        resultado: String,
+        mensajeCierre: String
     ): String? {
-        if (siguiente(actual) != destino) return "No está permitido saltar ni retroceder etapas"
-        if (destino == EtapaSiniestro.LIQUIDACION && pendientes > 0)
+        val cierreAnticipado = destino == EtapaSiniestro.CERRADO &&
+            actual in setOf(EtapaSiniestro.RECIBIDO, EtapaSiniestro.EVALUACION)
+        if (siguiente(actual) != destino && !cierreAnticipado) {
+            return "No está permitido saltar ni retroceder etapas"
+        }
+        if (destino == EtapaSiniestro.LIQUIDACION && pendientes > 0) {
             return "Primero debes recibir los documentos pendientes"
-        if (destino == EtapaSiniestro.CERRADO &&
-            resultado !in setOf("Aprobado", "Rechazado"))
-            return "Selecciona el resultado aprobado o rechazado"
-        if (destino == EtapaSiniestro.CERRADO && mensajeCierre.isBlank())
-            return "El mensaje de cierre es obligatorio"
+        }
+        if (destino == EtapaSiniestro.CERRADO) {
+            val permitidos = when (actual) {
+                EtapaSiniestro.RECIBIDO -> setOf("Desistido")
+                EtapaSiniestro.EVALUACION -> setOf("Rechazado", "Desistido")
+                EtapaSiniestro.LIQUIDACION -> setOf("Aprobado", "Rechazado")
+                EtapaSiniestro.CERRADO -> emptySet()
+            }
+            if (resultado !in permitidos) {
+                return "Resultado de cierre no permitido para esta etapa"
+            }
+            if (mensajeCierre.isBlank()) {
+                return "El mensaje de cierre es obligatorio"
+            }
+        }
         return null
     }
 

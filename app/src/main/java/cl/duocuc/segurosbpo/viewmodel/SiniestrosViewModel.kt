@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import androidx.lifecycle.AndroidViewModel
 import cl.duocuc.segurosbpo.data.SiniestroDbHelper
 import cl.duocuc.segurosbpo.model.Asegurado
+import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.Siniestro
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,6 +95,19 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
         val error = runCatching {
             db.avanzarAsignado(id, _liquidador.value, resultado, mensaje)
         }.exceptionOrNull()?.let { it.message ?: "No se pudo avanzar de etapa" }
+        if (error == null) {
+            refrescarAsignados()
+            cargarGestionesLiquidador(id)
+            refrescar()
+            refrescarAvisos()
+        }
+        return error
+    }
+
+    fun cerrarAnticipadoLiquidador(id: Long, resultado: String, mensaje: String): String? {
+        val error = runCatching {
+            db.avanzarAsignado(id, _liquidador.value, resultado, mensaje, EtapaSiniestro.CERRADO)
+        }.exceptionOrNull()?.let { it.message ?: "No se pudo cerrar el siniestro" }
         if (error == null) {
             refrescarAsignados()
             cargarGestionesLiquidador(id)

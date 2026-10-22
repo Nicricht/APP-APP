@@ -32,6 +32,34 @@ class ReglasEtapaTest {
         assertNotNull(ReglasEtapa.validar(EtapaSiniestro.LIQUIDACION,
             EtapaSiniestro.CERRADO, 0, "Desistido", "Cierre"))
     }
+    @Test fun puedeRechazarseEnEvaluacionConMensaje() {
+        assertNull(ReglasEtapa.validar(
+            EtapaSiniestro.EVALUACION, EtapaSiniestro.CERRADO,
+            0, "Rechazado", "Decisión registrada"
+        ))
+    }
+    @Test fun puedeDesistirseEnEvaluacion() {
+        assertNull(ReglasEtapa.validar(
+            EtapaSiniestro.EVALUACION, EtapaSiniestro.CERRADO,
+            0, "Desistido", "Solicitud de desistimiento"
+        ))
+    }
+    @Test fun recibidoSoloPermiteCierrePorDesistimiento() {
+        assertNull(ReglasEtapa.validar(
+            EtapaSiniestro.RECIBIDO, EtapaSiniestro.CERRADO,
+            0, "Desistido", "Solicitado"
+        ))
+        assertNotNull(ReglasEtapa.validar(
+            EtapaSiniestro.RECIBIDO, EtapaSiniestro.CERRADO,
+            0, "Rechazado", "No corresponde"
+        ))
+    }
+    @Test fun noApruebaAntesDeLiquidacion() {
+        assertNotNull(ReglasEtapa.validar(
+            EtapaSiniestro.EVALUACION, EtapaSiniestro.CERRADO,
+            0, "Aprobado", "No corresponde"
+        ))
+    }
     @Test fun noReabre() {
         assertNull(ReglasEtapa.siguiente(EtapaSiniestro.CERRADO))
     }

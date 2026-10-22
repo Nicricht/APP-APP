@@ -112,6 +112,36 @@ class SiniestroDbIntegrationTest {
     }
 
     @Test
+    fun liquidadorPuedeRegistrarRechazoAnticipadoEnEvaluacion() {
+        val caso = db.listar(Asegurado.JORGE).single()
+        assertEquals(EtapaSiniestro.EVALUACION, caso.etapa)
+        db.avanzarAsignado(
+            caso.id,
+            Liquidador.HOGAR,
+            "Rechazado",
+            "Resolución anticipada registrada",
+            EtapaSiniestro.CERRADO
+        )
+        val cerrado = db.obtener(caso.id, Asegurado.JORGE)
+        assertEquals(EtapaSiniestro.CERRADO, cerrado?.etapa)
+        assertEquals("Rechazado", cerrado?.resultadoCierre)
+    }
+
+    @Test
+    fun liquidadorNoPuedeAprobarAntesDeLiquidacion() {
+        val caso = db.listar(Asegurado.JORGE).single()
+        val intento = runCatching {
+            db.avanzarAsignado(
+                caso.id, Liquidador.HOGAR,
+                "Aprobado", "No corresponde",
+                EtapaSiniestro.CERRADO
+            )
+        }
+        assertTrue(intento.isFailure)
+        assertEquals(EtapaSiniestro.EVALUACION, db.obtener(caso.id, Asegurado.JORGE)?.etapa)
+    }
+
+    @Test
     fun noSeGuardaEvidenciaEnCasoCerrado() {
         val caso = db.listar(Asegurado.HECTOR).single()
         assertEquals(EtapaSiniestro.CERRADO, caso.etapa)
