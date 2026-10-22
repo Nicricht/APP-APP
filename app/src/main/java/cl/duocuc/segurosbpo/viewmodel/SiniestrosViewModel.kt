@@ -197,7 +197,10 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
                 db.guardarEvidencia(id, propietario, tipoDocumento, archivo)
             }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar el documento" }
         }
-        if (error == null) refrescarEvidencias(id)
+        if (error == null) {
+            refrescarEvidencias(id)
+            refrescar()
+        }
         return error
     }
 

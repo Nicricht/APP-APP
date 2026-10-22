@@ -36,6 +36,25 @@ class FlujoViewModelCoberturaTest {
 
     @After fun cerrar() {
         store.clear()
+        val aplicacion = InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as Application
+        aplicacion.getSharedPreferences("sesion_demo", 0).edit()
+            .putString("asegurado", Asegurado.CAMILA.name).commit()
+    }
+
+    @Test fun preferenciasIncorrectasRestauranAseguradoPorDefecto() {
+        val aplicacion = InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as Application
+        aplicacion.getSharedPreferences("sesion_demo", 0).edit()
+            .putString("asegurado", "DESCONOCIDO").commit()
+        val vmTemporal = SiniestrosViewModel(aplicacion)
+        val almacen = ViewModelStore()
+        almacen.put("sesion", vmTemporal)
+        try {
+            assertEquals(Asegurado.CAMILA, vmTemporal.asegurado.value)
+        } finally {
+            almacen.clear()
+        }
     }
 
     @Test fun registroYCorreccionActualizanEstadosReactivos() {
