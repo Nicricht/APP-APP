@@ -65,6 +65,19 @@ class ProcesadorEvidenciaCoberturaTest {
         assertTrue(procesar("application/pdf", enorme).isFailure)
     }
 
+    @Test fun formatosCortosYFirmasAlteradasSonRechazados() {
+        assertTrue(procesar("application/pdf", "%PDF".toByteArray()).isFailure)
+        assertTrue(procesar("application/pdf", "PDF-1.5".toByteArray()).isFailure)
+        assertTrue(procesar("image/jpeg", byteArrayOf(0xFF.toByte(), 0xD8.toByte())).isFailure)
+        assertTrue(procesar("image/jpeg", byteArrayOf(0x00, 0xD8.toByte(), 0x00)).isFailure)
+        assertTrue(procesar("image/jpeg", byteArrayOf(0xFF.toByte(), 0x00, 0x00)).isFailure)
+        assertTrue(procesar("image/png", byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)).isFailure)
+        assertTrue(procesar("image/png", byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x46, 0, 0, 0, 0)).isFailure)
+        assertTrue(procesar("image/webp", "RIFF1234WEB".toByteArray()).isFailure)
+        assertTrue(procesar("image/webp", "RIFX1234WEBP".toByteArray()).isFailure)
+        assertTrue(procesar("image/webp", "RIFF1234NADA".toByteArray()).isFailure)
+    }
+
     @Test fun camaraGeneraJpgComprimido() {
         val bitmap = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
         try {
