@@ -206,7 +206,7 @@ fun CasosLiquidadorScreen(
                         ) { Text("Confirmar cierre anticipado") }
                     }
                     val siguiente = ReglasEtapa.siguiente(caso.etapa)
-                    if (siguiente != null && caso.etapa != EtapaSiniestro.RECIBIDO) {
+                    if (siguiente != null) {
                         Text("Siguiente etapa: " + siguiente.etiqueta)
                         if (siguiente == EtapaSiniestro.CERRADO) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

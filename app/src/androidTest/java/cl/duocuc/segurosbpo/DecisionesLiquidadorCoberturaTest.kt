@@ -21,6 +21,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 @RunWith(AndroidJUnit4::class)
 class DecisionesLiquidadorCoberturaTest {
@@ -95,4 +96,29 @@ class DecisionesLiquidadorCoberturaTest {
         rule.onNodeWithText("Confirmar cierre anticipado").performScrollTo().performClick()
         assertEquals("Rechazado:Resolución informada", cierre.get())
     }
+    @Test fun recibidoAsignadoPermitePasarAEvaluacion() {
+        val avanzado = AtomicBoolean(false)
+        rule.setContent {
+            CasosLiquidadorScreen(
+                liquidador = Liquidador.HOGAR,
+                casos = listOf(caso(EtapaSiniestro.RECIBIDO)),
+                gestiones = emptyList(),
+                solicitudes = emptyList(),
+                onSolicitarDocumento = { _, _, _ -> null },
+                onSeleccionarLiquidador = {},
+                onCargarGestiones = {},
+                onRegistrarGestion = { _, _, _ -> null },
+                onAvanzar = { id, _, _ ->
+                    avanzado.set(id == 42L)
+                    null
+                },
+                onCerrarAnticipado = { _, _, _ -> null },
+                onVolver = {}
+            )
+        }
+        rule.onNodeWithText("SIN-26-000042").performScrollTo().performClick()
+        rule.onNodeWithText("Confirmar avance a En evaluación").performScrollTo().performClick()
+        assertEquals(true, avanzado.get())
+    }
+
 }
