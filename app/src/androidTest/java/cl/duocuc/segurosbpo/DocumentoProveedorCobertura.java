@@ -7,8 +7,11 @@ import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
+import android.util.Base64;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class DocumentoProveedorCobertura extends ContentProvider {
     @Override public boolean onCreate() {
@@ -26,7 +29,25 @@ public class DocumentoProveedorCobertura extends ContentProvider {
     }
 
     @Override public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
-        File archivo = new File(getContext().getCacheDir(), "qa_evidencia_" + uri.getLastPathSegment() + ".bin");
+        File directorio = getContext().getFilesDir();
+        if (!directorio.exists() && !directorio.mkdirs()) {
+            throw new FileNotFoundException("No se puede crear el directorio de prueba");
+        }
+        File archivo = new File(directorio, "qa_contenido.bin");
+        byte[] contenido;
+        if ("1".equals(uri.getQueryParameter("grande"))) {
+            contenido = new byte[5 * 1024 * 1024 + 1];
+            byte[] firma = "%PDF-".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+            System.arraycopy(firma, 0, contenido, 0, firma.length);
+        } else {
+            String datos = uri.getQueryParameter("contenido");
+            contenido = Base64.decode(datos == null ? "" : datos, Base64.URL_SAFE | Base64.NO_WRAP);
+        }
+        try (FileOutputStream flujo = new FileOutputStream(archivo)) {
+            flujo.write(contenido);
+        } catch (IOException e) {
+            throw new FileNotFoundException(e.getMessage());
+        }
         return ParcelFileDescriptor.open(archivo, ParcelFileDescriptor.MODE_READ_ONLY);
     }
 

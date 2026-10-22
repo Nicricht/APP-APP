@@ -16,23 +16,24 @@ class ProcesadorEvidenciaCoberturaTest {
     private val context = InstrumentationRegistry.getInstrumentation().context
 
     private fun procesar(mime: String, bytes: ByteArray, nombre: String? = "archivo"): Result<cl.duocuc.segurosbpo.data.ArchivoEvidencia> {
-        val identificador = System.nanoTime().toString()
-        val directorio = context.cacheDir
-        check(directorio.exists() || directorio.mkdirs())
-        val ruta = File(directorio, "qa_evidencia_" + identificador + ".bin")
-        ruta.writeBytes(bytes)
-        val constructor = Uri.Builder()
+        val uriBase = Uri.Builder()
             .scheme("content")
             .authority("cl.duocuc.segurosbpo.qa.archivos")
-            .appendPath(identificador)
+            .appendPath("documento")
             .appendQueryParameter("mime", mime)
-        if (nombre != null) constructor.appendQueryParameter("nombre", nombre)
-        val uri = constructor.build()
-        return try {
-            runCatching { ProcesadorEvidencia.desdeSelector(context, uri) }
-        } finally {
-            ruta.delete()
+        if (nombre != null) uriBase.appendQueryParameter("nombre", nombre)
+        if (bytes.size > ValidadorEvidencia.MAX_BYTES) {
+            uriBase.appendQueryParameter("grande", "1")
+        } else {
+            uriBase.appendQueryParameter(
+                "contenido",
+                android.util.Base64.encodeToString(
+                    bytes,
+                    android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP
+                )
+            )
         }
+        return runCatching { ProcesadorEvidencia.desdeSelector(context, uriBase.build()) }
     }
 
     @Test fun aceptaPdfYCompruebaNombreDelDocumento() {
