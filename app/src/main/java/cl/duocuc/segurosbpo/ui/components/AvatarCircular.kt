@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -24,14 +25,15 @@ import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 fun AvatarCircular(
     @DrawableRes imagen: Int,
     descripcion: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tamano: Dp = Dimens.tamanoAvatar
 ) {
     Image(
         painter = painterResource(id = imagen),
         contentDescription = descripcion,
         contentScale = ContentScale.Crop,
         modifier = modifier
-            .size(Dimens.tamanoAvatar)
+            .size(tamano)
             .shadow(elevation = 6.dp, shape = CircleShape)
             .clip(CircleShape)
             .border(Dimens.bordeAvatar, MaterialTheme.colorScheme.surface, CircleShape)

@@ -21,8 +21,8 @@ fun EtiquetaInteres(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(50),
-        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
-        contentColor = MaterialTheme.colorScheme.secondary
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+        contentColor = MaterialTheme.colorScheme.primary
     ) {
         Text(
             text = texto,

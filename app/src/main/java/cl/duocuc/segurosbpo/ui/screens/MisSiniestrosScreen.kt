@@ -27,8 +27,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.components.AvatarCircular
+import cl.duocuc.segurosbpo.ui.components.EtiquetaInteres
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
@@ -72,8 +76,20 @@ fun MisSiniestrosScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Seguimiento de seguros", style = MaterialTheme.typography.titleLarge)
-            Text("Asegurado: ${asegurado.etiqueta}")
-            Text("RUT: ${asegurado.rutOculto}", style = MaterialTheme.typography.bodySmall)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                AvatarCircular(
+                    imagen = R.drawable.avatar_usuario,
+                    descripcion = "Avatar ilustrativo del asegurado",
+                    tamano = 56.dp
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Asegurado: ${asegurado.etiqueta}")
+                    Text("RUT: ${asegurado.rutOculto}", style = MaterialTheme.typography.bodySmall)
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
                 Button(onClick = onReportar) { Text("Reportar") }
@@ -107,7 +123,7 @@ fun MisSiniestrosScreen(
                                 Text(siniestro.numero, style = MaterialTheme.typography.titleMedium)
                                 Text(siniestro.compania.etiqueta)
                                 Text(siniestro.tipo.etiqueta)
-                                Text("Estado: ${siniestro.etapa.etiqueta}", color = MaterialTheme.colorScheme.primary)
+                                EtiquetaInteres(texto = "Estado: ${siniestro.etapa.etiqueta}")
                                 if (ValidadorSiniestro.reporteFueraDePlazo(
                                         siniestro.fechaOcurrencia, siniestro.fechaReporte
                                     )) {

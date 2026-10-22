@@ -51,6 +51,14 @@ fun ResumenGraficosCasos(
                 GraficoEtapas(resumen)
                 Text("Abiertos y cerrados", style = MaterialTheme.typography.titleSmall)
                 GraficoSituacion(resumen)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TarjetaEstadistica(resumen.total.toString(), "Total", Modifier.weight(1f))
+                    TarjetaEstadistica(resumen.abiertos.toString(), "Abiertos", Modifier.weight(1f))
+                    TarjetaEstadistica(resumen.cerrados.toString(), "Cerrados", Modifier.weight(1f))
+                }
             }
         }
     }
