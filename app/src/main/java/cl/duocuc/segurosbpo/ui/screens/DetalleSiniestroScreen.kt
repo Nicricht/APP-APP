@@ -16,15 +16,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleSiniestroScreen(siniestro: Siniestro?, onVolver: () -> Unit, onEditar: () -> Unit, onEvidencias: () -> Unit, onHistorial: () -> Unit) {
+fun DetalleSiniestroScreen(
+    siniestro: Siniestro?,
+    solicitudes: List<SolicitudDocumento>,
+    onCargarSolicitudes: () -> Unit,
+    onVolver: () -> Unit,
+    onEditar: () -> Unit,
+    onEvidencias: () -> Unit,
+    onHistorial: () -> Unit
+) {
+    LaunchedEffect(siniestro?.id) {
+        if (siniestro != null) onCargarSolicitudes()
+    }
     Scaffold(topBar = { TopAppBar(title = { Text("Detalle del siniestro") }) }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState()).padding(16.dp),
@@ -61,7 +74,20 @@ fun DetalleSiniestroScreen(siniestro: Siniestro?, onVolver: () -> Unit, onEditar
                     }
                 }
                 Text("¿Qué sigue?", style = MaterialTheme.typography.titleMedium)
-                val proximoPaso = when (siniestro.etapa) {
+                val pendientes = solicitudes.filter { it.pendiente }
+                if (pendientes.isNotEmpty()) {
+                    Text(
+                        "Tienes ${pendientes.size} documento(s) pendiente(s) por entregar.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    pendientes.forEach { solicitud ->
+                        Text("Pendiente: " + solicitud.tipo)
+                    }
+                }
+                val proximoPaso = if (pendientes.isNotEmpty())
+                    "Adjunta los documentos solicitados para que tu caso pueda continuar."
+                else when (siniestro.etapa) {
                     EtapaSiniestro.RECIBIDO -> "Estamos revisando tu reporte para asignarlo a un liquidador. No necesitas hacer nada por ahora."
                     EtapaSiniestro.EVALUACION -> "El liquidador está revisando tu caso. Te avisaremos si necesitamos documentos."
                     EtapaSiniestro.LIQUIDACION -> "Estamos definiendo la resolución con tu compañía de seguros."

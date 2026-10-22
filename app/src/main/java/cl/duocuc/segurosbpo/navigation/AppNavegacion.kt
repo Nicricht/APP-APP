@@ -90,6 +90,8 @@ fun AppNavegacion() {
             val id = entrada.arguments?.getLong("id") ?: 0L
             DetalleSiniestroScreen(
                 siniestro = siniestrosVm.obtener(id),
+                solicitudes = solicitudes,
+                onCargarSolicitudes = { siniestrosVm.refrescarEvidencias(id) },
                 onVolver = { navController.navigateUp() },
                 onEditar = { navController.navigate(Ruta.Editar.crear(id)) },
                 onEvidencias = { navController.navigate(Ruta.Evidencias.crear(id)) },
