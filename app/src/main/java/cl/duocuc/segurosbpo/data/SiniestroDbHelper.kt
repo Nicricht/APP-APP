@@ -431,7 +431,8 @@ class SiniestroDbHelper(
     }
 
     fun avanzarAsignado(siniestroId: Long, liquidador: Liquidador,
-        resultado: String, mensajeCierre: String
+        resultado: String, mensajeCierre: String,
+        destino: EtapaSiniestro? = null
     ) {
         val db = writableDatabase
         db.beginTransaction()
@@ -440,7 +441,7 @@ class SiniestroDbHelper(
                 ?: throw IllegalArgumentException("El caso no está asignado a este liquidador")
 
 
-            val siguiente = ReglasEtapa.siguiente(actual.etapa)
+            val siguiente = destino ?: ReglasEtapa.siguiente(actual.etapa)
                 ?: throw IllegalArgumentException("Un siniestro cerrado no puede reabrirse")
             val pendientes = db.rawQuery(
                 "SELECT COUNT(*) FROM solicitudes_documentos WHERE siniestro_id = ? AND fecha_entrega IS NULL",

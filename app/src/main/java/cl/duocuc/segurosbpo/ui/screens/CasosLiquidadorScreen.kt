@@ -53,6 +53,7 @@ fun CasosLiquidadorScreen(
     onCargarGestiones: (Long) -> Unit,
     onRegistrarGestion: (Long, String, Boolean) -> String?,
     onAvanzar: (Long, String, String) -> String?,
+    onCerrarAnticipado: (Long, String, String) -> String?,
     onVolver: () -> Unit
 ) {
     val aviso = remember { SnackbarHostState() }
@@ -163,6 +164,47 @@ fun CasosLiquidadorScreen(
                             }
                         }
                     ) { Text("Solicitar documento") }
+                    if (caso.etapa == EtapaSiniestro.RECIBIDO ||
+                        caso.etapa == EtapaSiniestro.EVALUACION
+                    ) {
+                        Text("Cierre anticipado", style = MaterialTheme.typography.titleMedium)
+                        Text("Solo registra la decisión de la compañía o el desistimiento informado.")
+                        val opcionesCierre = if (caso.etapa == EtapaSiniestro.RECIBIDO)
+                            listOf("Desistido") else listOf("Rechazado", "Desistido")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            opcionesCierre.forEach { opcion ->
+                                FilterChip(
+                                    selected = resultado == opcion,
+                                    onClick = { resultado = opcion },
+                                    label = { Text(opcion) }
+                                )
+                            }
+                        }
+                        OutlinedTextField(
+                            value = mensajeCierre,
+                            onValueChange = { mensajeCierre = it },
+                            label = { Text("Mensaje de cierre obligatorio") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 2
+                        )
+                        Button(
+                            enabled = ReglasEtapa.validar(
+                                caso.etapa,
+                                EtapaSiniestro.CERRADO,
+                                solicitudes.count { it.pendiente },
+                                resultado,
+                                mensajeCierre
+                            ) == null,
+                            onClick = {
+                                val error = onCerrarAnticipado(caso.id, resultado, mensajeCierre)
+                                mostrar(error ?: "Caso cerrado")
+                                if (error == null) {
+                                    resultado = ""
+                                    mensajeCierre = ""
+                                }
+                            }
+                        ) { Text("Confirmar cierre anticipado") }
+                    }
                     val siguiente = ReglasEtapa.siguiente(caso.etapa)
                     if (siguiente != null && caso.etapa != EtapaSiniestro.RECIBIDO) {
                         Text("Siguiente etapa: " + siguiente.etiqueta)
