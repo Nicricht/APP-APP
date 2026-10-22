@@ -12,7 +12,8 @@ object EstiloTarjeta {
     val forma = RoundedCornerShape(Dimens.radioTarjeta)
     @Composable
     fun colores(): CardColors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
 
     @Composable
