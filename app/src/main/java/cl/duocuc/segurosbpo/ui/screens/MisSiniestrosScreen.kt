@@ -43,6 +43,8 @@ fun MisSiniestrosScreen(
     asegurado: Asegurado,
     siniestros: List<Siniestro>,
     busqueda: String,
+    avisosNoLeidos: Int,
+    onVerAvisos: () -> Unit,
     onBuscar: (String) -> Unit,
     onCambiarAsegurado: (Asegurado) -> Unit,
     onReportar: () -> Unit,
@@ -94,7 +96,16 @@ fun MisSiniestrosScreen(
                 TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
                 Button(onClick = onReportar) { Text("Reportar") }
             }
-            TextButton(onClick = onGestionar) { Text("Liquidador") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onGestionar) { Text("Liquidador") }
+                TextButton(onClick = onVerAvisos) {
+                    Text(if (avisosNoLeidos > 0) "Avisos ($avisosNoLeidos)" else "Avisos")
+                }
+            }
+            Text(
+                "Demostración académica. Los registros y documentos se guardan en este teléfono.",
+                style = MaterialTheme.typography.bodySmall
+            )
             OutlinedTextField(
                 value = busqueda,
                 onValueChange = onBuscar,

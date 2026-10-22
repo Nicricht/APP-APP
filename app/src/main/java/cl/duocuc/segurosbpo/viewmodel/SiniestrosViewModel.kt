@@ -4,6 +4,8 @@ import android.app.Application
 import android.graphics.Bitmap
 import android.net.Uri
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
+import cl.duocuc.segurosbpo.model.AvisoSiniestro
+import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Liquidador
@@ -41,10 +43,17 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
     val casosLiquidador = _casosLiquidador.asStateFlow()
     private val _gestionesLiquidador = MutableStateFlow<List<Gestion>>(emptyList())
     val gestionesLiquidador = _gestionesLiquidador.asStateFlow()
+    private val _solicitudes = MutableStateFlow<List<SolicitudDocumento>>(emptyList())
+    val solicitudes = _solicitudes.asStateFlow()
+    private val _solicitudesLiquidador = MutableStateFlow<List<SolicitudDocumento>>(emptyList())
+    val solicitudesLiquidador = _solicitudesLiquidador.asStateFlow()
+    private val _avisos = MutableStateFlow<List<AvisoSiniestro>>(db.listarAvisos(inicial))
+    val avisos = _avisos.asStateFlow()
 
     fun seleccionarLiquidador(nuevo: Liquidador) {
         _liquidador.value = nuevo
         _gestionesLiquidador.value = emptyList()
+        _solicitudesLiquidador.value = emptyList()
         refrescarAsignados()
     }
 
@@ -54,6 +63,20 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
 
     fun cargarGestionesLiquidador(id: Long) {
         _gestionesLiquidador.value = db.listarGestionesAsignadas(id, _liquidador.value)
+        _solicitudesLiquidador.value = db.listarSolicitudesAsignadas(id, _liquidador.value)
+    }
+
+    fun solicitarDocumentoLiquidador(id: Long, tipo: String, comentario: String): String? {
+        val error = runCatching {
+            db.solicitarDocumento(id, _liquidador.value, tipo, comentario)
+        }.exceptionOrNull()?.let { it.message ?: "No se pudo solicitar el documento" }
+        if (error == null) {
+            refrescarAsignados()
+            cargarGestionesLiquidador(id)
+            refrescar()
+            refrescarAvisos()
+        }
+        return error
     }
 
     fun registrarGestionLiquidador(id: Long, descripcion: String, visible: Boolean): String? {
@@ -75,6 +98,7 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
             refrescarAsignados()
             cargarGestionesLiquidador(id)
             refrescar()
+            refrescarAvisos()
         }
         return error
     }
@@ -87,10 +111,12 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
     fun seleccionarAsegurado(nuevo: Asegurado) {
         _evidencias.value = emptyList()
         _gestiones.value = emptyList()
+        _solicitudes.value = emptyList()
         _busqueda.value = ""
         _asegurado.value = nuevo
         preferencias.edit().putString("asegurado", nuevo.name).apply()
         refrescar()
+        refrescarAvisos()
     }
 
     fun refrescar() {
@@ -123,6 +149,16 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
 
     fun refrescarEvidencias(id: Long) {
         _evidencias.value = db.listarEvidencias(id, _asegurado.value)
+        _solicitudes.value = db.listarSolicitudes(id, _asegurado.value)
+    }
+
+    fun refrescarAvisos() {
+        _avisos.value = db.listarAvisos(_asegurado.value)
+    }
+
+    fun marcarAvisoLeido(id: Long) {
+        db.marcarAvisoLeido(id, _asegurado.value)
+        refrescarAvisos()
     }
 
     suspend fun guardarFoto(id: Long, tipoDocumento: String, bitmap: Bitmap): String? {
@@ -132,7 +168,10 @@ class SiniestrosViewModel(application: Application) : AndroidViewModel(applicati
                 db.guardarEvidencia(id, propietario, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap))
             }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar el documento" }
         }
-        if (error == null) refrescarEvidencias(id)
+        if (error == null) {
+            refrescarEvidencias(id)
+            refrescar()
+        }
         return error
     }
 

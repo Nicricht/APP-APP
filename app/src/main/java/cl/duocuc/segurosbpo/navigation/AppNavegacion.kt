@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import cl.duocuc.segurosbpo.ui.screens.AvisosScreen
 import cl.duocuc.segurosbpo.ui.screens.CasosLiquidadorScreen
 import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EvidenciasScreen
@@ -26,6 +27,9 @@ fun AppNavegacion() {
     val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
     val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
     val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
+    val solicitudes by siniestrosVm.solicitudes.collectAsStateWithLifecycle()
+    val solicitudesLiquidador by siniestrosVm.solicitudesLiquidador.collectAsStateWithLifecycle()
+    val avisos by siniestrosVm.avisos.collectAsStateWithLifecycle()
     val gestiones by siniestrosVm.gestiones.collectAsStateWithLifecycle()
     val liquidador by siniestrosVm.liquidador.collectAsStateWithLifecycle()
     val casosLiquidador by siniestrosVm.casosLiquidador.collectAsStateWithLifecycle()
@@ -38,10 +42,21 @@ fun AppNavegacion() {
                 siniestros = siniestros,
                 busqueda = busqueda,
                 onBuscar = siniestrosVm::buscar,
+                avisosNoLeidos = avisos.count { !it.leido },
+                onVerAvisos = { navController.navigate(Ruta.Avisos.ruta) },
                 onCambiarAsegurado = siniestrosVm::seleccionarAsegurado,
                 onReportar = { navController.navigate(Ruta.Reportar.ruta) },
                 onGestionar = { navController.navigate(Ruta.Liquidador.ruta) },
                 onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) }
+            )
+        }
+        composable(Ruta.Avisos.ruta) {
+            AvisosScreen(
+                avisos = avisos,
+                onCargar = siniestrosVm::refrescarAvisos,
+                onMarcarLeido = siniestrosVm::marcarAvisoLeido,
+                onAbrirCaso = { navController.navigate(Ruta.Detalle.crear(it)) },
+                onVolver = { navController.navigateUp() }
             )
         }
         composable(Ruta.Liquidador.ruta) {
@@ -49,6 +64,8 @@ fun AppNavegacion() {
                 liquidador = liquidador,
                 casos = casosLiquidador,
                 gestiones = gestionesLiquidador,
+                solicitudes = solicitudesLiquidador,
+                onSolicitarDocumento = siniestrosVm::solicitarDocumentoLiquidador,
                 onSeleccionarLiquidador = siniestrosVm::seleccionarLiquidador,
                 onCargarGestiones = siniestrosVm::cargarGestionesLiquidador,
                 onRegistrarGestion = siniestrosVm::registrarGestionLiquidador,
@@ -100,6 +117,7 @@ fun AppNavegacion() {
                 siniestro = siniestrosVm.obtener(id),
                 asegurado = asegurado,
                 evidencias = evidencias,
+                solicitudes = solicitudes,
                 onVolver = { navController.navigateUp() },
                 onCargar = { siniestrosVm.refrescarEvidencias(id) },
                 onCargarImagen = { evidenciaId -> siniestrosVm.cargarImagen(id, evidenciaId) },

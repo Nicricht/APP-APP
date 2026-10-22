@@ -165,7 +165,7 @@ class SiniestroDbIntegrationTest {
         assertTrue(db.listarGestiones(registro.id, Asegurado.JORGE)
             .any { it.descripcion.contains("incorporado al historial") })
         assertTrue(db.listarEvidencias(registro.id, Asegurado.JORGE).isEmpty())
-        assertEquals(4, db.readableDatabase.version)
+        assertEquals(5, db.readableDatabase.version)
     }
 
 
