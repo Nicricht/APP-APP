@@ -42,8 +42,7 @@ import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
 import cl.duocuc.segurosbpo.ui.components.BotonSecundario
 import cl.duocuc.segurosbpo.ui.components.CampoTexto
 import cl.duocuc.segurosbpo.ui.components.CasillaConTexto
-import cl.duocuc.segurosbpo.ui.components.GrupoRadio
-import cl.duocuc.segurosbpo.ui.components.ImagenEncabezado
+import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
 import cl.duocuc.segurosbpo.ui.components.InterruptorConTexto
 import cl.duocuc.segurosbpo.ui.components.TarjetaSeccion
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -122,12 +121,6 @@ fun FormularioContent(
             padding(innerPadding).
             verticalScroll(rememberScrollState())
         ) {
-            ImagenEncabezado(
-                imagen = R.drawable.banner_registro,
-                descripcion = stringResource(R.string.cd_banner),
-                titulo = stringResource(R.string.banner_titulo),
-                subtitulo = stringResource(R.string.baner_subtitulo)
-            )
             Column(
                 modifier = Modifier.padding(Dimens.espacioPantalla),
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
@@ -137,26 +130,24 @@ fun FormularioContent(
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_datos)) {
                     Text(
                         text = stringResource(R.string.etiqueta_asegurado),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Text(uiState.asegurado.etiqueta, style = MaterialTheme.typography.titleMedium)
+                    Text(uiState.asegurado.etiqueta, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
 
 
                     Text(
                         text = stringResource(R.string.rut_asegurado, uiState.asegurado.rutOculto),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
 
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_que_paso)) {
-                    Text(
-                        text = stringResource(R.string.etiqueta_compania),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    GrupoRadio(
+                    SelectorOpciones(
+                        titulo = stringResource(R.string.etiqueta_compania),
                         opciones = Compania.entries,
                         seleccionada = uiState.compania,
                         onSeleccionar = onCompaniaSeleccionada,
@@ -172,12 +163,8 @@ fun FormularioContent(
                         )
                     }
 
-                    Text(
-                        text = stringResource(R.string.etiqueta_tipo),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    GrupoRadio(
+                    SelectorOpciones(
+                        titulo = stringResource(R.string.etiqueta_tipo),
                         opciones = TipoSiniestro.entries,
                         seleccionada = uiState.tipoSiniestro,
                         onSeleccionar = onTipoSeleccionado,
@@ -189,6 +176,7 @@ fun FormularioContent(
                         onValorCambia = onDescripcionCambia,
                         etiqueta = stringResource(R.string.campo_descripcion),
                         icono = R.drawable.ic_correo,
+                        multilinea = true,
                         error = uiState.errorDescripcion
                     )
 

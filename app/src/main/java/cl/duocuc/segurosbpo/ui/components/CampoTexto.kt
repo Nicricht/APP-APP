@@ -29,7 +29,8 @@ fun CampoTexto(
     @DrawableRes icono: Int,
     modifier: Modifier = Modifier,
     error: String? = null,
-    tipoTeclado: KeyboardType = KeyboardType.Text
+    tipoTeclado: KeyboardType = KeyboardType.Text,
+    multilinea: Boolean = false
 ) {
     OutlinedTextField(
         value = valor,
@@ -44,11 +45,13 @@ fun CampoTexto(
             )
         },
         isError = error != null,
-        supportingText = { if (error != null) Text(error) },
-        singleLine = true,
+        supportingText = if (error != null) { { Text(error) } } else null,
+        singleLine = !multilinea,
+        minLines = if (multilinea) 3 else 1,
+        maxLines = if (multilinea) 5 else 1,
         keyboardOptions = KeyboardOptions(
             keyboardType = tipoTeclado,
-            imeAction = ImeAction.Next
+            imeAction = if (multilinea) ImeAction.Default else ImeAction.Next
         ),
         shape = EstiloCampo.forma,
         colors = EstiloCampo.colores()
