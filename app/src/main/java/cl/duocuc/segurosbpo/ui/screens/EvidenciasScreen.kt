@@ -54,7 +54,7 @@ fun EvidenciasScreen(
     siniestro: Siniestro?,
     asegurado: Asegurado,
     evidencias: List<Evidencia>,
-    solicitudes: List<SolicitudDocumento>,
+    solicitudes: List<SolicitudDocumento> = emptyList(),
     onVolver: () -> Unit,
     onCargar: () -> Unit,
     onCargarImagen: suspend (Long) -> Bitmap?,
