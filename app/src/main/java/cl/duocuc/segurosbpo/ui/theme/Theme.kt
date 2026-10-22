@@ -14,17 +14,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimarioClaro,
-    onPrimary = PrimarioClaro,
+    primary = Primario,
+    onPrimary = Blanco,
     primaryContainer = PrimarioOscuro,
-    onPrimaryContainer = PrimarioClaro,
-    secondary = Secundario,
-    onSecondary = Blanco,
+    onPrimaryContainer = Blanco,
+    secondary = PrimarioClaro,
+    onSecondary = TextoOscuro,
     tertiary = Acento,
-    onTertiary = Blanco,
+    onTertiary = TextoOscuro,
     background = FondoOscuro,
     onBackground = TextoClaro,
-    surface = SuperficieClara,
+    surface = SuperficieOscura,
     onSurface = TextoClaro
 )
 
