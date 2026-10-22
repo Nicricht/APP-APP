@@ -38,6 +38,10 @@ import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.TipoSiniestro
+import cl.duocuc.segurosbpo.model.ValidadorSiniestro
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
 import cl.duocuc.segurosbpo.ui.components.BotonSecundario
 import cl.duocuc.segurosbpo.ui.components.CampoTexto
@@ -208,6 +212,16 @@ fun FormularioContent(
                         error = uiState.errorFecha,
                         tipoTeclado = KeyboardType.Number
                     )
+                    if (ValidadorSiniestro.reporteFueraDePlazo(
+                            uiState.fechaOcurrencia,
+                            SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).format(Date())
+                        )) {
+                        Text(
+                            text = "Reporte fuera de plazo: pasaron más de 30 días desde el siniestro. Puedes continuar con el reporte.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                     CampoTexto(
                         valor = uiState.comuna,
                         onValorCambia = onComunaCambia,

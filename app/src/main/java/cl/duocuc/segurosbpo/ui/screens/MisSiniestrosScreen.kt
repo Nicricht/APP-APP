@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,6 +108,15 @@ fun MisSiniestrosScreen(
                                 Text(siniestro.compania.etiqueta)
                                 Text(siniestro.tipo.etiqueta)
                                 Text("Estado: ${siniestro.etapa.etiqueta}", color = MaterialTheme.colorScheme.primary)
+                                if (ValidadorSiniestro.reporteFueraDePlazo(
+                                        siniestro.fechaOcurrencia, siniestro.fechaReporte
+                                    )) {
+                                    Text(
+                                        "Reporte fuera de plazo",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                                 Text("Actualizado: ${siniestro.ultimaActualizacion}", style = MaterialTheme.typography.bodySmall)
                             }
                         }

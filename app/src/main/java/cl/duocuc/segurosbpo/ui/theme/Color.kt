@@ -26,5 +26,5 @@ val SuperficieOscura = Color(0xFF1F1D27)
 val GrisDeshabilitado = Color(0xFFBDBAC7)
 
 
-val Exito = Color(0xFF2E9E5B)
-val ExitoFondo = Color(0xFF3F5EAF)
+val Exito = Color(0xFF17633A)
+val ExitoFondo = Color(0xFFEAF7EF)
