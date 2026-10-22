@@ -41,6 +41,7 @@ fun CasillaConTexto(
         Text(
             text = texto,
             style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = Dimens.espacioChico)
         )
     }
@@ -62,7 +63,7 @@ fun InterruptorConTexto(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = texto, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        Text(text = texto, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         Switch(checked = activado, onCheckedChange = null)
     }
 }
@@ -94,6 +95,7 @@ fun <T> GrupoRadio(
                 Text(
                     text = textoDe(opcion),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(start = Dimens.espacioChico)
                 )
             }
