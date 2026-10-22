@@ -41,12 +41,12 @@ Ninguna puntuación está garantizada. Es la pauta, no una calificación obtenid
 | RF-08 Documentos solicitados | Implementado local; requiere prueba integral | Solicitud, pendiente, entrega por tipo y estado entregado localmente; sin confirmación externa |
 | RF-09 Avisos | Parcial | Bandeja local de avisos y contador; sin notificación del sistema ni backend |
 | RF-10 Gestión liquidador | Implementado local | Casos por equipo, gestión visible/interna, historial y gráficos |
-| RF-11 Solicitar y avanzar | Parcial | Solicitud local y avance con control real de pendientes; faltan cierres anticipados permitidos |
+| RF-11 Solicitar y avanzar | Implementado local, verificar en dispositivo | Solicitud, control real de pendientes y cierres anticipados permitidos por etapa |
 | RF-12 Auditoría de eventos | Parcial | Registro local de reportes, evidencias, solicitudes y cambios; pendientes otros eventos y reglas periódicas |
 
 ## Reglas de negocio y riesgos que siguen abiertos
 
-1. RN-02: faltan alternativas de cierre anticipado y estado Desistido conforme a las transiciones autorizadas.
+1. RN-02: se incorporaron cierres anticipados por Rechazado o Desistido según etapa; comprobar el recorrido y sus pruebas en la APK más reciente.
 2. RN-15: falta recordatorio de documentos pendientes a los 15 días y opción controlada de desistimiento a los 30 días.
 3. RN-16: falta verificar el seguimiento de gestión visible al menos cada siete días.
 4. RNF-04: hace falta comprobar contraste en modo claro/oscuro y accesibilidad con letra grande y lector de pantalla.
@@ -78,7 +78,7 @@ Ninguna puntuación está garantizada. Es la pauta, no una calificación obtenid
 5. Captura de cámara real, selección de galería, PDF, cancelación, denegación de permiso, 5 MB y 15 evidencias.
 6. Solicitud del liquidador, aviso local, pendiente, adjunto coincidente, entrega local y desbloqueo de etapa.
 7. Intento fallido de avanzar con documento pendiente.
-8. Cierre permitido, historial visible sin gestiones internas y lectura de avisos.
+8. Cierre habitual y anticipado permitido, intento de aprobación temprana rechazado, historial visible sin gestiones internas y lectura de avisos.
 9. Reinicio, modo avión, accesibilidad, rotación de pantalla y letra del sistema aumentada.
 10. Evidencia de autoría verificable de ambos estudiantes en GitHub y Trello.
 
