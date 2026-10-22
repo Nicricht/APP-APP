@@ -21,8 +21,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 
-class SiniestrosViewModel(application: Application) : AndroidViewModel(application) {
-    private val db = SiniestroDbHelper(application)
+class SiniestrosViewModel @JvmOverloads constructor(
+    application: Application,
+    private val db: SiniestroDbHelper = SiniestroDbHelper(application)
+) : AndroidViewModel(application) {
     private val preferencias = application.getSharedPreferences("sesion_demo", 0)
     private val inicial = runCatching {
         Asegurado.valueOf(preferencias.getString("asegurado", Asegurado.CAMILA.name)!!)

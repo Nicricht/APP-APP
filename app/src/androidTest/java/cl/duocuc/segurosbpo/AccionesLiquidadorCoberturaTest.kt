@@ -1,6 +1,6 @@
 package cl.duocuc.segurosbpo
 
-import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
@@ -43,8 +44,7 @@ class AccionesLiquidadorCoberturaTest {
         liquidadorAsignado = Liquidador.HOGAR
     )
 
-    @Test fun guardaGestionVisibleYSolicitaDocumento() {
-        val gestion = AtomicReference<String?>(null)
+    @Test fun solicitaDocumentoConIndicaciones() {
         val solicitud = AtomicReference<String?>(null)
         rule.setContent {
             CasosLiquidadorScreen(
@@ -58,6 +58,35 @@ class AccionesLiquidadorCoberturaTest {
                 },
                 onSeleccionarLiquidador = {},
                 onCargarGestiones = {},
+                onRegistrarGestion = { _, _, _ -> null },
+                onAvanzar = { _, _, _ -> null },
+                onCerrarAnticipado = { _, _, _ -> null },
+                onVolver = {}
+            )
+        }
+        rule.onNodeWithText("SIN-26-000062").performScrollTo().performClick()
+        rule.onNodeWithText("Nombre del documento requerido").performTextInput("Boleta de reparación")
+        rule.onNodeWithText("Indicaciones para el asegurado (opcional)").performTextInput("Presentar imagen")
+        Espresso.closeSoftKeyboard()
+        rule.onNode(hasText("Solicitar documento") and hasClickAction())
+            .assertIsEnabled()
+            .performScrollTo()
+            .performClick()
+        rule.waitForIdle()
+        assertEquals("62:Boleta de reparación:Presentar imagen", solicitud.get())
+    }
+
+    @Test fun registraGestionVisible() {
+        val gestion = AtomicReference<String?>(null)
+        rule.setContent {
+            CasosLiquidadorScreen(
+                liquidador = Liquidador.HOGAR,
+                casos = listOf(caso(EtapaSiniestro.EVALUACION)),
+                gestiones = emptyList(),
+                solicitudes = emptyList(),
+                onSolicitarDocumento = { _, _, _ -> null },
+                onSeleccionarLiquidador = {},
+                onCargarGestiones = {},
                 onRegistrarGestion = { id, descripcion, visible ->
                     gestion.set("$id:$descripcion:$visible")
                     null
@@ -69,12 +98,9 @@ class AccionesLiquidadorCoberturaTest {
         }
         rule.onNodeWithText("SIN-26-000062").performScrollTo().performClick()
         rule.onNodeWithText("Descripción de gestión").performTextInput("Gestión revisada")
+        Espresso.closeSoftKeyboard()
         rule.onNodeWithText("Registrar gestión").performScrollTo().performClick()
         assertEquals("62:Gestión revisada:true", gestion.get())
-        rule.onNodeWithText("Nombre del documento requerido").performTextInput("Boleta de reparación")
-        rule.onNodeWithText("Indicaciones para el asegurado (opcional)").performTextInput("Presentar imagen")
-        rule.onNode(hasText("Solicitar documento") and hasClickAction()).performScrollTo().performClick()
-        assertEquals("62:Boleta de reparación:Presentar imagen", solicitud.get())
     }
 
     @Test fun cierraCasoDesdeLiquidacion() {

@@ -7,6 +7,7 @@ import android.util.Base64
 import androidx.lifecycle.ViewModelStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import cl.duocuc.segurosbpo.data.SiniestroDbHelper
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.FormularioUiState
@@ -24,36 +25,43 @@ class FlujoViewModelCoberturaTest {
     private lateinit var vm: SiniestrosViewModel
     private lateinit var store: ViewModelStore
 
+    private lateinit var aplicacion: Application
+    private val nombreDb = "qa_flujos_viewmodel.db"
+
     @Before fun preparar() {
-        val aplicacion = InstrumentationRegistry.getInstrumentation()
+        aplicacion = InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as Application
+        aplicacion.deleteDatabase(nombreDb)
         aplicacion.getSharedPreferences("sesion_demo", 0).edit()
             .putString("asegurado", Asegurado.CAMILA.name).commit()
-        vm = SiniestrosViewModel(aplicacion)
+        vm = SiniestrosViewModel(aplicacion, SiniestroDbHelper(aplicacion, nombreDb))
         store = ViewModelStore()
         store.put("flujo", vm)
     }
 
     @After fun cerrar() {
         store.clear()
-        val aplicacion = InstrumentationRegistry.getInstrumentation()
-            .targetContext.applicationContext as Application
+        aplicacion.deleteDatabase(nombreDb)
         aplicacion.getSharedPreferences("sesion_demo", 0).edit()
             .putString("asegurado", Asegurado.CAMILA.name).commit()
     }
 
     @Test fun preferenciasIncorrectasRestauranAseguradoPorDefecto() {
-        val aplicacion = InstrumentationRegistry.getInstrumentation()
-            .targetContext.applicationContext as Application
         aplicacion.getSharedPreferences("sesion_demo", 0).edit()
             .putString("asegurado", "DESCONOCIDO").commit()
-        val vmTemporal = SiniestrosViewModel(aplicacion)
+        val temporal = "qa_sesion_invalida.db"
+        aplicacion.deleteDatabase(temporal)
+        val vmTemporal = SiniestrosViewModel(
+            aplicacion,
+            SiniestroDbHelper(aplicacion, temporal)
+        )
         val almacen = ViewModelStore()
         almacen.put("sesion", vmTemporal)
         try {
             assertEquals(Asegurado.CAMILA, vmTemporal.asegurado.value)
         } finally {
             almacen.clear()
+            aplicacion.deleteDatabase(temporal)
         }
     }
 
