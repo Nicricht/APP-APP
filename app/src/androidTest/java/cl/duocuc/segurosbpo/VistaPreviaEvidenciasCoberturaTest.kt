@@ -2,6 +2,7 @@ package cl.duocuc.segurosbpo
 
 import android.graphics.Bitmap
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -82,8 +83,8 @@ class VistaPreviaEvidenciasCoberturaTest {
         }
         rule.onNodeWithText("Ver imagen").performScrollTo().performClick()
         rule.waitUntil(10000) {
-            rule.onNodeWithText("No se pudo abrir la imagen")
-                .fetchSemanticsNodeOrNull() != null
+            rule.onAllNodesWithText("No se pudo abrir la imagen")
+                .fetchSemanticsNodes().isNotEmpty()
         }
     }
 
