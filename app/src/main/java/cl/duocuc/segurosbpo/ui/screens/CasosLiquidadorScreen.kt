@@ -1,5 +1,10 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +41,7 @@ import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ReglasEtapa
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import kotlinx.coroutines.launch
 
 
@@ -54,6 +60,7 @@ fun CasosLiquidadorScreen(
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var casoId by rememberSaveable(liquidador) { mutableStateOf<Long?>(null) }
+    var mostrarResumen by rememberSaveable(liquidador) { mutableStateOf(false) }
     var descripcion by rememberSaveable(casoId) { mutableStateOf("") }
     var visible by rememberSaveable(casoId) { mutableStateOf(true) }
     var resultado by rememberSaveable(casoId) { mutableStateOf("") }
@@ -86,6 +93,16 @@ fun CasosLiquidadorScreen(
             }
             Text("Responsable: " + liquidador.nombre)
             Text("Solo casos asignados a este equipo.")
+            TextButton(onClick = { mostrarResumen = !mostrarResumen }) {
+                Text(if (mostrarResumen) "Ocultar gráficos" else "Ver gráficos de mis casos")
+            }
+            AnimatedVisibility(
+                visible = mostrarResumen,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                ResumenGraficosCasos(casos = casos, equipo = liquidador.equipo)
+            }
             if (casos.isEmpty()) Text("No hay casos asignados.")
             casos.forEach { siniestro ->
                 Card(onClick = { casoId = siniestro.id }, modifier = Modifier.fillMaxWidth()) {
