@@ -8,9 +8,7 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
 import android.util.Base64;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class DocumentoProveedorCobertura extends ContentProvider {
@@ -29,11 +27,6 @@ public class DocumentoProveedorCobertura extends ContentProvider {
     }
 
     @Override public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
-        File directorio = getContext().getFilesDir();
-        if (!directorio.exists() && !directorio.mkdirs()) {
-            throw new FileNotFoundException("No se puede crear el directorio de prueba");
-        }
-        File archivo = new File(directorio, "qa_contenido.bin");
         byte[] contenido;
         if ("1".equals(uri.getQueryParameter("grande"))) {
             contenido = new byte[5 * 1024 * 1024 + 1];
@@ -43,12 +36,20 @@ public class DocumentoProveedorCobertura extends ContentProvider {
             String datos = uri.getQueryParameter("contenido");
             contenido = Base64.decode(datos == null ? "" : datos, Base64.URL_SAFE | Base64.NO_WRAP);
         }
-        try (FileOutputStream flujo = new FileOutputStream(archivo)) {
-            flujo.write(contenido);
+        try {
+            ParcelFileDescriptor[] extremos = ParcelFileDescriptor.createPipe();
+            Thread escritor = new Thread(() -> {
+                try (ParcelFileDescriptor.AutoCloseOutputStream salida =
+                    new ParcelFileDescriptor.AutoCloseOutputStream(extremos[1])) {
+                    salida.write(contenido);
+                } catch (IOException ignored) {
+                }
+            });
+            escritor.start();
+            return extremos[0];
         } catch (IOException e) {
             throw new FileNotFoundException(e.getMessage());
         }
-        return ParcelFileDescriptor.open(archivo, ParcelFileDescriptor.MODE_READ_ONLY);
     }
 
     @Override public Uri insert(Uri uri, ContentValues values) {
