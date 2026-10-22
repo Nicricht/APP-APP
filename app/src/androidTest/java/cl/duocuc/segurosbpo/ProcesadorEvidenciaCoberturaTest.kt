@@ -17,7 +17,9 @@ class ProcesadorEvidenciaCoberturaTest {
 
     private fun procesar(mime: String, bytes: ByteArray, nombre: String? = "archivo"): Result<cl.duocuc.segurosbpo.data.ArchivoEvidencia> {
         val identificador = System.nanoTime().toString()
-        val ruta = File(context.cacheDir, "qa_evidencia_" + identificador + ".bin")
+        val directorio = context.cacheDir
+        check(directorio.exists() || directorio.mkdirs())
+        val ruta = File(directorio, "qa_evidencia_" + identificador + ".bin")
         ruta.writeBytes(bytes)
         val constructor = Uri.Builder()
             .scheme("content")
