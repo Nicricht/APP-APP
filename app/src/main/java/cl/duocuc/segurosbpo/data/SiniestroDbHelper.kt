@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.AreasSiniestro
+import cl.duocuc.segurosbpo.model.ControlPlazos
 import cl.duocuc.segurosbpo.model.AvisoSiniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.Compania
@@ -596,6 +597,43 @@ class SiniestroDbHelper(
         } finally {
             db.endTransaction()
         }
+    }
+
+    fun generarRecordatorios(fechaConsulta: Date = Date()): Int {
+        val db = writableDatabase
+        var generados = 0
+        db.beginTransaction()
+        try {
+            data class Pendiente(val id: Long, val siniestroId: Long, val tipo: String, val fecha: String)
+            val pendientes = mutableListOf<Pendiente>()
+            db.rawQuery("""
+                SELECT id, siniestro_id, tipo, fecha_solicitud
+                FROM solicitudes_documentos
+                WHERE fecha_entrega IS NULL
+            """.trimIndent(), null).use { c ->
+                while (c.moveToNext()) {
+                    pendientes.add(Pendiente(c.getLong(0), c.getLong(1), c.getString(2), c.getString(3)))
+                }
+            }
+            pendientes.forEach { pendiente ->
+                if (ControlPlazos.diasCorridos(pendiente.fecha, fechaConsulta) >= 15) {
+                    val aviso = "Recordatorio #${pendiente.id}: entrega pendiente de ${pendiente.tipo}"
+                    val existe = db.rawQuery(
+                        "SELECT COUNT(*) FROM avisos WHERE siniestro_id = ? AND mensaje = ?",
+                        arrayOf(pendiente.siniestroId.toString(), aviso)
+                    ).use { c -> c.moveToFirst(); c.getInt(0) > 0 }
+                    if (!existe) {
+                        insertarAviso(db, pendiente.siniestroId, aviso)
+                        insertarGestion(db, pendiente.siniestroId, "Sistema", aviso, true)
+                        generados++
+                    }
+                }
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        return generados
     }
 
     fun listarAvisos(asegurado: Asegurado): List<AvisoSiniestro> {
