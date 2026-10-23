@@ -23,7 +23,7 @@ jobs:
         run: |
           set -e
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
-          sdkmanager "platforms;android-37"
+          sdkmanager "platforms;android-37.2"
       - name: Extraer proyecto del profesor
         shell: bash
         run: |
@@ -33,6 +33,7 @@ jobs:
           rm -f "$RUNNER_TEMP/profesor/MiRegistroAvatar/local.properties"
           rm -rf "$RUNNER_TEMP/profesor/MiRegistroAvatar/.gradle"
           rm -rf "$RUNNER_TEMP/profesor/MiRegistroAvatar/app/build"
+          sed -i 's/version = release(37)/version = release(37) { minorApiLevel = 2 }/' "$RUNNER_TEMP/profesor/MiRegistroAvatar/app/build.gradle.kts"
           chmod +x "$RUNNER_TEMP/profesor/MiRegistroAvatar/gradlew"
       - name: Compilar APK instalable sin testOnly
         shell: bash
