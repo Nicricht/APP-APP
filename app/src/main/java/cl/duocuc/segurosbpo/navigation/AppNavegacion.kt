@@ -1,5 +1,7 @@
 package cl.duocuc.segurosbpo.navigation
 
+import android.os.Bundle
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -18,6 +20,8 @@ import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
+
+fun idDesdeArgumentos(argumentos: Bundle?): Long = argumentos?.getLong("id") ?: 0L
 
 @Composable
 fun AppNavegacion() {
@@ -88,7 +92,7 @@ fun AppNavegacion() {
             route = Ruta.Detalle.ruta,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) { entrada ->
-            val id = entrada.arguments?.getLong("id") ?: 0L
+            val id = idDesdeArgumentos(entrada.arguments)
             DetalleSiniestroScreen(
                 siniestro = siniestrosVm.obtener(id),
                 solicitudes = solicitudes,
@@ -103,7 +107,7 @@ fun AppNavegacion() {
             route = Ruta.Historial.ruta,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) { entrada ->
-            val id = entrada.arguments?.getLong("id") ?: 0L
+            val id = idDesdeArgumentos(entrada.arguments)
             HistorialSiniestroScreen(
                 siniestro = siniestrosVm.obtener(id),
                 gestiones = gestiones,
@@ -115,7 +119,7 @@ fun AppNavegacion() {
             route = Ruta.Evidencias.ruta,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) { entrada ->
-            val id = entrada.arguments?.getLong("id") ?: 0L
+            val id = idDesdeArgumentos(entrada.arguments)
             EvidenciasScreen(
                 siniestro = siniestrosVm.obtener(id),
                 asegurado = asegurado,
@@ -132,7 +136,7 @@ fun AppNavegacion() {
             route = Ruta.Editar.ruta,
             arguments = listOf(navArgument("id") { type = NavType.LongType })
         ) { entrada ->
-            val id = entrada.arguments?.getLong("id") ?: 0L
+            val id = idDesdeArgumentos(entrada.arguments)
             EditarSiniestroScreen(
                 siniestro = siniestrosVm.obtener(id),
                 onVolver = { navController.navigateUp() },

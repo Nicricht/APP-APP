@@ -21,6 +21,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 
+fun mensajeError(error: Throwable, predeterminado: String): String =
+    error.message ?: predeterminado
+
 class SiniestrosViewModel @JvmOverloads constructor(
     application: Application,
     private val db: SiniestroDbHelper = SiniestroDbHelper(application)
@@ -72,7 +75,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun solicitarDocumentoLiquidador(id: Long, tipo: String, comentario: String): String? {
         val error = runCatching {
             db.solicitarDocumento(id, _liquidador.value, tipo, comentario)
-        }.exceptionOrNull()?.let { it.message ?: "No se pudo solicitar el documento" }
+        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo solicitar el documento") }
         if (error == null) {
             refrescarAsignados()
             cargarGestionesLiquidador(id)
@@ -85,7 +88,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun registrarGestionLiquidador(id: Long, descripcion: String, visible: Boolean): String? {
         val error = runCatching {
             db.registrarGestionAsignada(id, _liquidador.value, descripcion, visible)
-        }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar la gestión" }
+        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la gestión") }
         if (error == null) {
             refrescarAsignados()
             cargarGestionesLiquidador(id)
@@ -96,7 +99,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun avanzarLiquidador(id: Long, resultado: String, mensaje: String): String? {
         val error = runCatching {
             db.avanzarAsignado(id, _liquidador.value, resultado, mensaje)
-        }.exceptionOrNull()?.let { it.message ?: "No se pudo avanzar de etapa" }
+        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo avanzar de etapa") }
         if (error == null) {
             refrescarAsignados()
             cargarGestionesLiquidador(id)
@@ -109,7 +112,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun cerrarAnticipadoLiquidador(id: Long, resultado: String, mensaje: String): String? {
         val error = runCatching {
             db.avanzarAsignado(id, _liquidador.value, resultado, mensaje, EtapaSiniestro.CERRADO)
-        }.exceptionOrNull()?.let { it.message ?: "No se pudo cerrar el siniestro" }
+        }.exceptionOrNull()?.let { mensajeError(it, "No se pudo cerrar el siniestro") }
         if (error == null) {
             refrescarAsignados()
             cargarGestionesLiquidador(id)
@@ -182,7 +185,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
         val error = withContext(Dispatchers.IO) {
             runCatching {
                 db.guardarEvidencia(id, propietario, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap))
-            }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar el documento" }
+            }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
         }
         if (error == null) {
             refrescarEvidencias(id)
@@ -197,7 +200,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
             runCatching {
                 val archivo = ProcesadorEvidencia.desdeSelector(getApplication(), uri)
                 db.guardarEvidencia(id, propietario, tipoDocumento, archivo)
-            }.exceptionOrNull()?.let { it.message ?: "No se pudo guardar el documento" }
+            }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
         }
         if (error == null) {
             refrescarEvidencias(id)
