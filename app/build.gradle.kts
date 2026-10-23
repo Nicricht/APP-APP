@@ -23,6 +23,8 @@ android {
 
     buildTypes {
         debug {
+            applicationIdSuffix = ".prueba"
+            versionNameSuffix = "-prueba"
             enableUnitTestCoverage = true
             enableAndroidTestCoverage = true
         }
