@@ -86,7 +86,7 @@ class RecomposicionRaizCoberturaTest {
             val version = actualizacion.value
             SegurosBpoTheme(content = contenido)
             SegurosBpoTheme(darkTheme = true, content = contenido)
-            SegurosBpoTheme(dynamicColor = false, content = contenido)
+            SegurosBpoTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme(), dynamicColor = false, content = contenido)
             Text("Composición: " + version)
         }
         rule.onNodeWithText("Composición: 0").assertExists()
