@@ -205,44 +205,44 @@ fun CasosLiquidadorScreen(
                             }
                         ) { Text("Confirmar cierre anticipado") }
                     }
-                    val siguiente = ReglasEtapa.siguiente(caso.etapa)
-                    if (siguiente != null) {
-                        Text("Siguiente etapa: " + siguiente.etiqueta)
-                        if (siguiente == EtapaSiniestro.CERRADO) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf("Aprobado", "Rechazado").forEach { opcion ->
-                                    FilterChip(
-                                        selected = resultado == opcion,
-                                        onClick = { resultado = opcion },
-                                        label = { Text(opcion) }
-                                    )
-                                }
+                }
+                val siguiente = ReglasEtapa.siguiente(caso.etapa)
+                if (siguiente != null) {
+                    Text("Siguiente etapa: " + siguiente.etiqueta)
+                    if (siguiente == EtapaSiniestro.CERRADO) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("Aprobado", "Rechazado").forEach { opcion ->
+                                FilterChip(
+                                    selected = resultado == opcion,
+                                    onClick = { resultado = opcion },
+                                    label = { Text(opcion) }
+                                )
                             }
-                            OutlinedTextField(
-                                value = mensajeCierre,
-                                onValueChange = { mensajeCierre = it },
-                                label = { Text("Mensaje de cierre obligatorio") },
-                                modifier = Modifier.fillMaxWidth(),
-                                isError = mensajeCierre.isEmpty() && resultado.isNotEmpty()
-                            )
                         }
-                        val pendientes = solicitudes.count { it.pendiente }
-                        if (siguiente == EtapaSiniestro.LIQUIDACION && pendientes > 0) {
-                            Text(
-                                "Faltan $pendientes documentos. Deben entregarse antes de avanzar.",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        Button(
-                            enabled = ReglasEtapa.validar(caso.etapa, siguiente, pendientes,
-                                resultado, mensajeCierre) == null,
-                            onClick = {
-                                val error = onAvanzar(caso.id, resultado, mensajeCierre)
-                                mostrar(error ?: "Etapa actualizada")
-                                if (error == null) { resultado = ""; mensajeCierre = "" }
-                            }
-                        ) { Text("Confirmar avance a " + siguiente.etiqueta) }
+                        OutlinedTextField(
+                            value = mensajeCierre,
+                            onValueChange = { mensajeCierre = it },
+                            label = { Text("Mensaje de cierre obligatorio") },
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = mensajeCierre.isEmpty() && resultado.isNotEmpty()
+                        )
                     }
+                    val pendientes = solicitudes.count { it.pendiente }
+                    if (siguiente == EtapaSiniestro.LIQUIDACION && pendientes > 0) {
+                        Text(
+                            "Faltan $pendientes documentos. Deben entregarse antes de avanzar.",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Button(
+                        enabled = ReglasEtapa.validar(caso.etapa, siguiente, pendientes,
+                            resultado, mensajeCierre) == null,
+                        onClick = {
+                            val error = onAvanzar(caso.id, resultado, mensajeCierre)
+                            mostrar(error ?: "Etapa actualizada")
+                            if (error == null) { resultado = ""; mensajeCierre = "" }
+                        }
+                    ) { Text("Confirmar avance a " + siguiente.etiqueta) }
                 }
                 Text("Documentos solicitados", style = MaterialTheme.typography.titleMedium)
                 if (solicitudes.isEmpty()) Text("No hay documentos solicitados.")

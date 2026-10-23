@@ -23,6 +23,8 @@ import cl.duocuc.segurosbpo.ui.components.CampoContrasenaPreview
 import cl.duocuc.segurosbpo.ui.components.GrupoRadio
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
+import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
+import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 import cl.duocuc.segurosbpo.viewmodel.FormularioViewModel
 import org.junit.Assert.assertEquals
@@ -168,4 +170,56 @@ class RecorridosCondicionalesComposeTest {
         rule.onNodeWithText("Recomposición: 2").assertExists()
     }
 
+
+    @Test fun cambiosDeSolicitudesNoReinicianCargaDelMismoSiniestro() {
+        val pendientes = mutableStateOf(emptyList<SolicitudDocumento>())
+        val cargas = AtomicInteger(0)
+        val actual = caso(803, EtapaSiniestro.EVALUACION)
+        rule.setContent {
+            DetalleSiniestroScreen(
+                siniestro = actual,
+                solicitudes = pendientes.value,
+                onCargarSolicitudes = { cargas.incrementAndGet() },
+                onVolver = {},
+                onEditar = {},
+                onEvidencias = {},
+                onHistorial = {}
+            )
+        }
+        rule.waitForIdle()
+        assertEquals(1, cargas.get())
+        rule.runOnIdle {
+            pendientes.value = listOf(
+                SolicitudDocumento(1, 803, "Constancia", "PDF", "20-10-2026", null)
+            )
+        }
+        rule.onNodeWithText("Tienes 1 documento(s) pendiente(s) por entregar.").assertExists()
+        rule.waitForIdle()
+        assertEquals(1, cargas.get())
+        rule.runOnIdle { pendientes.value = emptyList() }
+        rule.onNodeWithText("Tienes 1 documento(s) pendiente(s) por entregar.").assertDoesNotExist()
+        assertEquals(1, cargas.get())
+    }
+
+    @Test fun formularioRecibeCambiosDelAseguradoSinRecrearViewModel() {
+        val asegurado = mutableStateOf(Asegurado.CAMILA)
+        val vm = FormularioViewModel()
+        rule.setContent {
+            FormularioScreen(
+                aseguradoActual = asegurado.value,
+                onRegistroExitoso = { "SIN-26-009999" },
+                onVolver = {},
+                onVerMisSiniestros = {},
+                viewModel = vm
+            )
+        }
+        rule.waitForIdle()
+        assertEquals(Asegurado.CAMILA, vm.uiState.value.asegurado)
+        rule.runOnIdle { asegurado.value = Asegurado.JORGE }
+        rule.waitForIdle()
+        assertEquals(Asegurado.JORGE, vm.uiState.value.asegurado)
+        rule.runOnIdle { asegurado.value = Asegurado.CAMILA }
+        rule.waitForIdle()
+        assertEquals(Asegurado.CAMILA, vm.uiState.value.asegurado)
+    }
 }
