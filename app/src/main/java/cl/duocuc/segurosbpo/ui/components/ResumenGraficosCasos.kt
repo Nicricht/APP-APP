@@ -47,7 +47,7 @@ fun ResumenGraficosCasos(
                 style = MaterialTheme.typography.bodyMedium
             )
             if (resumen.total == 0) {
-                Text("No hay siniestros para mostrar en los gráficos.")
+                Text(if (descripcion == "Casos asignados a este liquidador") "No hay casos asignados para mostrar en los gráficos." else "No hay siniestros para mostrar en los gráficos.")
             } else {
                 Text("Casos por etapa", style = MaterialTheme.typography.titleSmall)
                 GraficoEtapas(resumen)
