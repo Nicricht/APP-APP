@@ -61,8 +61,24 @@ fun FormularioScreen(
     aseguradoActual: Asegurado,
     onRegistroExitoso: (FormularioUiState) -> String,
     onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit
+) {
+    FormularioScreen(
+        aseguradoActual,
+        onRegistroExitoso,
+        onVolver,
+        onVerMisSiniestros,
+        viewModel()
+    )
+}
+
+@Composable
+fun FormularioScreen(
+    aseguradoActual: Asegurado,
+    onRegistroExitoso: (FormularioUiState) -> String,
+    onVolver: () -> Unit,
     onVerMisSiniestros: () -> Unit,
-    viewModel: FormularioViewModel = viewModel()
+    viewModel: FormularioViewModel
 ){
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     androidx.compose.runtime.LaunchedEffect(aseguradoActual) {

@@ -55,10 +55,30 @@ private val Formas = Shapes(
 )
 
 @Composable
-fun SegurosBpoTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+fun SegurosBpoTheme(content: @Composable () -> Unit) {
+    SegurosBpoTheme(isSystemInDarkTheme(), true, content)
+}
 
-    dynamicColor: Boolean = true,
+@Composable
+fun SegurosBpoTheme(
+    darkTheme: Boolean,
+    content: @Composable () -> Unit
+) {
+    SegurosBpoTheme(darkTheme, true, content)
+}
+
+@Composable
+fun SegurosBpoTheme(
+    dynamicColor: Boolean,
+    content: @Composable () -> Unit
+) {
+    SegurosBpoTheme(isSystemInDarkTheme(), dynamicColor, content)
+}
+
+@Composable
+fun SegurosBpoTheme(
+    darkTheme: Boolean,
+    dynamicColor: Boolean,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
