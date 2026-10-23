@@ -1,0 +1,49 @@
+name: APK MiRegistro Profesor
+on:
+  push:
+    branches: [qa]
+    paths:
+      - '.github/workflows/mi-registro-profesor-apk.yml'
+      - 'MiRegistroAvatar.zip'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compilar-profesor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Preparar Android SDK
+        shell: bash
+        run: |
+          set -e
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
+          sdkmanager "platforms;android-37"
+      - name: Extraer proyecto del profesor
+        shell: bash
+        run: |
+          set -e
+          mkdir -p "$RUNNER_TEMP/profesor"
+          unzip -q MiRegistroAvatar.zip -d "$RUNNER_TEMP/profesor"
+          rm -f "$RUNNER_TEMP/profesor/MiRegistroAvatar/local.properties"
+          rm -rf "$RUNNER_TEMP/profesor/MiRegistroAvatar/.gradle"
+          rm -rf "$RUNNER_TEMP/profesor/MiRegistroAvatar/app/build"
+          chmod +x "$RUNNER_TEMP/profesor/MiRegistroAvatar/gradlew"
+      - name: Compilar APK instalable sin testOnly
+        shell: bash
+        run: |
+          set -e
+          cd "$RUNNER_TEMP/profesor/MiRegistroAvatar"
+          ./gradlew :app:assembleDebug --no-daemon -Pandroid.injected.testOnly=false
+      - name: Publicar APK original recompilado
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiRegistroProfesor-instalable
+          path: ${{ runner.temp }}/profesor/MiRegistroAvatar/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
