@@ -49,6 +49,7 @@ fun AppNavegacion() {
     val gestiones by siniestrosVm.gestiones.collectAsStateWithLifecycle()
     val liquidador by siniestrosVm.liquidador.collectAsStateWithLifecycle()
     val casosLiquidador by siniestrosVm.casosLiquidador.collectAsStateWithLifecycle()
+    val disponiblesLiquidador by siniestrosVm.disponiblesLiquidador.collectAsStateWithLifecycle()
     val gestionesLiquidador by siniestrosVm.gestionesLiquidador.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = Ruta.MisSiniestros.ruta) {
@@ -79,6 +80,8 @@ fun AppNavegacion() {
             CasosLiquidadorScreen(
                 liquidador = liquidador,
                 casos = casosLiquidador,
+                disponibles = disponiblesLiquidador,
+                onTomarCaso = siniestrosVm::tomarCasoLiquidador,
                 gestiones = gestionesLiquidador,
                 solicitudes = solicitudesLiquidador,
                 onSolicitarDocumento = siniestrosVm::solicitarDocumentoLiquidador,

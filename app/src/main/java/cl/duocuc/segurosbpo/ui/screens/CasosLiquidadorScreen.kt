@@ -54,7 +54,9 @@ fun CasosLiquidadorScreen(
     onRegistrarGestion: (Long, String, Boolean) -> String?,
     onAvanzar: (Long, String, String) -> String?,
     onCerrarAnticipado: (Long, String, String) -> String?,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    disponibles: List<Siniestro> = emptyList(),
+    onTomarCaso: (Long) -> String? = { "No disponible" }
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -94,6 +96,22 @@ fun CasosLiquidadorScreen(
             Text("Responsable: " + liquidador.nombre)
             Text("Solo casos asignados a este equipo.")
             ResumenGraficosCasos(casos = casos, equipo = liquidador.equipo)
+            Text("Disponibles en " + liquidador.equipo, style = MaterialTheme.typography.titleLarge)
+            if (disponibles.isEmpty()) Text("No hay siniestros pendientes de asignación en tu área.")
+            disponibles.forEach { disponible ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(disponible.numero, style = MaterialTheme.typography.titleMedium)
+                        Text(disponible.tipo.etiqueta)
+                        Text("Recibido · Sin liquidador asignado")
+                        Button(onClick = {
+                            val error = onTomarCaso(disponible.id)
+                            mostrar(error ?: "Caso asignado. Ya puedes gestionarlo.")
+                        }) { Text("Tomar caso") }
+                    }
+                }
+            }
+            Text("Mis casos asignados", style = MaterialTheme.typography.titleLarge)
             if (casos.isEmpty()) Text("No hay casos asignados.")
             if (caso == null) {
                 casos.forEach { siniestro ->

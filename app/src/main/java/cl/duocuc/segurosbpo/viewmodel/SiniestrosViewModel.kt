@@ -47,6 +47,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     val liquidador = _liquidador.asStateFlow()
     private val _casosLiquidador = MutableStateFlow(db.listarAsignados(Liquidador.VEHICULOS))
     val casosLiquidador = _casosLiquidador.asStateFlow()
+    private val _disponiblesLiquidador = MutableStateFlow(db.listarDisponibles(Liquidador.VEHICULOS))
+    val disponiblesLiquidador = _disponiblesLiquidador.asStateFlow()
     private val _gestionesLiquidador = MutableStateFlow<List<Gestion>>(emptyList())
     val gestionesLiquidador = _gestionesLiquidador.asStateFlow()
     private val _solicitudes = MutableStateFlow<List<SolicitudDocumento>>(emptyList())
@@ -65,6 +67,22 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun refrescarAsignados() {
         _casosLiquidador.value = db.listarAsignados(_liquidador.value)
+        _disponiblesLiquidador.value = db.listarDisponibles(_liquidador.value)
+    }
+
+    fun tomarCasoLiquidador(id: Long): String? {
+        val resultado = runCatching {
+            db.tomarCaso(id, _liquidador.value)
+        }
+        val mensaje = resultado.exceptionOrNull()?.let {
+            mensajeError(it, "No se pudo tomar el caso")
+        } ?: if (resultado.getOrNull() != true) "El caso ya fue tomado o no corresponde a tu área" else null
+        refrescarAsignados()
+        if (mensaje == null) {
+            refrescar()
+            refrescarAvisos()
+        }
+        return mensaje
     }
 
     fun cargarGestionesLiquidador(id: Long) {
@@ -146,6 +164,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
         require(estado.asegurado == _asegurado.value) { "El asegurado seleccionado cambió" }
         val nuevo = db.registrar(estado)
         refrescar()
+        refrescarAsignados()
         return nuevo.numero
     }
 

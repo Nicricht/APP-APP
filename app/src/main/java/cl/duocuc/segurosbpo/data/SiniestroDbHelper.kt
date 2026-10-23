@@ -288,6 +288,63 @@ class SiniestroDbHelper(
         )
     }
 
+    fun listarDisponibles(liquidador: Liquidador): List<Siniestro> {
+        val resultado = mutableListOf<Siniestro>()
+        val tipos = if (liquidador.esVehiculo) {
+            listOf(TipoSiniestro.CHOQUE, TipoSiniestro.ROBO_VEHICULO, TipoSiniestro.CRISTALES)
+        } else {
+            listOf(TipoSiniestro.DANO_AGUA, TipoSiniestro.ROBO_HOGAR, TipoSiniestro.INCENDIO)
+        }
+        val marcadores = tipos.joinToString(",") { "?" }
+        readableDatabase.query(
+            "siniestros", null,
+            "liquidador IS NULL AND etapa = ? AND tipo IN ($marcadores)",
+            arrayOf(EtapaSiniestro.RECIBIDO.name, *tipos.map { it.name }.toTypedArray()),
+            null, null, "id ASC"
+        ).use { cursor ->
+            while (cursor.moveToNext()) resultado.add(convertir(cursor))
+        }
+        return resultado
+    }
+
+    fun tomarCaso(siniestroId: Long, liquidador: Liquidador): Boolean {
+        val tipos = if (liquidador.esVehiculo) {
+            listOf(TipoSiniestro.CHOQUE, TipoSiniestro.ROBO_VEHICULO, TipoSiniestro.CRISTALES)
+        } else {
+            listOf(TipoSiniestro.DANO_AGUA, TipoSiniestro.ROBO_HOGAR, TipoSiniestro.INCENDIO)
+        }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val marcadores = tipos.joinToString(",") { "?" }
+            val filas = db.update(
+                "siniestros",
+                ContentValues().apply {
+                    put("liquidador", liquidador.name)
+                    put("etapa", EtapaSiniestro.EVALUACION.name)
+                    put("ultima_actualizacion", fechaActual())
+                },
+                "id = ? AND liquidador IS NULL AND etapa = ? AND tipo IN ($marcadores)",
+                arrayOf(
+                    siniestroId.toString(),
+                    EtapaSiniestro.RECIBIDO.name,
+                    *tipos.map { it.name }.toTypedArray()
+                )
+            )
+            if (filas == 1) {
+                insertarGestion(
+                    db, siniestroId, liquidador.nombre,
+                    "Caso asignado a ${liquidador.nombre} del equipo ${liquidador.equipo}", true
+                )
+                insertarAviso(db, siniestroId, "Tu caso está en evaluación")
+            }
+            db.setTransactionSuccessful()
+            return filas == 1
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     fun listarAsignados(liquidador: Liquidador): List<Siniestro> {
         val casos = mutableListOf<Siniestro>()
         readableDatabase.query(
