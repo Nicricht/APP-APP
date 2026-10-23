@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -16,13 +17,20 @@ class ComponentesSiniestroTest {
 
     @Test
     fun seMuestranAvatarYEstadoDelAsegurado() {
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Continuar como Camila (demo)").performClick()
         composeRule.onNodeWithContentDescription("Avatar ilustrativo del asegurado").assertExists()
         composeRule.onNodeWithText("Estado: Recibido").assertExists()
     }
 
     @Test
     fun liquidadorMuestraTarjetasEstadisticas() {
-        composeRule.onNodeWithText("Liquidador").performClick()
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Liquidador de Vehículos (demo)").performClick()
         composeRule.onNodeWithText("Total").assertExists()
         composeRule.onNodeWithText("Abiertos").assertExists()
         composeRule.onNodeWithText("Cerrados").assertExists()

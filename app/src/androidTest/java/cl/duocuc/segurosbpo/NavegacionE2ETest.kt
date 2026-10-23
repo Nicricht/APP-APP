@@ -38,6 +38,6 @@ class NavegacionE2ETest {
 
         composeRule.onNodeWithText("Gestión de siniestros").assertIsDisplayed()
         composeRule.onNodeWithText("Cerrar sesión").performClick()
-        composeRule.onNodeWithText("Iniciar sesión").assertIsDisplayed()
+        composeRule.onNodeWithText("Correo electrónico").assertIsDisplayed()
     }
 }
