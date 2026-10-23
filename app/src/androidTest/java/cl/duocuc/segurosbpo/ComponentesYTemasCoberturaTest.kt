@@ -187,4 +187,30 @@ class ComponentesYTemasCoberturaTest {
         rule.onNodeWithText("Tema claro del sistema").assertExists()
         rule.onNodeWithText("Fondo claro: true").assertExists()
     }
+
+    @Test fun temaPredeterminadoCambiaConConfiguracionDelSistemaSinReiniciar() {
+        val modoOscuro = androidx.compose.runtime.mutableStateOf(false)
+        rule.setContent {
+            val configuracion = Configuration(LocalConfiguration.current).apply {
+                uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                    if (modoOscuro.value) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+            }
+            CompositionLocalProvider(LocalConfiguration provides configuracion) {
+                SegurosBpoTheme(dynamicColor = false) {
+                    val fondo = androidx.compose.material3.MaterialTheme.colorScheme.background
+                    Text(
+                        if (fondo == cl.duocuc.segurosbpo.ui.theme.FondoOscuro)
+                            "Modo nocturno aplicado"
+                        else
+                            "Modo diurno aplicado"
+                    )
+                }
+            }
+        }
+        rule.onNodeWithText("Modo diurno aplicado").assertExists()
+        rule.runOnIdle { modoOscuro.value = true }
+        rule.onNodeWithText("Modo nocturno aplicado").assertExists()
+        rule.runOnIdle { modoOscuro.value = false }
+        rule.onNodeWithText("Modo diurno aplicado").assertExists()
+    }
 }
