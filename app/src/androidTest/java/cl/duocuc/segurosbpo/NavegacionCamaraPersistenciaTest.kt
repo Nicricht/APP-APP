@@ -7,6 +7,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.MediaStore
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -122,8 +124,18 @@ class NavegacionCamaraPersistenciaTest {
             assertNotNull(recuperada)
             recuperada!!.recycle()
         }
+        rule.waitUntil(15000) {
+            rule.onAllNodesWithText("Documento guardado en este teléfono")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.waitUntil(18000) {
+            rule.onAllNodesWithText("Documento guardado en este teléfono")
+                .fetchSemanticsNodes().isEmpty()
+        }
         rule.onNodeWithText("Ver imagen").performScrollTo().performClick()
-        rule.waitForIdle()
-        rule.onNodeWithText("Ver imagen").assertExists()
+        rule.waitUntil(20000) {
+            rule.onAllNodesWithContentDescription("Vista previa: $documento")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }
