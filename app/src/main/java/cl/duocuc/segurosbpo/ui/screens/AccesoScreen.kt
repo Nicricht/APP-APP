@@ -31,7 +31,8 @@ import cl.duocuc.segurosbpo.model.Liquidador
 fun AccesoScreen(
     onIniciar: (String, String) -> String?,
     onRegistrar: (String, String, String, String, String, String) -> String?,
-    onDemoLiquidador: (Liquidador) -> Unit
+    onDemoLiquidador: (Liquidador) -> Unit,
+    onDemoAsegurado: () -> Unit
 ) {
     var registro by rememberSaveable { mutableStateOf(false) }
     var nombre by rememberSaveable { mutableStateOf("") }
@@ -116,6 +117,9 @@ fun AccesoScreen(
                 Text(if (registro) "Ya tengo cuenta" else "Crear cuenta de asegurado")
             }
             if (!registro) {
+                Button(onClick = onDemoAsegurado, modifier = Modifier.fillMaxWidth()) {
+                    Text("Continuar como Camila (demo)")
+                }
                 Text(
                     "Accesos de demostración para liquidadores",
                     style = MaterialTheme.typography.titleMedium

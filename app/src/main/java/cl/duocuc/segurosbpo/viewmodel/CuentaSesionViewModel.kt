@@ -3,6 +3,7 @@ package cl.duocuc.segurosbpo.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import cl.duocuc.segurosbpo.data.CuentaDbHelper
+import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.RolCuenta
@@ -13,7 +14,9 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
     private val db = CuentaDbHelper(application)
     private val preferencias = application.getSharedPreferences("cuenta_sesion_local", 0)
     private val inicial = preferencias.getString("cuenta_id", null)?.let { id ->
-        if (id.startsWith("DEMO_LIQ_")) {
+        if (id == "DEMO_ASEG_CAMILA") {
+            crearAseguradoDemo()
+        } else if (id.startsWith("DEMO_LIQ_")) {
             val equipo = runCatching {
                 Liquidador.valueOf(id.removePrefix("DEMO_LIQ_"))
             }.getOrNull()
@@ -54,6 +57,21 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             return null
         }
         return resultado.exceptionOrNull()?.message ?: "No se pudo registrar la cuenta"
+    }
+
+    private fun crearAseguradoDemo(): CuentaLocal = CuentaLocal(
+        id = Asegurado.CAMILA.name,
+        nombre = Asegurado.CAMILA.etiqueta,
+        rut = Asegurado.CAMILA.rut,
+        correo = "",
+        telefono = "",
+        rol = RolCuenta.ASEGURADO,
+        equipo = null
+    )
+
+    fun accederAseguradoDemo() {
+        preferencias.edit().putString("cuenta_id", "DEMO_ASEG_CAMILA").apply()
+        _cuenta.value = crearAseguradoDemo()
     }
 
     private fun crearLiquidadorDemo(equipo: Liquidador): CuentaLocal = CuentaLocal(

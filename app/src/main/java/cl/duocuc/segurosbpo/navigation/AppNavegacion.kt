@@ -51,7 +51,8 @@ fun AppNavegacion() {
         AccesoScreen(
             onIniciar = cuentaVm::iniciar,
             onRegistrar = cuentaVm::registrar,
-            onDemoLiquidador = cuentaVm::accederLiquidadorDemo
+            onDemoLiquidador = cuentaVm::accederLiquidadorDemo,
+            onDemoAsegurado = cuentaVm::accederAseguradoDemo
         )
         return
     }
