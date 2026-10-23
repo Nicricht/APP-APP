@@ -82,6 +82,14 @@ jobs:
           for lineas, ramas, nombre in sorted(pendientes, reverse=True)[:20]:
               print(f'Pendiente: {nombre}: {lineas} líneas, {ramas} ramas')
           PY
+      - name: Recuperar clases de Compose para diagnóstico
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p app/build/qa-bytecode
+          find app/build -path app/build/qa-bytecode -prune -o -type f \( -name 'ThemeKt.class' -o -name 'FormularioScreenKt.class' \) -exec cp -t app/build/qa-bytecode {} +
+          find app/build/qa-bytecode -type f -printf '%f\n'
+
       - name: Guardar informes instrumentados
         if: always()
         uses: actions/upload-artifact@v4
@@ -93,5 +101,6 @@ jobs:
             app/build/reports/coverage/androidTest/
             app/build/tmp/kotlin-classes/debug/
             app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/
+            app/build/qa-bytecode/
           if-no-files-found: ignore
           retention-days: 14
