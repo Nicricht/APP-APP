@@ -111,7 +111,7 @@ class ComponentesYTemasCoberturaTest {
     @Test fun temaConConfiguracionParcialPermiteUsarValoresPredeterminados() {
         rule.setContent {
             androidx.compose.foundation.layout.Column {
-                SegurosBpoTheme(dynamicColor = false) { Text("Solo color no dinámico") }
+                SegurosBpoTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme(), dynamicColor = false) { Text("Solo color no dinámico") }
                 SegurosBpoTheme(darkTheme = true) { Text("Solo tema oscuro") }
             }
         }
@@ -159,7 +159,7 @@ class ComponentesYTemasCoberturaTest {
                     Configuration.UI_MODE_NIGHT_YES
             }
             CompositionLocalProvider(LocalConfiguration provides configuracion) {
-                SegurosBpoTheme(dynamicColor = false) {
+                SegurosBpoTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme(), dynamicColor = false) {
                     Text("Tema oscuro del sistema")
                     val fondo = androidx.compose.material3.MaterialTheme.colorScheme.background
                     Text("Fondo oscuro: " + (fondo == cl.duocuc.segurosbpo.ui.theme.FondoOscuro))
@@ -177,7 +177,7 @@ class ComponentesYTemasCoberturaTest {
                     Configuration.UI_MODE_NIGHT_NO
             }
             CompositionLocalProvider(LocalConfiguration provides configuracion) {
-                SegurosBpoTheme(dynamicColor = false) {
+                SegurosBpoTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme(), dynamicColor = false) {
                     Text("Tema claro del sistema")
                     val fondo = androidx.compose.material3.MaterialTheme.colorScheme.background
                     Text("Fondo claro: " + (fondo == cl.duocuc.segurosbpo.ui.theme.FondoClaro))
@@ -196,7 +196,7 @@ class ComponentesYTemasCoberturaTest {
                     if (modoOscuro.value) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
             }
             CompositionLocalProvider(LocalConfiguration provides configuracion) {
-                SegurosBpoTheme(dynamicColor = false) {
+                SegurosBpoTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme(), dynamicColor = false) {
                     val fondo = androidx.compose.material3.MaterialTheme.colorScheme.background
                     Text(
                         if (fondo == cl.duocuc.segurosbpo.ui.theme.FondoOscuro)

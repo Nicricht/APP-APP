@@ -69,14 +69,6 @@ fun SegurosBpoTheme(
 
 @Composable
 fun SegurosBpoTheme(
-    dynamicColor: Boolean,
-    content: @Composable () -> Unit
-) {
-    SegurosBpoTheme(isSystemInDarkTheme(), dynamicColor, content)
-}
-
-@Composable
-fun SegurosBpoTheme(
     darkTheme: Boolean,
     dynamicColor: Boolean,
     content: @Composable () -> Unit
