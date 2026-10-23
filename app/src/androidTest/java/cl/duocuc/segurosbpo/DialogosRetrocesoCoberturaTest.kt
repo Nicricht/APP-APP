@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import android.accessibilityservice.AccessibilityService
@@ -67,7 +68,9 @@ class DialogosRetrocesoCoberturaTest {
                 AccessibilityService.GLOBAL_ACTION_BACK
             )
         )
-        rule.waitForIdle()
+        rule.waitUntil(6000) {
+            rule.onAllNodesWithText("Cancelar").fetchSemanticsNodes().isEmpty()
+        }
         rule.onNodeWithText("Cancelar").assertDoesNotExist()
         rule.onNodeWithText("Cordillera").assertExists()
         assertEquals(0, cambios.get())

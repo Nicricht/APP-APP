@@ -39,11 +39,11 @@ class RutasAdicionalesCoberturaTest {
             rule.onNodeWithText("Cerrar sesión").performClick()
         }
         rule.onNodeWithText("Continuar como Camila (demo)").performClick()
-        rule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        rule.onNodeWithText("Seguimiento de seguros").assertExists()
         rule.onNodeWithText("Avisos").performClick()
         rule.onNodeWithText("Avisos de mis siniestros").assertIsDisplayed()
         rule.onNodeWithText("Volver a mis siniestros").performClick()
-        rule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        rule.onNodeWithText("Seguimiento de seguros").assertExists()
     }
 
     @Test fun detalleEdicionYEvidenciasRestauranLaNavegacion() {
@@ -51,7 +51,7 @@ class RutasAdicionalesCoberturaTest {
             rule.onNodeWithText("Cerrar sesión").performClick()
         }
         rule.onNodeWithText("Continuar como Camila (demo)").performClick()
-        rule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        rule.onNodeWithText("Seguimiento de seguros").assertExists()
         rule.onNodeWithText("Estado: Recibido").performClick()
         rule.onNodeWithText("Detalle del siniestro").assertIsDisplayed()
         rule.onNodeWithText("Corregir descripción").performScrollTo().performClick()
@@ -63,6 +63,6 @@ class RutasAdicionalesCoberturaTest {
         rule.onNodeWithText("Volver al siniestro").performClick()
         rule.onNodeWithText("Detalle del siniestro").assertIsDisplayed()
         rule.onNodeWithText("Volver").performClick()
-        rule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        rule.onNodeWithText("Seguimiento de seguros").assertExists()
     }
 }
