@@ -66,8 +66,11 @@ class AlternanciaEvidenciasCoberturaTest {
                 rule.onAllNodesWithContentDescription("Vista previa: Vista trasera")
                     .fetchSemanticsNodes().isNotEmpty()
             }
-            rule.onAllNodesWithContentDescription("Vista previa: Vista frontal")
-                .assertCountEquals(0)
+            assertEquals(
+                0,
+                rule.onAllNodesWithContentDescription("Vista previa: Vista frontal")
+                    .fetchSemanticsNodes().size
+            )
             assertEquals(2, lecturas.get())
         } finally {
             fotoFrontal.recycle()
