@@ -22,7 +22,8 @@ data class Asegurado(
 
         fun valueOf(codigo: String): Asegurado =
             entries.firstOrNull { it.name == codigo }
-                ?: Asegurado("Asegurado", "", "***", codigo)
+                ?: if (codigo.startsWith("USR_")) Asegurado("Asegurado", "", "***", codigo)
+                    else throw IllegalArgumentException("Asegurado desconocido")
     }
 }
 
