@@ -194,6 +194,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun refrescarAvisos() {
+        db.generarRecordatorios()
         _avisos.value = db.listarAvisos(_asegurado.value)
     }
 
