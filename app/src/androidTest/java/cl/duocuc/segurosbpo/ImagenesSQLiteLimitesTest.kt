@@ -74,4 +74,34 @@ class ImagenesSQLiteLimitesTest {
         val evidencia = db.listarEvidencias(caso.id, Asegurado.CAMILA).single()
         assertNull(db.obtenerImagen(evidencia.id, caso.id, Asegurado.CAMILA))
     }
+
+    @Test
+    fun fotografiaVerticalSeReduceAunqueElAnchoSeaMenorAlLimite() {
+        val caso = db.registrar(FormularioUiState(
+            asegurado = Asegurado.CAMILA,
+            fechaOcurrencia = "20-10-2026",
+            comuna = "Santiago",
+            descripcion = "Comprobación de una fotografía vertical"
+        ))
+        val foto = Bitmap.createBitmap(480, 1800, Bitmap.Config.ARGB_8888)
+        try {
+            db.guardarEvidencia(
+                caso.id,
+                Asegurado.CAMILA,
+                "Fotografía vertical",
+                ProcesadorEvidencia.desdeCamara(foto)
+            )
+        } finally {
+            foto.recycle()
+        }
+        val evidencia = db.listarEvidencias(caso.id, Asegurado.CAMILA).single()
+        val resultado = db.obtenerImagen(evidencia.id, caso.id, Asegurado.CAMILA)
+        assertNotNull(resultado)
+        try {
+            assertTrue(resultado!!.width <= 900)
+            assertTrue(resultado.height <= 900)
+        } finally {
+            resultado?.recycle()
+        }
+    }
 }

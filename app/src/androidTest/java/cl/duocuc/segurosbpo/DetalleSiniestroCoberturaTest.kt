@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
+import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.TipoSiniestro
@@ -99,5 +100,15 @@ class DetalleSiniestroCoberturaTest {
         rule.onNodeWithText("Mensaje de cierre: Decisión registrada").assertExists()
         rule.onNodeWithText("Reporte fuera de plazo (más de 30 días desde el siniestro)").assertExists()
         rule.onNodeWithText("Tu caso terminó. Revisa el resultado registrado.").assertExists()
+    }
+
+    @Test fun casoAsignadoMuestraElNombreDelLiquidadorResponsable() {
+        val asignado = caso(EtapaSiniestro.EVALUACION).copy(
+            liquidadorAsignado = Liquidador.VEHICULOS
+        )
+        mostrar(asignado)
+        rule.onNodeWithText("Liquidador: " + Liquidador.VEHICULOS.nombre).assertExists()
+        rule.waitForIdle()
+        assertEquals(1, cargados.get())
     }
 }

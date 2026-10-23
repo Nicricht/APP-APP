@@ -79,4 +79,20 @@ class SolicitudesAvisosIntegrationTest {
             db.solicitarDocumento(caso.id, Liquidador.VEHICULOS, "Documento", "")
         }.isFailure)
     }
+
+    @Test
+    fun avisosDesconocidosYOtroAseguradoNoQuedanMarcadosComoLeidos() {
+        val caso = db.listar(Asegurado.JORGE).single()
+        db.solicitarDocumento(caso.id, Liquidador.HOGAR, "Boleta", "Adjuntar boleta")
+        db.solicitarDocumento(caso.id, Liquidador.HOGAR, "Póliza", "Adjuntar póliza")
+        val avisos = db.listarAvisos(Asegurado.JORGE)
+        assertEquals(2, avisos.size)
+        assertFalse(db.marcarAvisoLeido(-1L, Asegurado.JORGE))
+        val primero = avisos.last()
+        assertFalse(db.marcarAvisoLeido(primero.id, Asegurado.CAMILA))
+        assertTrue(db.marcarAvisoLeido(primero.id, Asegurado.JORGE))
+        val resultado = db.listarAvisos(Asegurado.JORGE)
+        assertTrue(resultado.first { it.id == primero.id }.leido)
+        assertFalse(resultado.first { it.id != primero.id }.leido)
+    }
 }
