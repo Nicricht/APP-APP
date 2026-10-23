@@ -82,8 +82,13 @@ fun AppNavegacion() {
         }
     }
 
-    if (sesion.rol == RolCuenta.ASEGURADO && asegurado.name != sesion.id) {
-        androidx.compose.material3.Text("Preparando tus siniestros")
+    val identidadLista = if (sesion.rol == RolCuenta.ASEGURADO) {
+        asegurado.name == sesion.id
+    } else {
+        liquidador.name == sesion.equipo
+    }
+    if (!identidadLista) {
+        androidx.compose.material3.Text("Preparando la sesión")
         return
     }
     NavHost(
