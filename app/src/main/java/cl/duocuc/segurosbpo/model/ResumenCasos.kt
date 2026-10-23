@@ -1,5 +1,8 @@
 package cl.duocuc.segurosbpo.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class ResumenCasos(
     val recibidos: Int,
     val evaluacion: Int,

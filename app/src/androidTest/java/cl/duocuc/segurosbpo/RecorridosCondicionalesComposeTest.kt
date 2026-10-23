@@ -222,4 +222,29 @@ class RecorridosCondicionalesComposeTest {
         rule.waitForIdle()
         assertEquals(Asegurado.CAMILA, vm.uiState.value.asegurado)
     }
+
+    @Test fun formularioConParametrosSinCambiosPermaneceConsistenteAlActualizarElPadre() {
+        val actualizacion = mutableStateOf(0)
+        val vm = FormularioViewModel()
+        val guardar: (cl.duocuc.segurosbpo.model.FormularioUiState) -> String = { "SIN-26-010000" }
+        val sinAccion: () -> Unit = {}
+        rule.setContent {
+            Column {
+                Text("Pantalla: " + actualizacion.value)
+                FormularioScreen(
+                    aseguradoActual = Asegurado.CAMILA,
+                    onRegistroExitoso = guardar,
+                    onVolver = sinAccion,
+                    onVerMisSiniestros = sinAccion,
+                    viewModel = vm
+                )
+            }
+        }
+        rule.onNodeWithText("Pantalla: 0").assertExists()
+        rule.runOnIdle { actualizacion.value = 1 }
+        rule.onNodeWithText("Pantalla: 1").assertExists()
+        rule.runOnIdle { actualizacion.value = 2 }
+        rule.onNodeWithText("Pantalla: 2").assertExists()
+        assertEquals(Asegurado.CAMILA, vm.uiState.value.asegurado)
+    }
 }

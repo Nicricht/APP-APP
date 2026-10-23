@@ -1,6 +1,9 @@
 package cl.duocuc.segurosbpo
 
 import androidx.compose.material3.Text
+import android.content.res.Configuration
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -147,5 +150,41 @@ class ComponentesYTemasCoberturaTest {
         rule.onNodeWithText("Segunda pantalla").assertExists()
         rule.runOnIdle { contenido.value = "Tercera pantalla" }
         rule.onNodeWithText("Tercera pantalla").assertExists()
+    }
+
+    @Test fun temaPredeterminadoRespetaModoOscuroSimuladoEnConfiguracion() {
+        rule.setContent {
+            val configuracion = Configuration(LocalConfiguration.current).apply {
+                uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                    Configuration.UI_MODE_NIGHT_YES
+            }
+            CompositionLocalProvider(LocalConfiguration provides configuracion) {
+                SegurosBpoTheme(dynamicColor = false) {
+                    Text("Tema oscuro del sistema")
+                    val fondo = androidx.compose.material3.MaterialTheme.colorScheme.background
+                    Text("Fondo oscuro: " + (fondo == cl.duocuc.segurosbpo.ui.theme.FondoOscuro))
+                }
+            }
+        }
+        rule.onNodeWithText("Tema oscuro del sistema").assertExists()
+        rule.onNodeWithText("Fondo oscuro: true").assertExists()
+    }
+
+    @Test fun temaPredeterminadoRespetaModoClaroSimuladoEnConfiguracion() {
+        rule.setContent {
+            val configuracion = Configuration(LocalConfiguration.current).apply {
+                uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                    Configuration.UI_MODE_NIGHT_NO
+            }
+            CompositionLocalProvider(LocalConfiguration provides configuracion) {
+                SegurosBpoTheme(dynamicColor = false) {
+                    Text("Tema claro del sistema")
+                    val fondo = androidx.compose.material3.MaterialTheme.colorScheme.background
+                    Text("Fondo claro: " + (fondo == cl.duocuc.segurosbpo.ui.theme.FondoClaro))
+                }
+            }
+        }
+        rule.onNodeWithText("Tema claro del sistema").assertExists()
+        rule.onNodeWithText("Fondo claro: true").assertExists()
     }
 }
