@@ -369,7 +369,7 @@ class SiniestroDbHelper(
             null, null, "CASE WHEN etapa = 'CERRADO' THEN 1 ELSE 0 END, id DESC"
         ).use { cursor ->
             while (cursor.moveToNext()) {
-                resultado.add(convertir(cursor))
+                resultado.add(convertir(cursor).copy(asegurado = asegurado))
             }
         }
         return resultado
