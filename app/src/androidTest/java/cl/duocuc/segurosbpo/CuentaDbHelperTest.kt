@@ -28,6 +28,16 @@ class CuentaDbHelperTest {
         contexto.deleteDatabase(archivo)
     }
 
+    @Test fun liquidadoresConCredencialesTienenSoloSuEspecialidad() {
+        val vehiculos = db.iniciarSesion("vehiculos@segurosbpo.demo", "Demo2026!")
+        val hogar = db.iniciarSesion("hogar@segurosbpo.demo", "Demo2026!")
+        assertEquals(RolCuenta.LIQUIDADOR, vehiculos?.rol)
+        assertEquals("VEHICULOS", vehiculos?.equipo)
+        assertEquals(RolCuenta.LIQUIDADOR, hogar?.rol)
+        assertEquals("HOGAR", hogar?.equipo)
+        assertNull(db.iniciarSesion("vehiculos@segurosbpo.demo", "incorrecta"))
+    }
+
     @Test fun cuentaNuevaSeAutenticaConSuClaveYConservaSuRol() {
         val cuenta = db.registrarAsegurado(
             "Ana Pérez", "12.345.678-5", "ana@ejemplo.cl", "912345678", "Clave2026", "Clave2026"

@@ -17,7 +17,7 @@ import javax.crypto.spec.PBEKeySpec
 class CuentaDbHelper(
     context: Context,
     nombreBase: String = "cuentas_demo.db"
-) : SQLiteOpenHelper(context, nombreBase, null, 2) {
+) : SQLiteOpenHelper(context, nombreBase, null, 3) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
             CREATE TABLE cuentas (
@@ -33,10 +33,43 @@ class CuentaDbHelper(
                 foto BLOB
             )
         """.trimIndent())
+        insertarLiquidadorDemo(db, "LIQ_VEHICULOS", "María P.", "VEHICULOS",
+            "vehiculos@segurosbpo.demo", "DEMO-VEHICULOS")
+        insertarLiquidadorDemo(db, "LIQ_HOGAR", "Pedro C.", "HOGAR",
+            "hogar@segurosbpo.demo", "DEMO-HOGAR")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) db.execSQL("ALTER TABLE cuentas ADD COLUMN foto BLOB")
+        if (oldVersion < 3) {
+            insertarLiquidadorDemo(db, "LIQ_VEHICULOS", "María P.", "VEHICULOS",
+                "vehiculos@segurosbpo.demo", "DEMO-VEHICULOS")
+            insertarLiquidadorDemo(db, "LIQ_HOGAR", "Pedro C.", "HOGAR",
+                "hogar@segurosbpo.demo", "DEMO-HOGAR")
+        }
+    }
+
+    private fun insertarLiquidadorDemo(
+        db: SQLiteDatabase,
+        id: String,
+        nombre: String,
+        equipo: String,
+        correo: String,
+        rut: String
+    ) {
+        val sal = ByteArray(16).also { SecureRandom().nextBytes(it) }
+        val hash = derivar("Demo2026!", sal)
+        db.insertWithOnConflict("cuentas", null, ContentValues().apply {
+            put("id", id)
+            put("nombre", nombre)
+            put("rut", rut)
+            put("correo", correo)
+            put("telefono", "900000000")
+            put("rol", RolCuenta.LIQUIDADOR.name)
+            put("equipo", equipo)
+            put("salt", sal)
+            put("clave_hash", hash)
+        }, SQLiteDatabase.CONFLICT_IGNORE)
     }
 
     private fun derivar(clave: String, salt: ByteArray): ByteArray {
