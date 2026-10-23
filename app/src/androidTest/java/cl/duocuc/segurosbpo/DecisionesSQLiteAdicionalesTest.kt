@@ -58,4 +58,26 @@ class DecisionesSQLiteAdicionalesTest {
         assertNull(db.obtenerAsignado(caso.id, Liquidador.VEHICULOS))
         assertNull(db.obtenerAsignado(-1L, Liquidador.HOGAR))
     }
+
+    @Test fun rechazoDeActualizacionEnSQLiteMantieneEtapaYEvitaGestionesParciales() {
+        val caso = db.listar(Asegurado.JORGE).single()
+        val gestionesAntes = db.listarGestionesAsignadas(caso.id, Liquidador.HOGAR).size
+        db.writableDatabase.execSQL("""
+            CREATE TRIGGER qa_bloquear_avance BEFORE UPDATE OF etapa ON siniestros
+            WHEN OLD.id = ${caso.id}
+            BEGIN
+                SELECT RAISE(IGNORE);
+            END
+        """.trimIndent())
+        val resultado = runCatching {
+            db.avanzarAsignado(caso.id, Liquidador.HOGAR, "", "")
+        }
+        assertTrue(resultado.isFailure)
+        assertEquals(
+            "El estado del siniestro cambió. Actualiza la pantalla",
+            resultado.exceptionOrNull()?.message
+        )
+        assertEquals(caso.etapa, db.obtener(caso.id, Asegurado.JORGE)?.etapa)
+        assertEquals(gestionesAntes, db.listarGestionesAsignadas(caso.id, Liquidador.HOGAR).size)
+    }
 }
