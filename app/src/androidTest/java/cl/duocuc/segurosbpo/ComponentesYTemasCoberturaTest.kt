@@ -115,4 +115,37 @@ class ComponentesYTemasCoberturaTest {
         rule.onNodeWithText("Solo color no dinámico").assertExists()
         rule.onNodeWithText("Solo tema oscuro").assertExists()
     }
+
+    @Test fun temaEstablePermiteActualizarUnHermanoSinCambiarLaPaleta() {
+        val actualizacion = androidx.compose.runtime.mutableStateOf(0)
+        rule.setContent {
+            androidx.compose.foundation.layout.Column {
+                Text("Actualización: " + actualizacion.value)
+                SegurosBpoTheme(darkTheme = false, dynamicColor = false) {
+                    Text("Tema estable")
+                }
+            }
+        }
+        rule.onNodeWithText("Actualización: 0").assertExists()
+        rule.onNodeWithText("Tema estable").assertExists()
+        rule.runOnIdle { actualizacion.value = 1 }
+        rule.onNodeWithText("Actualización: 1").assertExists()
+        rule.runOnIdle { actualizacion.value = 2 }
+        rule.onNodeWithText("Actualización: 2").assertExists()
+        rule.onNodeWithText("Tema estable").assertExists()
+    }
+
+    @Test fun temaPredeterminadoSePuedeRecomponerConCambioDeContenido() {
+        val contenido = androidx.compose.runtime.mutableStateOf("Primera pantalla")
+        rule.setContent {
+            SegurosBpoTheme {
+                Text(contenido.value)
+            }
+        }
+        rule.onNodeWithText("Primera pantalla").assertExists()
+        rule.runOnIdle { contenido.value = "Segunda pantalla" }
+        rule.onNodeWithText("Segunda pantalla").assertExists()
+        rule.runOnIdle { contenido.value = "Tercera pantalla" }
+        rule.onNodeWithText("Tercera pantalla").assertExists()
+    }
 }
