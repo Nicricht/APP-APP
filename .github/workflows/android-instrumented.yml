@@ -91,5 +91,7 @@ jobs:
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
             app/build/reports/coverage/androidTest/
+            app/build/tmp/kotlin-classes/debug/
+            app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/
           if-no-files-found: ignore
           retention-days: 14
