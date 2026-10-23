@@ -3,6 +3,8 @@ package cl.duocuc.segurosbpo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasRole
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.onNodeWithText
@@ -99,8 +101,8 @@ class FormulariosLiquidadorLimitesTest {
         abrir(EtapaSiniestro.RECIBIDO)
         rule.onNodeWithText("Nombre del documento requerido")
             .performScrollTo().performTextInput("B".repeat(101))
-        rule.onNodeWithText("Solicitar documento", substring = false).assertExists()
-        rule.onNodeWithText("Solicitar documento", substring = false)
+        rule.onNode(hasText("Solicitar documento") and hasClickAction()).assertExists()
+        rule.onNode(hasText("Solicitar documento") and hasClickAction())
             .assertIsNotEnabled()
     }
 
@@ -110,7 +112,7 @@ class FormulariosLiquidadorLimitesTest {
             .performScrollTo().performTextInput("Boleta")
         rule.onNodeWithText("Indicaciones para el asegurado (opcional)")
             .performScrollTo().performTextInput("C".repeat(501))
-        rule.onNodeWithText("Solicitar documento", substring = false)
+        rule.onNode(hasText("Solicitar documento") and hasClickAction())
             .assertIsNotEnabled()
     }
 
