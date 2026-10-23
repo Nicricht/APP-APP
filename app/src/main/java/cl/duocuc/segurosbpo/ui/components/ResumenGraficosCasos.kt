@@ -31,7 +31,9 @@ import cl.duocuc.segurosbpo.model.Siniestro
 fun ResumenGraficosCasos(
     casos: List<Siniestro>,
     equipo: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    titulo: String = "Resumen del equipo " + equipo,
+    descripcion: String = "Casos asignados a este liquidador"
 ) {
     val resumen = remember(casos) { ResumenCasos.desde(casos) }
     Card(modifier = modifier.fillMaxWidth()) {
@@ -39,13 +41,13 @@ fun ResumenGraficosCasos(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Resumen del equipo " + equipo, style = MaterialTheme.typography.titleMedium)
+            Text(titulo, style = MaterialTheme.typography.titleMedium)
             Text(
-                "Casos asignados a este liquidador: " + resumen.total,
+                descripcion + ": " + resumen.total,
                 style = MaterialTheme.typography.bodyMedium
             )
             if (resumen.total == 0) {
-                Text("No hay casos asignados para mostrar en los gráficos.")
+                Text("No hay siniestros para mostrar en los gráficos.")
             } else {
                 Text("Casos por etapa", style = MaterialTheme.typography.titleSmall)
                 GraficoEtapas(resumen)

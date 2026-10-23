@@ -49,7 +49,8 @@ fun MisSiniestrosScreen(
     onCambiarAsegurado: (Asegurado) -> Unit,
     onReportar: () -> Unit,
     onGestionar: () -> Unit,
-    onVerDetalle: (Long) -> Unit
+    onVerDetalle: (Long) -> Unit,
+    onVerEstadisticas: () -> Unit = {}
 ) {
     var mostrarUsuarios by remember { mutableStateOf(false) }
     if (mostrarUsuarios) {
@@ -101,6 +102,9 @@ fun MisSiniestrosScreen(
                 TextButton(onClick = onVerAvisos) {
                     Text(if (avisosNoLeidos > 0) "Avisos ($avisosNoLeidos)" else "Avisos")
                 }
+            }
+            Button(onClick = onVerEstadisticas, modifier = Modifier.fillMaxWidth()) {
+                Text("Mis estadísticas")
             }
             Text(
                 "Demostración académica. Los registros y documentos se guardan en este teléfono.",

@@ -37,6 +37,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     val asegurado = _asegurado.asStateFlow()
     private val _siniestros = MutableStateFlow(db.listar(inicial))
     val siniestros = _siniestros.asStateFlow()
+    private val _estadisticasAsegurado = MutableStateFlow(db.listar(inicial))
+    val estadisticasAsegurado = _estadisticasAsegurado.asStateFlow()
     private val _busqueda = MutableStateFlow("")
     val busqueda = _busqueda.asStateFlow()
     private val _evidencias = MutableStateFlow<List<Evidencia>>(emptyList())
@@ -158,6 +160,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun refrescar() {
         _siniestros.value = db.listar(_asegurado.value, _busqueda.value)
+        _estadisticasAsegurado.value = db.listar(_asegurado.value)
     }
 
     fun registrar(estado: FormularioUiState): String {

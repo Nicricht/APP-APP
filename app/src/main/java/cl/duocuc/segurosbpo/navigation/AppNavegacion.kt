@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cl.duocuc.segurosbpo.ui.screens.AvisosScreen
+import cl.duocuc.segurosbpo.ui.screens.EstadisticasAseguradoScreen
 import cl.duocuc.segurosbpo.ui.screens.CasosLiquidadorScreen
 import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EvidenciasScreen
@@ -41,6 +42,7 @@ fun AppNavegacion() {
     val siniestrosVm: SiniestrosViewModel = viewModel()
     val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
     val siniestros by siniestrosVm.siniestros.collectAsStateWithLifecycle()
+    val estadisticasAsegurado by siniestrosVm.estadisticasAsegurado.collectAsStateWithLifecycle()
     val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
     val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
     val solicitudes by siniestrosVm.solicitudes.collectAsStateWithLifecycle()
@@ -64,7 +66,14 @@ fun AppNavegacion() {
                 onCambiarAsegurado = siniestrosVm::seleccionarAsegurado,
                 onReportar = { navController.navigate(Ruta.Reportar.ruta) },
                 onGestionar = { navController.navigate(Ruta.Liquidador.ruta) },
-                onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) }
+                onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) },
+                onVerEstadisticas = { navController.navigate(Ruta.Estadisticas.ruta) }
+            )
+        }
+        composable(Ruta.Estadisticas.ruta) {
+            EstadisticasAseguradoScreen(
+                siniestros = estadisticasAsegurado,
+                onVolver = { navController.navigateUp() }
             )
         }
         composable(Ruta.Avisos.ruta) {
