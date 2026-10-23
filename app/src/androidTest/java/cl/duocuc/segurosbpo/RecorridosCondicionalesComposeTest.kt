@@ -135,4 +135,37 @@ class RecorridosCondicionalesComposeTest {
         rule.onNodeWithContentDescription("Ocultar Contraseña").performClick()
         rule.onNodeWithContentDescription("Mostrar contraseña").assertExists()
     }
+
+    @Test fun graficoPermaneceCorrectoSiCambiaSoloElNombreDelEquipo() {
+        val titulo = mutableStateOf("Vehículos")
+        val casos = listOf(
+            caso(701, EtapaSiniestro.RECIBIDO),
+            caso(702, EtapaSiniestro.CERRADO)
+        )
+        rule.setContent {
+            ResumenGraficosCasos(casos = casos, equipo = titulo.value)
+        }
+        rule.onNodeWithText("Resumen del equipo Vehículos").assertExists()
+        rule.onNodeWithText("Abiertos: 1").assertExists()
+        rule.runOnIdle { titulo.value = "Equipo de pruebas" }
+        rule.onNodeWithText("Resumen del equipo Equipo de pruebas").assertExists()
+        rule.onNodeWithText("Cerrados: 1").assertExists()
+        rule.runOnIdle { titulo.value = "Vehículos" }
+        rule.onNodeWithText("Abiertos: 1").assertExists()
+    }
+
+    @Test fun temaConservaContenidoDuranteRecomposicionesSinCambiarPaleta() {
+        val contador = mutableStateOf(0)
+        rule.setContent {
+            SegurosBpoTheme {
+                Text("Recomposición: " + contador.value)
+            }
+        }
+        rule.onNodeWithText("Recomposición: 0").assertExists()
+        rule.runOnIdle { contador.value = 1 }
+        rule.onNodeWithText("Recomposición: 1").assertExists()
+        rule.runOnIdle { contador.value = 2 }
+        rule.onNodeWithText("Recomposición: 2").assertExists()
+    }
+
 }

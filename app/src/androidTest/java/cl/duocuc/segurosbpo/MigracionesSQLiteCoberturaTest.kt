@@ -145,4 +145,15 @@ class MigracionesSQLiteCoberturaTest {
         assertEquals(1, base!!.listarAvisos(Asegurado.JORGE).size)
         assertTrue(base!!.listarAvisos(Asegurado.CAMILA).isEmpty())
     }
+
+    @Test fun versionActualNoRepiteMigracionesNiAlteraLasTablas() {
+        val actual = SiniestroDbHelper(contexto, nombre)
+        base = actual
+        val sqlite = actual.writableDatabase
+        val casosPrevios = actual.listar(Asegurado.CAMILA).size
+        actual.onUpgrade(sqlite, 5, 5)
+        assertEquals(5, sqlite.version)
+        assertEquals(casosPrevios, actual.listar(Asegurado.CAMILA).size)
+    }
+
 }

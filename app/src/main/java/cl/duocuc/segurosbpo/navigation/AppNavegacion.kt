@@ -23,6 +23,15 @@ import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 
 fun idDesdeArgumentos(argumentos: Bundle?): Long = argumentos?.getLong("id") ?: 0L
 
+fun actualizarDescripcionYRegresar(
+    actualizar: (Long, String) -> Boolean,
+    id: Long,
+    descripcion: String,
+    regresar: () -> Unit
+) {
+    if (actualizar(id, descripcion)) regresar()
+}
+
 @Composable
 fun AppNavegacion() {
     val navController = rememberNavController()
@@ -141,7 +150,11 @@ fun AppNavegacion() {
                 siniestro = siniestrosVm.obtener(id),
                 onVolver = { navController.navigateUp() },
                 onGuardar = { descripcion ->
-                    if (siniestrosVm.actualizarDescripcion(id, descripcion)) {
+                    actualizarDescripcionYRegresar(
+                        siniestrosVm::actualizarDescripcion,
+                        id,
+                        descripcion
+                    ) {
                         navController.popBackStack(Ruta.MisSiniestros.ruta, false)
                     }
                 }
