@@ -14,7 +14,7 @@ object EstadisticasCasos {
             if (!Regex("[0-9]{2}-[0-9]{2}-[0-9]{4}").matches(fecha.take(10))) null
             else fecha.substring(6, 10) + "-" + fecha.substring(3, 5)
         }.groupingBy { it }.eachCount()
-            .toSortedMap().entries.takeLast(6)
+            .toSortedMap().entries.toList().takeLast(6)
             .map { PuntoEstadistico(it.key.substring(5) + "/" + it.key.substring(0, 4), it.value) }
     }
 }
