@@ -2,6 +2,7 @@ package cl.duocuc.segurosbpo
 
 import android.content.ContentValues
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -67,6 +68,11 @@ class EdicionNavegacionRealTest {
     }
 
     @Test fun guardarCorreccionDesdeDetalleRegresaALaLista() {
+        if (rule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        rule.onNodeWithText("Continuar como Camila (demo)").performClick()
+
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val db = SiniestroDbHelper(context)
         try {

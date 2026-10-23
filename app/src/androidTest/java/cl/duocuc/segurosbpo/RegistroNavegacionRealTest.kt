@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -51,6 +52,11 @@ class RegistroNavegacionRealTest {
     }
 
     @Test fun reporteDesdeLaListaSeRegistraYRegresaALaPantallaPrincipal() {
+        if (rule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        rule.onNodeWithText("Continuar como Camila (demo)").performClick()
+
         rule.onNodeWithText("Seguimiento de seguros").assertExists()
         rule.onNodeWithText("Reportar").performClick()
         rule.onNodeWithText("Reportar un siniestro").assertExists()

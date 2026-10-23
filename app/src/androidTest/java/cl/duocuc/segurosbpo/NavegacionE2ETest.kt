@@ -2,6 +2,7 @@ package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -17,6 +18,11 @@ class NavegacionE2ETest {
 
     @Test
     fun deMisSiniestrosAlFormularioYDeVuelta() {
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Continuar como Camila (demo)").performClick()
+
         composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
         composeRule.onNodeWithText("Reportar").performClick()
         composeRule.onNodeWithText("Volver a mis siniestros").performClick()
@@ -25,10 +31,13 @@ class NavegacionE2ETest {
 
     @Test
     fun abrePerfilLiquidadorYRegresa() {
-        composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
-        composeRule.onNodeWithText("Liquidador").performClick()
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Liquidador de Vehículos (demo)").performClick()
+
         composeRule.onNodeWithText("Gestión de siniestros").assertIsDisplayed()
-        composeRule.onNodeWithText("Volver a los asegurados").performClick()
-        composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        composeRule.onNodeWithText("Cerrar sesión").performClick()
+        composeRule.onNodeWithText("Iniciar sesión").assertIsDisplayed()
     }
 }

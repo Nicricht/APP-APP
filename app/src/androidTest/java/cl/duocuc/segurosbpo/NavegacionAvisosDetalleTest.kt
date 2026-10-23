@@ -47,6 +47,11 @@ class NavegacionAvisosDetalleTest {
     }
 
     @Test fun abrirAvisoMarcaLeidoYNavegaAlCasoDelAsegurado() {
+        if (rule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        rule.onNodeWithText("Continuar como Camila (demo)").performClick()
+
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val caso = SiniestroDbHelper(context).use { db ->
             val seleccionado = db.listar(Asegurado.CAMILA).first()

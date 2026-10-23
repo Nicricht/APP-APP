@@ -86,6 +86,11 @@ class NavegacionCamaraPersistenciaTest {
     }
 
     @Test fun fotografiaDesdeNavegacionSePersisteSoloParaAseguradoAutorizado() {
+        if (rule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        rule.onNodeWithText("Continuar como Camila (demo)").performClick()
+
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val previo = SiniestroDbHelper(context).use { db ->
             val caso = db.listar(Asegurado.CAMILA)
