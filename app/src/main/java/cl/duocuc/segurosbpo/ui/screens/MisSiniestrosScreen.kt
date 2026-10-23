@@ -50,7 +50,10 @@ fun MisSiniestrosScreen(
     onReportar: () -> Unit,
     onGestionar: () -> Unit,
     onVerDetalle: (Long) -> Unit,
-    onVerEstadisticas: () -> Unit = {}
+    onVerEstadisticas: () -> Unit = {},
+    permitirCambioAsegurado: Boolean = true,
+    permitirGestor: Boolean = true,
+    onCerrarSesion: () -> Unit = {}
 ) {
     var mostrarUsuarios by remember { mutableStateOf(false) }
     if (mostrarUsuarios) {
@@ -94,11 +97,15 @@ fun MisSiniestrosScreen(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
+                if (permitirCambioAsegurado) {
+                    TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
+                } else {
+                    TextButton(onClick = onCerrarSesion) { Text("Cerrar sesión") }
+                }
                 Button(onClick = onReportar) { Text("Reportar") }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onGestionar) { Text("Liquidador") }
+                if (permitirGestor) TextButton(onClick = onGestionar) { Text("Liquidador") }
                 TextButton(onClick = onVerAvisos) {
                     Text(if (avisosNoLeidos > 0) "Avisos ($avisosNoLeidos)" else "Avisos")
                 }

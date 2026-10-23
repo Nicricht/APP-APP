@@ -3,6 +3,7 @@ package cl.duocuc.segurosbpo.navigation
 import android.os.Bundle
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -11,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import cl.duocuc.segurosbpo.ui.screens.AccesoScreen
 import cl.duocuc.segurosbpo.ui.screens.AvisosScreen
 import cl.duocuc.segurosbpo.ui.screens.EstadisticasAseguradoScreen
 import cl.duocuc.segurosbpo.ui.screens.CasosLiquidadorScreen
@@ -20,6 +22,11 @@ import cl.duocuc.segurosbpo.ui.screens.HistorialSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
+import cl.duocuc.segurosbpo.model.CuentaLocal
+import cl.duocuc.segurosbpo.model.RolCuenta
+import cl.duocuc.segurosbpo.model.Liquidador
+import cl.duocuc.segurosbpo.model.comoAsegurado
+import cl.duocuc.segurosbpo.viewmodel.CuentaSesionViewModel
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 
 fun idDesdeArgumentos(argumentos: Bundle?): Long = argumentos?.getLong("id") ?: 0L
@@ -38,6 +45,17 @@ fun actualizarDescripcionYRegresar(
 
 @Composable
 fun AppNavegacion() {
+    val cuentaVm: CuentaSesionViewModel = viewModel()
+    val cuenta by cuentaVm.cuenta.collectAsStateWithLifecycle()
+    if (cuenta == null) {
+        AccesoScreen(
+            onIniciar = cuentaVm::iniciar,
+            onRegistrar = cuentaVm::registrar,
+            onDemoLiquidador = cuentaVm::accederLiquidadorDemo
+        )
+        return
+    }
+    val sesion = cuenta ?: return
     val navController = rememberNavController()
     val siniestrosVm: SiniestrosViewModel = viewModel()
     val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
@@ -54,7 +72,24 @@ fun AppNavegacion() {
     val disponiblesLiquidador by siniestrosVm.disponiblesLiquidador.collectAsStateWithLifecycle()
     val gestionesLiquidador by siniestrosVm.gestionesLiquidador.collectAsStateWithLifecycle()
 
-    NavHost(navController = navController, startDestination = Ruta.MisSiniestros.ruta) {
+    LaunchedEffect(sesion.id) {
+        if (sesion.rol == RolCuenta.ASEGURADO) {
+            siniestrosVm.seleccionarAsegurado(sesion.comoAsegurado())
+        } else {
+            siniestrosVm.seleccionarLiquidador(Liquidador.valueOf(sesion.equipo!!))
+        }
+    }
+
+    if (sesion.rol == RolCuenta.ASEGURADO && asegurado.name != sesion.id) {
+        androidx.compose.material3.Text("Preparando tus siniestros")
+        return
+    }
+    NavHost(
+        navController = navController,
+        startDestination = if (sesion.rol == RolCuenta.ASEGURADO)
+            Ruta.MisSiniestros.ruta else Ruta.Liquidador.ruta
+    ) {
+        if (sesion.rol == RolCuenta.ASEGURADO) {
         composable(Ruta.MisSiniestros.ruta) {
             MisSiniestrosScreen(
                 asegurado = asegurado,
@@ -67,7 +102,10 @@ fun AppNavegacion() {
                 onReportar = { navController.navigate(Ruta.Reportar.ruta) },
                 onGestionar = { navController.navigate(Ruta.Liquidador.ruta) },
                 onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) },
-                onVerEstadisticas = { navController.navigate(Ruta.Estadisticas.ruta) }
+                onVerEstadisticas = { navController.navigate(Ruta.Estadisticas.ruta) },
+                permitirCambioAsegurado = false,
+                permitirGestor = false,
+                onCerrarSesion = cuentaVm::cerrarSesion
             )
         }
         composable(Ruta.Estadisticas.ruta) {
@@ -85,6 +123,8 @@ fun AppNavegacion() {
                 onVolver = { navController.navigateUp() }
             )
         }
+        }
+        if (sesion.rol == RolCuenta.LIQUIDADOR) {
         composable(Ruta.Liquidador.ruta) {
             CasosLiquidadorScreen(
                 liquidador = liquidador,
@@ -99,9 +139,13 @@ fun AppNavegacion() {
                 onRegistrarGestion = siniestrosVm::registrarGestionLiquidador,
                 onAvanzar = siniestrosVm::avanzarLiquidador,
                 onCerrarAnticipado = siniestrosVm::cerrarAnticipadoLiquidador,
-                onVolver = { navController.navigateUp() }
+                onVolver = { navController.navigateUp() },
+                permitirElegirEquipo = false,
+                onCerrarSesion = cuentaVm::cerrarSesion
             )
         }
+        }
+        if (sesion.rol == RolCuenta.ASEGURADO) {
         composable(Ruta.Reportar.ruta) {
             FormularioScreen(
                 aseguradoActual = asegurado,
@@ -175,5 +219,6 @@ fun AppNavegacion() {
                 }
             )
         }
+          }
     }
 }

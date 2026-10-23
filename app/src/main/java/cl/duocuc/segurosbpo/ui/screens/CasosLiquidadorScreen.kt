@@ -56,7 +56,9 @@ fun CasosLiquidadorScreen(
     onCerrarAnticipado: (Long, String, String) -> String?,
     onVolver: () -> Unit,
     disponibles: List<Siniestro> = emptyList(),
-    onTomarCaso: (Long) -> String? = { "No disponible" }
+    onTomarCaso: (Long) -> String? = { "No disponible" },
+    permitirElegirEquipo: Boolean = true,
+    onCerrarSesion: () -> Unit = {}
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -82,9 +84,13 @@ fun CasosLiquidadorScreen(
             Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextButton(onClick = onVolver) { Text("Volver a los asegurados") }
+            if (permitirElegirEquipo) {
+                TextButton(onClick = onVolver) { Text("Volver a los asegurados") }
+            } else {
+                TextButton(onClick = onCerrarSesion) { Text("Cerrar sesión") }
+            }
             Text("Perfil de liquidador (simulado)", style = MaterialTheme.typography.titleLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (permitirElegirEquipo) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Liquidador.entries.forEach { persona ->
                     FilterChip(
                         selected = liquidador == persona,
