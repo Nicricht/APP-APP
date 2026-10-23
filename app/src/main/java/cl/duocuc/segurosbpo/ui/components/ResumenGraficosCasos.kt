@@ -73,7 +73,7 @@ private fun GraficoEtapas(resumen: ResumenCasos) {
         resumen.liquidacion,
         resumen.cerrados
     )
-    val maximo = valores.maxOrNull()?.coerceAtLeast(1) ?: 1
+    val maximo = maxOf(1, resumen.recibidos, resumen.evaluacion, resumen.liquidacion, resumen.cerrados)
     val progreso = remember(valores) { Animatable(0f) }
     LaunchedEffect(valores) { progreso.animateTo(1f, tween(650)) }
     val colorBarra = MaterialTheme.colorScheme.primary

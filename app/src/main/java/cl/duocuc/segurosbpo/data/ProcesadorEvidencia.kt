@@ -11,9 +11,35 @@ data class ArchivoEvidencia(val nombre: String, val mime: String, val bytes: Byt
 
 
 object ProcesadorEvidencia {
-    fun desdeCamara(bitmap: Bitmap): ArchivoEvidencia {
+    private val validadoresFirma: Map<String, (ByteArray) -> Boolean> = mapOf(
+        "application/pdf" to { bytes ->
+            bytes.size >= 5 && bytes.copyOfRange(0, 5).contentEquals("%PDF-".toByteArray())
+        },
+        "image/jpeg" to { bytes ->
+            bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte()
+        },
+        "image/png" to { bytes ->
+            bytes.size >= 8 && bytes.copyOfRange(0, 4).contentEquals(
+                byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47)
+            )
+        },
+        "image/webp" to { bytes ->
+            bytes.size >= 12 && String(bytes, 0, 4, Charsets.US_ASCII) == "RIFF" &&
+                String(bytes, 8, 4, Charsets.US_ASCII) == "WEBP"
+        }
+    )
+
+    fun desdeCamara(bitmap: Bitmap): ArchivoEvidencia =
+        desdeCamara(bitmap) { imagen, salida ->
+            imagen.compress(Bitmap.CompressFormat.JPEG, 85, salida)
+        }
+
+    internal fun desdeCamara(
+        bitmap: Bitmap,
+        comprimir: (Bitmap, ByteArrayOutputStream) -> Boolean
+    ): ArchivoEvidencia {
         val salida = ByteArrayOutputStream()
-        check(bitmap.compress(Bitmap.CompressFormat.JPEG, 85, salida)) {
+        check(comprimir(bitmap, salida)) {
             "No se pudo convertir la fotografía"
         }
         val bytes = salida.toByteArray()
@@ -24,9 +50,8 @@ object ProcesadorEvidencia {
     fun desdeSelector(context: Context, uri: Uri): ArchivoEvidencia {
         val resolver = context.contentResolver
         val mime = resolver.getType(uri).orEmpty().lowercase()
-        require(mime in setOf("image/jpeg", "image/png", "image/webp", "application/pdf")) {
-            "Selecciona una imagen JPG, PNG, WEBP o un PDF"
-        }
+        val verificarFirma = validadoresFirma[mime]
+            ?: throw IllegalArgumentException("Selecciona una imagen JPG, PNG, WEBP o un PDF")
         var nombre = "documento"
         resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
             if (it.moveToFirst()) nombre = it.getString(0) ?: nombre
@@ -48,14 +73,7 @@ object ProcesadorEvidencia {
         }
         val bytes = salida.toByteArray()
 
-        val valido = when (mime) {
-            "application/pdf" -> bytes.size >= 5 && bytes.copyOfRange(0, 5).contentEquals("%PDF-".toByteArray())
-            "image/jpeg" -> bytes.size >= 3 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte()
-            "image/png" -> bytes.size >= 8 && bytes.copyOfRange(0, 4).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47))
-            "image/webp" -> bytes.size >= 12 && String(bytes, 0, 4, Charsets.US_ASCII) == "RIFF" &&
-                String(bytes, 8, 4, Charsets.US_ASCII) == "WEBP"
-            else -> false
-        }
+        val valido = verificarFirma(bytes)
         require(valido) { "El contenido del archivo no coincide con su formato" }
         return ArchivoEvidencia(nombre, mime, bytes)
     }

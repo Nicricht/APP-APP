@@ -145,4 +145,20 @@ class ProcesadorEvidenciaCoberturaTest {
             bitmap.recycle()
         }
     }
+
+    @Test fun errorDeCompresionSeRechazaAunqueElCodificadorHayaEscritoDatos() {
+        val bitmap = Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+        try {
+            val resultado = runCatching {
+                ProcesadorEvidencia.desdeCamara(bitmap) { _, salida ->
+                    salida.write(byteArrayOf(1, 2, 3))
+                    false
+                }
+            }
+            assertTrue(resultado.isFailure)
+            assertEquals("No se pudo convertir la fotografía", resultado.exceptionOrNull()?.message)
+        } finally {
+            bitmap.recycle()
+        }
+    }
 }
