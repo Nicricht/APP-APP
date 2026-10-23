@@ -105,7 +105,7 @@ fun <T> GrupoRadio(
 
 @Preview(showBackground = true)
 @Composable
-private fun ControlesSeleccionPreview() {
+internal fun ControlesSeleccionPreview() {
     SegurosBpoTheme {
         Column(Modifier.padding(16.dp)) {
             CasillaConTexto(texto = "Acepto los términos", marcado = true, onCambio = {})

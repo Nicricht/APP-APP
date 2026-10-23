@@ -32,7 +32,7 @@ fun BotonSecundario(
 
 @Preview(showBackground = true)
 @Composable
-private fun BotonSecundarioPreview() {
+internal fun BotonSecundarioPreview() {
     SegurosBpoTheme {
         BotonSecundario(texto = "Limpiar", onClick = {}, modifier = Modifier.padding(16.dp))
     }

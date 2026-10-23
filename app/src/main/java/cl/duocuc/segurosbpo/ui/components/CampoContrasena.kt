@@ -70,7 +70,7 @@ fun CampoContrasena(
 
 @Preview(showBackground = true)
 @Composable
-private fun CampoContrasenaPreview() {
+internal fun CampoContrasenaPreview() {
     SegurosBpoTheme {
         CampoContrasena(
             valor = "secreto",

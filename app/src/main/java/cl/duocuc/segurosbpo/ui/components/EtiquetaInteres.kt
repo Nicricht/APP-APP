@@ -34,7 +34,7 @@ fun EtiquetaInteres(
 
 @Preview(showBackground = true)
 @Composable
-private fun EtiquetaInteresPreview() {
+internal fun EtiquetaInteresPreview() {
     SegurosBpoTheme {
         EtiquetaInteres(texto = "Kotlin", modifier = Modifier.padding(16.dp))
     }

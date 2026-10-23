@@ -54,7 +54,7 @@ fun TarjetaEstadistica(
 
 @Preview(showBackground = true)
 @Composable
-private fun TarjetaEstadisticaPreview() {
+internal fun TarjetaEstadisticaPreview() {
     SegurosBpoTheme {
         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TarjetaEstadistica("128", "Seguidores", Modifier.weight(1f))

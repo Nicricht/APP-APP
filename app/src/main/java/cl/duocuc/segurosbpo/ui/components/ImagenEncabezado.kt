@@ -69,7 +69,7 @@ fun ImagenEncabezado(
 
 @Preview(showBackground = true)
 @Composable
-private fun ImagenEncabezadoPreview() {
+internal fun ImagenEncabezadoPreview() {
     SegurosBpoTheme {
         ImagenEncabezado(
             imagen = R.drawable.banner_registro,

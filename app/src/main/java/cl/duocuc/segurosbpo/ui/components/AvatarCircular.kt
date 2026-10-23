@@ -42,7 +42,7 @@ fun AvatarCircular(
 
 @Preview(showBackground = true)
 @Composable
-private fun AvatarCircularPreview() {
+internal fun AvatarCircularPreview() {
     SegurosBpoTheme {
         AvatarCircular(imagen = R.drawable.avatar_usuario, descripcion = "", modifier = Modifier.padding(16.dp))
     }

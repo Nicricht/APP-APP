@@ -60,7 +60,7 @@ fun CampoTexto(
 
 @Preview(showBackground = true)
 @Composable
-private fun CampoTextoPreview() {
+internal fun CampoTextoPreview() {
     SegurosBpoTheme {
         CampoTexto(
             valor = "ana@",

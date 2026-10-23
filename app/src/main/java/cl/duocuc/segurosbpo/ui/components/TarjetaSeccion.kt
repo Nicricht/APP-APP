@@ -49,7 +49,7 @@ fun TarjetaSeccion(
 
 @Preview(showBackground = true)
 @Composable
-private fun TarjetaSeccionPreview() {
+internal fun TarjetaSeccionPreview() {
     SegurosBpoTheme {
         TarjetaSeccion(titulo = "Sobre mí", modifier = Modifier.padding(16.dp)) {
             Text("Cualquier contenido puede ir aquí dentro.")

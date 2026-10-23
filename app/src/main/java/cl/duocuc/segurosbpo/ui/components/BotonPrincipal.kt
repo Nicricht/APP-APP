@@ -54,7 +54,7 @@ fun BotonPrincipal(
 
 @Preview(showBackground = true)
 @Composable
-private fun BotonPrincipalPreview() {
+internal fun BotonPrincipalPreview() {
     SegurosBpoTheme {
         Column(Modifier.padding(16.dp)) {
             BotonPrincipal(texto = "Registrarme", onClick = {}, modifier = Modifier.fillMaxWidth())
