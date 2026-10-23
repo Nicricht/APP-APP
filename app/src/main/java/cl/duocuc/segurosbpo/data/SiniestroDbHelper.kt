@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import cl.duocuc.segurosbpo.model.Asegurado
+import cl.duocuc.segurosbpo.model.AreasSiniestro
 import cl.duocuc.segurosbpo.model.AvisoSiniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.Compania
@@ -290,11 +291,7 @@ class SiniestroDbHelper(
 
     fun listarDisponibles(liquidador: Liquidador): List<Siniestro> {
         val resultado = mutableListOf<Siniestro>()
-        val tipos = if (liquidador.esVehiculo) {
-            listOf(TipoSiniestro.CHOQUE, TipoSiniestro.ROBO_VEHICULO, TipoSiniestro.CRISTALES)
-        } else {
-            listOf(TipoSiniestro.DANO_AGUA, TipoSiniestro.ROBO_HOGAR, TipoSiniestro.INCENDIO)
-        }
+        val tipos = AreasSiniestro.paraLiquidador(liquidador).tipos
         val marcadores = tipos.joinToString(",") { "?" }
         readableDatabase.query(
             "siniestros", null,
@@ -308,11 +305,7 @@ class SiniestroDbHelper(
     }
 
     fun tomarCaso(siniestroId: Long, liquidador: Liquidador): Boolean {
-        val tipos = if (liquidador.esVehiculo) {
-            listOf(TipoSiniestro.CHOQUE, TipoSiniestro.ROBO_VEHICULO, TipoSiniestro.CRISTALES)
-        } else {
-            listOf(TipoSiniestro.DANO_AGUA, TipoSiniestro.ROBO_HOGAR, TipoSiniestro.INCENDIO)
-        }
+        val tipos = AreasSiniestro.paraLiquidador(liquidador).tipos
         val db = writableDatabase
         db.beginTransaction()
         try {
