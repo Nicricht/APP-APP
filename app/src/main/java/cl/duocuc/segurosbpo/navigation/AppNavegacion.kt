@@ -251,6 +251,7 @@ fun AppNavegacion() {
             FormularioScreen(
                 aseguradoActual = asegurado,
                 onRegistroExitoso = siniestrosVm::registrar,
+                onPosibleDuplicado = siniestrosVm::buscarPosibleDuplicado,
                 onVolver = { navController.navigateUp() },
                 onVerMisSiniestros = {
                     navController.popBackStack(Ruta.MisSiniestros.ruta, false)

@@ -163,6 +163,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
         _estadisticasAsegurado.value = db.listar(_asegurado.value)
     }
 
+    fun buscarPosibleDuplicado(estado: FormularioUiState): String? =
+        if (estado.asegurado.name != _asegurado.value.name) null else db.buscarPosibleDuplicado(estado)
+
     fun registrar(estado: FormularioUiState): String {
         require(estado.asegurado == _asegurado.value) { "El asegurado seleccionado cambió" }
         val nuevo = db.registrar(estado)

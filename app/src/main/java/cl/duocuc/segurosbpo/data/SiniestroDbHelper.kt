@@ -236,6 +236,17 @@ class SiniestroDbHelper(
         SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
 
     
+    fun buscarPosibleDuplicado(formulario: FormularioUiState): String? =
+        readableDatabase.query(
+            "siniestros", arrayOf("numero"),
+            "asegurado = ? AND compania = ? AND tipo = ? AND fecha_ocurrencia = ? AND etapa <> ?",
+            arrayOf(
+                formulario.asegurado.name, formulario.compania.name, formulario.tipoSiniestro.name,
+                formulario.fechaOcurrencia, EtapaSiniestro.CERRADO.name
+            ),
+            null, null, "id DESC", "1"
+        ).use { if (it.moveToFirst()) it.getString(0) else null }
+
     fun registrar(formulario: FormularioUiState): Siniestro {
         val db = writableDatabase
         db.beginTransaction()

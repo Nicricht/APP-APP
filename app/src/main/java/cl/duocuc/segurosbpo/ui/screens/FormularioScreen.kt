@@ -16,6 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,14 +66,16 @@ fun FormularioScreen(
     aseguradoActual: Asegurado,
     onRegistroExitoso: (FormularioUiState) -> String,
     onVolver: () -> Unit,
-    onVerMisSiniestros: () -> Unit
+    onVerMisSiniestros: () -> Unit,
+    onPosibleDuplicado: (FormularioUiState) -> String? = { null }
 ) {
     FormularioScreen(
         aseguradoActual,
         onRegistroExitoso,
         onVolver,
         onVerMisSiniestros,
-        viewModel()
+        viewModel(),
+        onPosibleDuplicado
     )
 }
 
@@ -78,8 +85,28 @@ fun FormularioScreen(
     onRegistroExitoso: (FormularioUiState) -> String,
     onVolver: () -> Unit,
     onVerMisSiniestros: () -> Unit,
-    viewModel: FormularioViewModel
+    viewModel: FormularioViewModel,
+    onPosibleDuplicado: (FormularioUiState) -> String? = { null }
 ){
+    var duplicado by remember { mutableStateOf<String?>(null) }
+    if (duplicado != null) {
+        AlertDialog(
+            onDismissRequest = { duplicado = null },
+            title = { Text("Posible siniestro duplicado") },
+            text = { Text("Ya existe un caso abierto: " + duplicado +
+                ". Si se trata de otro incidente, puedes continuar.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val numero = onRegistroExitoso(viewModel.uiState.value)
+                    viewModel.confirmarRegistro(numero)
+                    duplicado = null
+                }) { Text("Continuar de todos modos") }
+            },
+            dismissButton = {
+                TextButton(onClick = { duplicado = null }) { Text("Revisar datos") }
+            }
+        )
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     androidx.compose.runtime.LaunchedEffect(aseguradoActual) {
         viewModel.seleccionarAsegurado(aseguradoActual)
@@ -96,8 +123,13 @@ fun FormularioScreen(
         onDatosCorrectosCambia = viewModel::onDatosCorrectosCambia,
         onRegistrar = {
             if (viewModel.onRegistrar()) {
-                val numero = onRegistroExitoso(viewModel.uiState.value)
-                viewModel.confirmarRegistro(numero)
+                val numeroExistente = onPosibleDuplicado(viewModel.uiState.value)
+                if (numeroExistente != null) {
+                    duplicado = numeroExistente
+                } else {
+                    val numero = onRegistroExitoso(viewModel.uiState.value)
+                    viewModel.confirmarRegistro(numero)
+                }
             }
         },
         onLimpiar = viewModel::onLimpiar,
