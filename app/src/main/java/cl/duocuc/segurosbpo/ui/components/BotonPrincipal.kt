@@ -11,6 +11,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,12 +60,15 @@ fun BotonPrincipal(
 @Composable
 internal fun BotonPrincipalPreview() {
     SegurosBpoTheme {
+        var pulsaciones by remember { mutableStateOf(0) }
+        val pulsar = { pulsaciones += 1 }
         Column(Modifier.padding(16.dp)) {
-            BotonPrincipal(texto = "Registrarme", onClick = {}, modifier = Modifier.fillMaxWidth())
+            BotonPrincipal(texto = "Registrarme", onClick = pulsar, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.size(8.dp))
-            BotonPrincipal(texto = "Con ícono", onClick = {}, icono = R.drawable.ic_check, modifier = Modifier.fillMaxWidth())
+            BotonPrincipal(texto = "Con ícono", onClick = pulsar, icono = R.drawable.ic_check, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.size(8.dp))
-            BotonPrincipal(texto = "Deshabilitado", onClick = {}, habilitado = false, modifier = Modifier.fillMaxWidth())
+            BotonPrincipal(texto = "Deshabilitado", onClick = pulsar, habilitado = false, modifier = Modifier.fillMaxWidth())
+            Text("Pulsaciones: " + pulsaciones)
         }
     }
 }

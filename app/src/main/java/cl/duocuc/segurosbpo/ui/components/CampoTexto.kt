@@ -9,6 +9,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -62,12 +66,13 @@ fun CampoTexto(
 @Composable
 internal fun CampoTextoPreview() {
     SegurosBpoTheme {
+        var correo by remember { mutableStateOf("ana@") }
         CampoTexto(
-            valor = "ana@",
-            onValorCambia = {},
+            valor = correo,
+            onValorCambia = { correo = it },
             etiqueta = "Correo electrónico",
             icono = R.drawable.ic_correo,
-            error = "Ingresa un correo válido",
+            error = if ("@" in correo && correo.endsWith(".cl")) null else "Ingresa un correo válido",
             modifier = Modifier.padding(16.dp)
         )
     }

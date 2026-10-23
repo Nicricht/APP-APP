@@ -14,6 +14,10 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -107,15 +111,21 @@ fun <T> GrupoRadio(
 @Composable
 internal fun ControlesSeleccionPreview() {
     SegurosBpoTheme {
+        var aceptado by remember { mutableStateOf(true) }
+        var recibir by remember { mutableStateOf(false) }
+        var seleccion by remember { mutableStateOf("Uno") }
         Column(Modifier.padding(16.dp)) {
-            CasillaConTexto(texto = "Acepto los términos", marcado = true, onCambio = {})
-            InterruptorConTexto(texto = "Recibir novedades", activado = false, onCambio = {})
+            CasillaConTexto(texto = "Acepto los términos", marcado = aceptado, onCambio = { aceptado = it })
+            InterruptorConTexto(texto = "Recibir novedades", activado = recibir, onCambio = { recibir = it })
             GrupoRadio(
                 opciones = listOf("Uno", "Dos", "Tres"),
-                seleccionada = "Uno",
-                onSeleccionar = {},
+                seleccionada = seleccion,
+                onSeleccionar = { seleccion = it },
                 textoDe = { it }
             )
+            Text("Aceptación: " + (if (aceptado) "Sí" else "No"))
+            Text("Notificaciones: " + (if (recibir) "Sí" else "No"))
+            Text("Selección: " + seleccion)
         }
     }
 }

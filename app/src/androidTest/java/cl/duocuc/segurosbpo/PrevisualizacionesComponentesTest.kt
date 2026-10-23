@@ -6,6 +6,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.ui.components.AvatarCircularPreview
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipalPreview
@@ -68,5 +72,50 @@ class PrevisualizacionesComponentesTest {
         rule.onNodeWithText("Únete a la comunidad").assertExists()
         rule.onNodeWithText("Completa tus datos en menos de un minuto").assertExists()
         rule.onNodeWithText("Kotlin").assertExists()
+    }
+
+    @Test fun controlesDePreviewPermitenAlternarEstadosYSeleccionar() {
+        rule.setContent { ControlesSeleccionPreview() }
+        rule.onNodeWithText("Aceptación: Sí").assertExists()
+        rule.onNodeWithText("Notificaciones: No").assertExists()
+        rule.onNodeWithText("Acepto los términos").performClick()
+        rule.onNodeWithText("Aceptación: No").assertExists()
+        rule.onNodeWithText("Recibir novedades").performClick()
+        rule.onNodeWithText("Notificaciones: Sí").assertExists()
+        rule.onNodeWithText("Dos").performClick()
+        rule.onNodeWithText("Selección: Dos").assertExists()
+    }
+
+    @Test fun botonesDePreviewRegistranPulsacionesSinActivarElDeshabilitado() {
+        rule.setContent { BotonPrincipalPreview() }
+        rule.onNodeWithText("Pulsaciones: 0").assertExists()
+        rule.onNodeWithText("Registrarme").performClick()
+        rule.onNodeWithText("Pulsaciones: 1").assertExists()
+        rule.onNodeWithText("Con ícono").performClick()
+        rule.onNodeWithText("Pulsaciones: 2").assertExists()
+        rule.onNodeWithText("Deshabilitado").assertIsNotEnabled()
+    }
+
+    @Test fun botonSecundarioDePreviewRegistraLaAccion() {
+        rule.setContent { BotonSecundarioPreview() }
+        rule.onNodeWithText("Limpiezas: 0").assertExists()
+        rule.onNodeWithText("Limpiar").performClick()
+        rule.onNodeWithText("Limpiezas: 1").assertExists()
+    }
+
+    @Test fun campoTextoDePreviewRetiraElErrorAlIngresarCorreoValido() {
+        rule.setContent { CampoTextoPreview() }
+        rule.onNodeWithText("Ingresa un correo válido").assertExists()
+        rule.onNodeWithText("Correo electrónico").performTextReplacement("ana@ejemplo.cl")
+        rule.onNodeWithText("Ingresa un correo válido").assertDoesNotExist()
+    }
+
+    @Test fun contrasenaDePreviewActualizaTextoYAlternaVisibilidad() {
+        rule.setContent { CampoContrasenaPreview() }
+        rule.onNodeWithText("Caracteres: 7").assertExists()
+        rule.onNodeWithText("Contraseña").performTextReplacement("secreto2026")
+        rule.onNodeWithText("Caracteres: 11").assertExists()
+        rule.onNodeWithContentDescription("Mostrar contraseña").performClick()
+        rule.onNodeWithContentDescription("Ocultar Contraseña").assertExists()
     }
 }

@@ -1,5 +1,6 @@
 package cl.duocuc.segurosbpo.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -9,6 +10,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -72,13 +77,17 @@ fun CampoContrasena(
 @Composable
 internal fun CampoContrasenaPreview() {
     SegurosBpoTheme {
-        CampoContrasena(
-            valor = "secreto",
-            onValorCambia = {},
-            etiqueta = "Contraseña",
-            visible = false,
-            onAlternarVisible = {},
-            modifier = Modifier.padding(16.dp)
-        )
+        var clave by remember { mutableStateOf("secreto") }
+        var visible by remember { mutableStateOf(false) }
+        Column(Modifier.padding(16.dp)) {
+            CampoContrasena(
+                valor = clave,
+                onValorCambia = { clave = it },
+                etiqueta = "Contraseña",
+                visible = visible,
+                onAlternarVisible = { visible = !visible }
+            )
+            Text("Caracteres: " + clave.length)
+        }
     }
 }
