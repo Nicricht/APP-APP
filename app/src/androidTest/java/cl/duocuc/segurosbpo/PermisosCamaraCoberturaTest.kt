@@ -133,6 +133,9 @@ class PermisosCamaraCoberturaTest {
                 fotoGuardada = guardada
             )
             mensaje("Foto no guardada")
+            rule.waitUntil(18000) {
+                rule.onAllNodesWithText("Foto no guardada").fetchSemanticsNodes().isEmpty()
+            }
             assertEquals("Fotografía:24", guardada.get())
         } finally {
             imagen.recycle()
