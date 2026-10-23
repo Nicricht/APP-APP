@@ -373,7 +373,7 @@ class SiniestroDbHelper(
         val resultado = mutableListOf<Gestion>()
         readableDatabase.rawQuery("""
             SELECT g.id, g.siniestro_id, g.fecha, g.responsable,
-                   g.descripcion, g.visible_asegurado
+                   g.descripcion
             FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
             WHERE s.id = ? AND s.asegurado = ? AND g.visible_asegurado = 1
             ORDER BY g.id DESC
@@ -381,7 +381,7 @@ class SiniestroDbHelper(
             while (c.moveToNext()) {
                 resultado.add(Gestion(c.getLong(0), c.getLong(1),
                     c.getString(2), c.getString(3), c.getString(4),
-                    c.getInt(5) == 1))
+                    true))
             }
         }
         return resultado
@@ -567,13 +567,13 @@ class SiniestroDbHelper(
     }
 
     fun marcarAvisoLeido(id: Long, asegurado: Asegurado): Boolean {
-        val filas = writableDatabase.execSQL("""
-            UPDATE avisos SET leido = 1
-            WHERE id = ? AND siniestro_id IN (
-                SELECT id FROM siniestros WHERE asegurado = ?
-            )
-        """.trimIndent(), arrayOf(id, asegurado.name))
-        return listarAvisos(asegurado).any { it.id == id && it.leido }
+        val cambios = ContentValues().apply { put("leido", 1) }
+        return writableDatabase.update(
+            "avisos",
+            cambios,
+            "id = ? AND siniestro_id IN (SELECT id FROM siniestros WHERE asegurado = ?)",
+            arrayOf(id.toString(), asegurado.name)
+        ) == 1
     }
 
     fun listarEvidencias(siniestroId: Long, asegurado: Asegurado): List<Evidencia> {

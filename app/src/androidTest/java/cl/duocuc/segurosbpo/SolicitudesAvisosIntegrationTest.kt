@@ -95,4 +95,15 @@ class SolicitudesAvisosIntegrationTest {
         assertTrue(resultado.first { it.id == primero.id }.leido)
         assertFalse(resultado.first { it.id != primero.id }.leido)
     }
+
+    @Test fun avisoYaLeidoSiguePerteneciendoASuAseguradoYNoSeDuplica() {
+        val caso = db.listar(Asegurado.JORGE).single()
+        db.solicitarDocumento(caso.id, Liquidador.HOGAR, "Acta", "Documento firmado")
+        val aviso = db.listarAvisos(Asegurado.JORGE).single()
+        assertTrue(db.marcarAvisoLeido(aviso.id, Asegurado.JORGE))
+        assertTrue(db.marcarAvisoLeido(aviso.id, Asegurado.JORGE))
+        assertFalse(db.marcarAvisoLeido(aviso.id, Asegurado.CAMILA))
+        assertEquals(1, db.listarAvisos(Asegurado.JORGE).size)
+        assertTrue(db.listarAvisos(Asegurado.JORGE).single().leido)
+    }
 }

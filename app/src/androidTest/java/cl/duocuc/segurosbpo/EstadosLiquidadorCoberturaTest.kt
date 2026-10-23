@@ -52,4 +52,26 @@ class EstadosLiquidadorCoberturaTest {
         rule.onNodeWithText("Volver a la lista de casos").performScrollTo().performClick()
         rule.onNodeWithText("SIN-26-000042").assertExists()
     }
+
+    @Test fun unaListaConDosCasosPermiteAbrirElSegundoSinMostrarElPrimero() {
+        val primero = Siniestro(
+            42, "SIN-26-000042", Asegurado.JORGE, Compania.LITORAL,
+            TipoSiniestro.DANO_AGUA, "20-10-2026", "21-10-2026",
+            "Maipú", "Primer caso", false, EtapaSiniestro.RECIBIDO,
+            "21-10-2026 12:00", Liquidador.HOGAR
+        )
+        val segundo = primero.copy(
+            id = 43,
+            numero = "SIN-26-000043",
+            descripcion = "Segundo caso",
+            etapa = EtapaSiniestro.EVALUACION
+        )
+        presentar(listOf(primero, segundo))
+        rule.onNodeWithText("SIN-26-000043").performScrollTo().performClick()
+        rule.onNodeWithText("Etapa actual: " + EtapaSiniestro.EVALUACION.etiqueta).assertExists()
+        rule.onNodeWithText("Gestionar: SIN-26-000043").assertExists()
+        rule.onNodeWithText("Volver a la lista de casos").performScrollTo().performClick()
+        rule.onNodeWithText("SIN-26-000042").assertExists()
+        rule.onNodeWithText("SIN-26-000043").assertExists()
+    }
 }

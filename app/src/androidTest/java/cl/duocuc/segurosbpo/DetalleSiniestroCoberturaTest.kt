@@ -111,4 +111,35 @@ class DetalleSiniestroCoberturaTest {
         rule.waitForIdle()
         assertEquals(1, cargados.get())
     }
+
+    @Test fun cambioEntreDosSiniestrosYCasoNoEncontradoRecargaLosDatos() {
+        val actual = androidx.compose.runtime.mutableStateOf<Siniestro?>(null)
+        val cargas = AtomicInteger(0)
+        rule.setContent {
+            DetalleSiniestroScreen(
+                siniestro = actual.value,
+                solicitudes = emptyList(),
+                onCargarSolicitudes = { cargas.incrementAndGet() },
+                onVolver = {},
+                onEditar = {},
+                onEvidencias = {},
+                onHistorial = {}
+            )
+        }
+        rule.onNodeWithText("No se encontró el siniestro de este asegurado").assertExists()
+        rule.runOnIdle { actual.value = caso(EtapaSiniestro.RECIBIDO) }
+        rule.onNodeWithText("SIN-26-000091").assertExists()
+        rule.waitForIdle()
+        assertEquals(1, cargas.get())
+        rule.runOnIdle {
+            actual.value = caso(EtapaSiniestro.EVALUACION).copy(id = 92, numero = "SIN-26-000092")
+        }
+        rule.onNodeWithText("SIN-26-000092").assertExists()
+        rule.waitForIdle()
+        assertEquals(2, cargas.get())
+        rule.runOnIdle { actual.value = null }
+        rule.onNodeWithText("No se encontró el siniestro de este asegurado").assertExists()
+        rule.waitForIdle()
+        assertEquals(2, cargas.get())
+    }
 }
