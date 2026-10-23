@@ -2,6 +2,16 @@
 
 Proyecto de Desarrollo de Aplicaciones Móviles (DSY1105). Es una aplicación Android para registrar y consultar siniestros de seguros con datos ficticios.
 
+## Plan de finalizacion y control QA (23-10-2026)
+
+Para continuar el desarrollo, consultar estos documentos vigentes en la rama `qa`:
+
+- [Plan maestro para terminar la app](docs/PLAN_MAESTRO_FINALIZACION.md): roles Asegurado/Liquidador, cuentas demo, asignacion por area, tomar caso, flujos, arquitectura, mejoras visuales y backlog BPO-00 a BPO-12.
+- [Protocolo QA obligatorio](docs/PROTOCOLO_QA_OBLIGATORIO.md): todo cambio se integra y prueba en `qa` antes de proponer una promocion; `main` y `entrega-01` permanecen intactas.
+- [Matriz de aceptacion y pruebas](docs/MATRIZ_ACEPTACION_Y_PRUEBAS.md): casos para permisos, migraciones, documentos, estados, graficos, Android, APK y recorrido completo.
+
+**Importante:** estos son planes de implementacion, no funcionalidades ya terminadas. El QA instrumentado del commit auditado del 23-10-2026 estaba fallando y debe corregirse primero. Registro/login y boton `Tomar caso` son ampliaciones acordadas respecto de la identificacion simulada y la asignacion por analista opcional del caso original.
+
 ## Herramientas utilizadas
 
 - Android Studio y Kotlin.
