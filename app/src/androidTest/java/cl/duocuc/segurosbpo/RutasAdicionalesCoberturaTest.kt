@@ -2,6 +2,7 @@ package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -34,6 +35,10 @@ class RutasAdicionalesCoberturaTest {
     }
 
     @Test fun avisosNavegaYVuelveALaLista() {
+        if (rule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        rule.onNodeWithText("Continuar como Camila (demo)").performClick()
         rule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
         rule.onNodeWithText("Avisos").performClick()
         rule.onNodeWithText("Avisos de mis siniestros").assertIsDisplayed()
@@ -42,6 +47,10 @@ class RutasAdicionalesCoberturaTest {
     }
 
     @Test fun detalleEdicionYEvidenciasRestauranLaNavegacion() {
+        if (rule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        rule.onNodeWithText("Continuar como Camila (demo)").performClick()
         rule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
         rule.onNodeWithText("Estado: Recibido").performClick()
         rule.onNodeWithText("Detalle del siniestro").assertIsDisplayed()

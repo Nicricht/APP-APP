@@ -2,6 +2,7 @@ package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -37,6 +38,10 @@ class RecorridosPresentacionTest {
 
     @Test
     fun formularioVacioMuestraErroresEnPantalla() {
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Continuar como Camila (demo)").performClick()
         composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
         composeRule.onNodeWithText("Reportar").performClick()
         composeRule.onNodeWithText("Reportar un siniestro").assertIsDisplayed()
@@ -47,6 +52,10 @@ class RecorridosPresentacionTest {
 
     @Test
     fun sePuedeConsultarHistorialDesdeUnSiniestro() {
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Continuar como Camila (demo)").performClick()
         composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
         composeRule.onNodeWithText("Estado: Recibido").performClick()
         composeRule.onNodeWithText("Detalle del siniestro").assertIsDisplayed()
@@ -58,6 +67,10 @@ class RecorridosPresentacionTest {
 
     @Test
     fun evidenciaExigeTipoDeDocumentoAntesDeAbrirGaleria() {
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Continuar como Camila (demo)").performClick()
         composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
         composeRule.onNodeWithText("Estado: Recibido").performClick()
         composeRule.onNodeWithText("Documentos y evidencias").performScrollTo().performClick()
@@ -68,6 +81,10 @@ class RecorridosPresentacionTest {
 
     @Test
     fun unaBusquedaSinResultadosMuestraAviso() {
+        if (composeRule.onAllNodesWithText("Cerrar sesión").fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNodeWithText("Cerrar sesión").performClick()
+        }
+        composeRule.onNodeWithText("Continuar como Camila (demo)").performClick()
         composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
         composeRule.onNodeWithText("Buscar siniestro").performTextInput("CASO_QUE_NO_EXISTE_000")
         composeRule.onNodeWithText("No hay siniestros con ese criterio").assertIsDisplayed()
