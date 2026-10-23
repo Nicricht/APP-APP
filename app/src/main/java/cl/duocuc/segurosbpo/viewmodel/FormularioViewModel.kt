@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.Stable
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.FormularioUiState
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+@Stable
 class FormularioViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(FormularioUiState())
