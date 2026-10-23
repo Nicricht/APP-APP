@@ -16,6 +16,9 @@ on:
       - 'settings.gradle.kts'
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   android-qa:
     runs-on: ubuntu-latest
