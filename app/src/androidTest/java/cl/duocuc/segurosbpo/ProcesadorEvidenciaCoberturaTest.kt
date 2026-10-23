@@ -124,4 +124,25 @@ class ProcesadorEvidenciaCoberturaTest {
         assertTrue(resultado.isFailure)
         assertNotNull(resultado.exceptionOrNull())
     }
+
+    @Test fun camaraRechazaFotoComprimidaMayorACincoMegabytes() {
+        val ancho = 4096
+        val alto = 4096
+        val bitmap = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
+        val random = java.util.Random(2026L)
+        val fila = IntArray(ancho)
+        try {
+            for (y in 0 until alto) {
+                for (x in fila.indices) {
+                    fila[x] = random.nextInt() or -0x1000000
+                }
+                bitmap.setPixels(fila, 0, ancho, 0, y, ancho, 1)
+            }
+            val intento = runCatching { ProcesadorEvidencia.desdeCamara(bitmap) }
+            assertTrue(intento.isFailure)
+            assertEquals("Foto demasiado grande", intento.exceptionOrNull()?.message)
+        } finally {
+            bitmap.recycle()
+        }
+    }
 }
