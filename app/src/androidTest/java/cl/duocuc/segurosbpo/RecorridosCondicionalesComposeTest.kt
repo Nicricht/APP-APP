@@ -22,6 +22,8 @@ import cl.duocuc.segurosbpo.model.TipoSiniestro
 import cl.duocuc.segurosbpo.ui.components.CampoContrasenaPreview
 import cl.duocuc.segurosbpo.ui.components.GrupoRadio
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
+import cl.duocuc.segurosbpo.ui.components.GraficoSituacion
+import cl.duocuc.segurosbpo.model.ResumenCasos
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.DetalleSiniestroScreen
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
@@ -246,5 +248,24 @@ class RecorridosCondicionalesComposeTest {
         rule.runOnIdle { actualizacion.value = 2 }
         rule.onNodeWithText("Pantalla: 2").assertExists()
         assertEquals(Asegurado.CAMILA, vm.uiState.value.asegurado)
+    }
+
+    @Test fun graficoCircularSeMantieneAlActualizarUnHermanoEnLaComposicion() {
+        val contador = mutableStateOf(0)
+        val resumen = ResumenCasos(recibidos = 2, evaluacion = 1, liquidacion = 0, cerrados = 1)
+        rule.setContent {
+            Column {
+                Text("Versión de la vista: " + contador.value)
+                GraficoSituacion(resumen)
+            }
+        }
+        rule.onNodeWithText("Total: 4").assertExists()
+        rule.onNodeWithText("Abiertos: 3").assertExists()
+        rule.runOnIdle { contador.value = 1 }
+        rule.onNodeWithText("Versión de la vista: 1").assertExists()
+        rule.onNodeWithText("Cerrados: 1").assertExists()
+        rule.runOnIdle { contador.value = 2 }
+        rule.onNodeWithText("Versión de la vista: 2").assertExists()
+        rule.onNodeWithText("Total: 4").assertExists()
     }
 }

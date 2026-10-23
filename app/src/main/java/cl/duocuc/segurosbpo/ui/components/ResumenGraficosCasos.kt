@@ -110,7 +110,7 @@ private fun GraficoEtapas(resumen: ResumenCasos) {
 }
 
 @Composable
-private fun GraficoSituacion(resumen: ResumenCasos) {
+internal fun GraficoSituacion(resumen: ResumenCasos) {
     val abiertos = resumen.abiertos
     val cerrados = resumen.cerrados
     val colorAbierto = MaterialTheme.colorScheme.primary
