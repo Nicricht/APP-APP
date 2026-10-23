@@ -3,7 +3,9 @@ package cl.duocuc.segurosbpo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso
+import android.accessibilityservice.AccessibilityService
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertTrue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
@@ -36,7 +38,12 @@ class DialogosRetrocesoCoberturaTest {
         }
         rule.onNodeWithText("Cambiar asegurado").performClick()
         rule.onNodeWithText("Selecciona un asegurado ficticio").assertExists()
-        Espresso.pressBack()
+        assertTrue(
+            InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(
+                AccessibilityService.GLOBAL_ACTION_BACK
+            )
+        )
+        rule.waitForIdle()
         rule.onNodeWithText("Selecciona un asegurado ficticio").assertDoesNotExist()
         rule.onNodeWithText("Asegurado: ${Asegurado.CAMILA.etiqueta}").assertExists()
         assertEquals(0, cambios.get())
@@ -55,7 +62,12 @@ class DialogosRetrocesoCoberturaTest {
         }
         rule.onNodeWithText("Cambiar").performClick()
         rule.onNodeWithText("Cancelar").assertExists()
-        Espresso.pressBack()
+        assertTrue(
+            InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(
+                AccessibilityService.GLOBAL_ACTION_BACK
+            )
+        )
+        rule.waitForIdle()
         rule.onNodeWithText("Cancelar").assertDoesNotExist()
         rule.onNodeWithText("Cordillera").assertExists()
         assertEquals(0, cambios.get())
