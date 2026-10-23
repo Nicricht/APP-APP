@@ -89,4 +89,39 @@ class ProcesadorEvidenciaCoberturaTest {
             bitmap.recycle()
         }
     }
+
+    @Test fun selectorSinCursorYSinFilasUsaNombreGenerico() {
+        val datos = android.util.Base64.encodeToString(
+            "%PDF-1.7".toByteArray(),
+            android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP
+        )
+        val uri = Uri.Builder().scheme("content")
+            .authority("cl.duocuc.segurosbpo.qa.archivos")
+            .appendPath("documento")
+            .appendQueryParameter("mime", "application/pdf")
+            .appendQueryParameter("contenido", datos)
+            .build()
+        val primero = ProcesadorEvidencia.desdeSelector(
+            context, uri.buildUpon().appendQueryParameter("sin_cursor", "1").build()
+        )
+        val segundo = ProcesadorEvidencia.desdeSelector(
+            context, uri.buildUpon().appendQueryParameter("sin_filas", "1").build()
+        )
+        assertEquals("documento", primero.nombre)
+        assertEquals("documento", segundo.nombre)
+        assertEquals("application/pdf", primero.mime)
+        assertEquals("%PDF-1.7", String(segundo.bytes))
+    }
+
+    @Test fun proveedorSinFlujoDeEntradaNoEntregaArchivo() {
+        val uri = Uri.Builder().scheme("content")
+            .authority("cl.duocuc.segurosbpo.qa.archivos")
+            .appendPath("documento")
+            .appendQueryParameter("mime", "application/pdf")
+            .appendQueryParameter("sin_entrada", "1")
+            .build()
+        val resultado = runCatching { ProcesadorEvidencia.desdeSelector(context, uri) }
+        assertTrue(resultado.isFailure)
+        assertNotNull(resultado.exceptionOrNull())
+    }
 }

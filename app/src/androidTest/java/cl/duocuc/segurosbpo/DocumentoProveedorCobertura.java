@@ -21,12 +21,15 @@ public class DocumentoProveedorCobertura extends ContentProvider {
     }
 
     @Override public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        if ("1".equals(uri.getQueryParameter("sin_cursor"))) return null;
         MatrixCursor cursor = new MatrixCursor(new String[]{OpenableColumns.DISPLAY_NAME});
+        if ("1".equals(uri.getQueryParameter("sin_filas"))) return cursor;
         cursor.addRow(new Object[]{uri.getQueryParameter("nombre")});
         return cursor;
     }
 
     @Override public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+        if ("1".equals(uri.getQueryParameter("sin_entrada"))) return null;
         byte[] contenido;
         if ("1".equals(uri.getQueryParameter("grande"))) {
             contenido = new byte[5 * 1024 * 1024 + 1];
