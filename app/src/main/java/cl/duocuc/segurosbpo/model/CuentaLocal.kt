@@ -14,3 +14,10 @@ data class CuentaLocal(
     val rol: RolCuenta,
     val equipo: String?
 )
+
+fun CuentaLocal.comoAsegurado(): Asegurado = Asegurado(
+    etiqueta = nombre,
+    rut = rut,
+    rutOculto = "****" + rut.takeLast(4),
+    name = id
+)
