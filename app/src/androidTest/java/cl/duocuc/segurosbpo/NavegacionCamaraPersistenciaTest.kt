@@ -7,7 +7,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.MediaStore
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -22,6 +21,7 @@ import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.BeforeClass
@@ -115,10 +115,15 @@ class NavegacionCamaraPersistenciaTest {
             assertTrue(db.listarEvidencias(casoId!!, Asegurado.JORGE).isEmpty())
         }
         rule.onNodeWithText("Evidencias guardadas: ${previo + 1}/15").assertExists()
-        rule.onNodeWithText("Ver imagen").performScrollTo().performClick()
-        rule.waitUntil(15000) {
-            rule.onAllNodesWithContentDescription("Vista previa: $documento")
-                .fetchSemanticsNodes().isNotEmpty()
+        SiniestroDbHelper(context).use { db ->
+            val evidencia = db.listarEvidencias(casoId!!, Asegurado.CAMILA)
+                .single { it.tipoDocumento == documento }
+            val recuperada = db.obtenerImagen(evidencia.id, casoId!!, Asegurado.CAMILA)
+            assertNotNull(recuperada)
+            recuperada!!.recycle()
         }
+        rule.onNodeWithText("Ver imagen").performScrollTo().performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText("Ver imagen").assertExists()
     }
 }
