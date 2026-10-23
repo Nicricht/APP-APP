@@ -409,8 +409,7 @@ class SiniestroDbHelper(
     fun registrarGestionAsignada(siniestroId: Long, liquidador: Liquidador,
         descripcion: String, visible: Boolean
     ) {
-        val error = ReglasEtapa.validarGestion(descripcion)
-        require(error == null) { error ?: "Descripción inválida" }
+        ReglasEtapa.validarGestion(descripcion)?.let { throw IllegalArgumentException(it) }
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -447,8 +446,8 @@ class SiniestroDbHelper(
                 "SELECT COUNT(*) FROM solicitudes_documentos WHERE siniestro_id = ? AND fecha_entrega IS NULL",
                 arrayOf(siniestroId.toString())
             ).use { c -> c.moveToFirst(); c.getInt(0) }
-            val error = ReglasEtapa.validar(actual.etapa, siguiente, pendientes, resultado, mensajeCierre)
-            require(error == null) { error ?: "Transición inválida" }
+            ReglasEtapa.validar(actual.etapa, siguiente, pendientes, resultado, mensajeCierre)
+                ?.let { throw IllegalArgumentException(it) }
             val valores = ContentValues().apply {
                 put("etapa", siguiente.name)
                 put("ultima_actualizacion", fechaActual())
@@ -614,10 +613,8 @@ class SiniestroDbHelper(
                 "SELECT COUNT(*) FROM evidencias WHERE siniestro_id = ?",
                 arrayOf(siniestroId.toString())
             ).use { c -> c.moveToFirst(); c.getInt(0) }
-            val error = ValidadorEvidencia.error(
-                tipoDocumento, archivo.mime, archivo.bytes.size, cantidad
-            )
-            require(error == null) { error ?: "Archivo inválido" }
+            ValidadorEvidencia.error(tipoDocumento, archivo.mime, archivo.bytes.size, cantidad)
+                ?.let { throw IllegalArgumentException(it) }
             val valores = ContentValues().apply {
                 put("siniestro_id", siniestroId)
                 put("tipo_documento", tipoDocumento.trim())

@@ -118,4 +118,12 @@ class PrevisualizacionesComponentesTest {
         rule.onNodeWithContentDescription("Mostrar contraseña").performClick()
         rule.onNodeWithContentDescription("Ocultar Contraseña").assertExists()
     }
+
+    @Test fun correoDePreviewRechazaLaAusenciaDeArroba() {
+        rule.setContent { CampoTextoPreview() }
+        rule.onNodeWithText("Correo electrónico").performTextReplacement("correo.sin.arroba.cl")
+        rule.onNodeWithText("Ingresa un correo válido").assertExists()
+        rule.onNodeWithText("Correo electrónico").performTextReplacement("correo@ejemplo.cl")
+        rule.onNodeWithText("Ingresa un correo válido").assertDoesNotExist()
+    }
 }
