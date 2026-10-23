@@ -60,3 +60,57 @@ jobs:
             app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: warn
           retention-days: 14
+
+  instalar-android:
+    needs: android-qa
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [30, 35]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: SegurosBPO-debug-apk
+          path: apk
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Permitir acceso a KVM
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Verificar APK instalable y arranque
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_4
+          disable-animations: true
+          script: |
+            set -e
+            mkdir -p evidencia-apk
+            adb wait-for-device
+            adb install -r apk/app-debug.apk
+            adb shell pm path cl.duocuc.segurosbpo.prueba | tee evidencia-apk/paquete-${{ matrix.api }}.txt
+            adb shell am start -n cl.duocuc.segurosbpo.prueba/cl.duocuc.segurosbpo.MainActivity
+            sleep 8
+            adb shell pidof cl.duocuc.segurosbpo.prueba | tee evidencia-apk/proceso-${{ matrix.api }}.txt
+            adb exec-out screencap -p > evidencia-apk/inicio-${{ matrix.api }}.png
+            adb shell uiautomator dump /sdcard/ventana.xml || true
+            adb pull /sdcard/ventana.xml evidencia-apk/ventana-${{ matrix.api }}.xml || true
+            adb shell am force-stop cl.duocuc.segurosbpo.prueba
+            adb shell am start -n cl.duocuc.segurosbpo.prueba/cl.duocuc.segurosbpo.MainActivity
+            sleep 5
+            adb shell pidof cl.duocuc.segurosbpo.prueba
+      - name: Guardar evidencia APK Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seguros-bpo-instalacion-api-${{ matrix.api }}
+          path: evidencia-apk/
+          if-no-files-found: ignore
+          retention-days: 14
