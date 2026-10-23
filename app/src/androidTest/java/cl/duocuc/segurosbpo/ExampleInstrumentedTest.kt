@@ -15,6 +15,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
 
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("cl.duocuc.segurosbpo", appContext.packageName)
+        assertEquals("cl.duocuc.segurosbpo.prueba", appContext.packageName)
     }
 }
