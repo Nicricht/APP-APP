@@ -53,6 +53,10 @@ fun ResumenGraficosCasos(
                 GraficoEtapas(resumen)
                 Text("Abiertos y cerrados", style = MaterialTheme.typography.titleSmall)
                 GraficoSituacion(resumen)
+                Text("Distribución por tipo", style = MaterialTheme.typography.titleSmall)
+                GraficosDistribucionCasos(casos)
+                Text("Evolución mensual", style = MaterialTheme.typography.titleSmall)
+                GraficoEvolucionCasos(casos)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
