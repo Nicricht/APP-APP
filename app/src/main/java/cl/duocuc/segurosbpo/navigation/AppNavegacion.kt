@@ -112,7 +112,7 @@ fun AppNavegacion() {
                 Text("Seguros BPO · " + sesion.nombre)
                 if (sesion.rol == RolCuenta.ASEGURADO) {
                     NavigationDrawerItem(
-                        label = { Text("Mis siniestros") },
+                        label = { Text("Panel del asegurado") },
                         selected = false,
                         onClick = {
                             navController.navigate(Ruta.MisSiniestros.ruta)
@@ -128,7 +128,7 @@ fun AppNavegacion() {
                         }
                     )
                     NavigationDrawerItem(
-                        label = { Text("Mis estadísticas") },
+                        label = { Text("Ver estadísticas") },
                         selected = false,
                         onClick = {
                             navController.navigate(Ruta.Estadisticas.ruta)
@@ -136,7 +136,7 @@ fun AppNavegacion() {
                         }
                     )
                     NavigationDrawerItem(
-                        label = { Text("Avisos") },
+                        label = { Text("Centro de avisos") },
                         selected = false,
                         onClick = {
                             navController.navigate(Ruta.Avisos.ruta)
@@ -145,7 +145,7 @@ fun AppNavegacion() {
                     )
                 } else {
                     NavigationDrawerItem(
-                        label = { Text("Gestión de siniestros") },
+                        label = { Text("Panel de trabajo") },
                         selected = false,
                         onClick = {
                             navController.navigate(Ruta.Liquidador.ruta)
@@ -154,7 +154,7 @@ fun AppNavegacion() {
                     )
                 }
                 NavigationDrawerItem(
-                    label = { Text("Mi perfil") },
+                    label = { Text("Cuenta y perfil") },
                     selected = false,
                     onClick = {
                         navController.navigate(Ruta.Perfil.ruta)
@@ -162,7 +162,7 @@ fun AppNavegacion() {
                     }
                 )
                 NavigationDrawerItem(
-                    label = { Text("Cerrar sesión") },
+                    label = { Text("Salir de la cuenta") },
                     selected = false,
                     onClick = cuentaVm::cerrarSesion
                 )
