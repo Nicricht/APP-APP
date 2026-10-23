@@ -100,12 +100,30 @@ jobs:
             sleep 8
             adb shell pidof cl.duocuc.segurosbpo.prueba | tee evidencia-apk/proceso-${{ matrix.api }}.txt
             adb exec-out screencap -p > evidencia-apk/inicio-${{ matrix.api }}.png
-            adb shell uiautomator dump /sdcard/ventana.xml || true
-            adb pull /sdcard/ventana.xml evidencia-apk/ventana-${{ matrix.api }}.xml || true
+            for intento in 1 2 3; do
+              adb shell uiautomator dump /sdcard/ventana.xml || true
+              adb pull /sdcard/ventana.xml evidencia-apk/ventana-${{ matrix.api }}.xml || true
+              if grep -q 'Correo electrónico' evidencia-apk/ventana-${{ matrix.api }}.xml && ! grep -qi "isn.t responding" evidencia-apk/ventana-${{ matrix.api }}.xml; then
+                break
+              fi
+              adb shell am force-stop com.google.android.apps.nexuslauncher || true
+              adb shell am force-stop com.android.launcher3 || true
+              adb shell input keyevent 4 || true
+              adb shell am start -n cl.duocuc.segurosbpo.prueba/cl.duocuc.segurosbpo.MainActivity
+              sleep 6
+            done
+            grep -q 'Correo electrónico' evidencia-apk/ventana-${{ matrix.api }}.xml
+            if grep -qi "isn.t responding" evidencia-apk/ventana-${{ matrix.api }}.xml; then
+              exit 1
+            fi
+            adb exec-out screencap -p > evidencia-apk/inicio-${{ matrix.api }}.png
             adb shell am force-stop cl.duocuc.segurosbpo.prueba
             adb shell am start -n cl.duocuc.segurosbpo.prueba/cl.duocuc.segurosbpo.MainActivity
             sleep 5
             adb shell pidof cl.duocuc.segurosbpo.prueba
+            adb shell uiautomator dump /sdcard/ventana-reinicio.xml
+            adb pull /sdcard/ventana-reinicio.xml evidencia-apk/reinicio-${{ matrix.api }}.xml
+            grep -q 'Correo electrónico' evidencia-apk/reinicio-${{ matrix.api }}.xml
       - name: Guardar evidencia APK Android
         if: always()
         uses: actions/upload-artifact@v4
