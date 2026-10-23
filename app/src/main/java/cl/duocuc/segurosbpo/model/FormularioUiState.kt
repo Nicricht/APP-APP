@@ -1,15 +1,29 @@
 package cl.duocuc.segurosbpo.model
 
 
-enum class Asegurado(val etiqueta: String, val rut: String, val rutOculto: String){
-    CAMILA("Camila Rojas Fuentes", "15.842.371-5", "**.***.371-5"),
-    JORGE("Jorge Pizarro Contreras", "9.418.552-1", "*.***.552-1"),
-    VALENTINA("Valentina Soto Munoz", "19.205.884-8", "**.***.884-8"),
-    HECTOR("Hector Araya Diaz", "7.836.219-7", "*.***.219-7"),
-    DANIELA("Daniela Vergara Lagos", "17.552.093-7", "**.***.093-7"),
-    RICARDO("Ricardo Espinoza Tapia", "13.664.708-3", "**.***.708-3"),
-    FRANCISCA("Francisca Morales Henriquez", "20.118.465-7", "**.***.465-7"),
-    LUIS("Luis Carrasco Pena", "11.290.337-2", "**.***.337-2")
+data class Asegurado(
+    val etiqueta: String,
+    val rut: String,
+    val rutOculto: String,
+    val name: String
+) {
+    companion object {
+        val CAMILA = Asegurado("Camila Rojas Fuentes", "15.842.371-5", "**.***.371-5", "CAMILA")
+        val JORGE = Asegurado("Jorge Pizarro Contreras", "9.418.552-1", "*.***.552-1", "JORGE")
+        val VALENTINA = Asegurado("Valentina Soto Munoz", "19.205.884-8", "**.***.884-8", "VALENTINA")
+        val HECTOR = Asegurado("Hector Araya Diaz", "7.836.219-7", "*.***.219-7", "HECTOR")
+        val DANIELA = Asegurado("Daniela Vergara Lagos", "17.552.093-7", "**.***.093-7", "DANIELA")
+        val RICARDO = Asegurado("Ricardo Espinoza Tapia", "13.664.708-3", "**.***.708-3", "RICARDO")
+        val FRANCISCA = Asegurado("Francisca Morales Henriquez", "20.118.465-7", "**.***.465-7", "FRANCISCA")
+        val LUIS = Asegurado("Luis Carrasco Pena", "11.290.337-2", "**.***.337-2", "LUIS")
+        val entries: List<Asegurado> = listOf(
+            CAMILA, JORGE, VALENTINA, HECTOR, DANIELA, RICARDO, FRANCISCA, LUIS
+        )
+
+        fun valueOf(codigo: String): Asegurado =
+            entries.firstOrNull { it.name == codigo }
+                ?: Asegurado("Asegurado", "", "***", codigo)
+    }
 }
 
 enum class Compania(val etiqueta: String, val activa: Boolean){
