@@ -23,6 +23,9 @@ import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 
 fun idDesdeArgumentos(argumentos: Bundle?): Long = argumentos?.getLong("id") ?: 0L
 
+fun contarAvisosNoLeidos(avisos: List<cl.duocuc.segurosbpo.model.AvisoSiniestro>): Int =
+    avisos.count { !it.leido }
+
 fun actualizarDescripcionYRegresar(
     actualizar: (Long, String) -> Boolean,
     id: Long,
@@ -55,7 +58,7 @@ fun AppNavegacion() {
                 siniestros = siniestros,
                 busqueda = busqueda,
                 onBuscar = siniestrosVm::buscar,
-                avisosNoLeidos = avisos.count { !it.leido },
+                avisosNoLeidos = contarAvisosNoLeidos(avisos),
                 onVerAvisos = { navController.navigate(Ruta.Avisos.ruta) },
                 onCambiarAsegurado = siniestrosVm::seleccionarAsegurado,
                 onReportar = { navController.navigate(Ruta.Reportar.ruta) },

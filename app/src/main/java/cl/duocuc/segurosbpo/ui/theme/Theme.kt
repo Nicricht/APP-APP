@@ -45,6 +45,9 @@ private val LightColorScheme = lightColorScheme(
 )
 
 
+internal fun admiteColoresDinamicos(solicitado: Boolean, sdk: Int): Boolean =
+    solicitado && sdk >= Build.VERSION_CODES.S
+
 private val Formas = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
@@ -59,7 +62,7 @@ fun SegurosBpoTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        admiteColoresDinamicos(dynamicColor, Build.VERSION.SDK_INT) -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }

@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.navigation.idDesdeArgumentos
 import cl.duocuc.segurosbpo.navigation.actualizarDescripcionYRegresar
+import cl.duocuc.segurosbpo.navigation.contarAvisosNoLeidos
+import cl.duocuc.segurosbpo.model.AvisoSiniestro
 import cl.duocuc.segurosbpo.viewmodel.mensajeError
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -52,4 +54,14 @@ class RespuestasErroresYRutasCoberturaTest {
         assertEquals(1, regresos)
     }
 
+
+    @Test fun contarAvisosDistingueLeidosYPendientes() {
+        val primero = AvisoSiniestro(1, 7, "SIN-26-7", "Documento solicitado", "20-10-2026", false)
+        val segundo = primero.copy(id = 2, leido = true)
+        val tercero = primero.copy(id = 3, leido = false)
+        assertEquals(0, contarAvisosNoLeidos(emptyList()))
+        assertEquals(1, contarAvisosNoLeidos(listOf(primero, segundo)))
+        assertEquals(2, contarAvisosNoLeidos(listOf(primero, segundo, tercero)))
+        assertEquals(0, contarAvisosNoLeidos(listOf(segundo)))
+    }
 }

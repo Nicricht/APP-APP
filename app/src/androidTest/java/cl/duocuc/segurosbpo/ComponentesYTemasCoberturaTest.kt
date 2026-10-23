@@ -14,6 +14,7 @@ import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
 import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
+import cl.duocuc.segurosbpo.ui.theme.admiteColoresDinamicos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -95,5 +96,23 @@ class ComponentesYTemasCoberturaTest {
         rule.onNodeWithText("Cambiar").performClick()
         rule.onNodeWithText("Cancelar").performClick()
         rule.onNodeWithText("Segunda").assertExists()
+    }
+
+    @Test fun versionAndroidDeterminaDisponibilidadDeColoresDinamicos() {
+        assertTrue(admiteColoresDinamicos(true, 31))
+        assertTrue(admiteColoresDinamicos(true, 35))
+        org.junit.Assert.assertFalse(admiteColoresDinamicos(true, 30))
+        org.junit.Assert.assertFalse(admiteColoresDinamicos(false, 35))
+    }
+
+    @Test fun temaConConfiguracionParcialPermiteUsarValoresPredeterminados() {
+        rule.setContent {
+            androidx.compose.foundation.layout.Column {
+                SegurosBpoTheme(dynamicColor = false) { Text("Solo color no dinámico") }
+                SegurosBpoTheme(darkTheme = true) { Text("Solo tema oscuro") }
+            }
+        }
+        rule.onNodeWithText("Solo color no dinámico").assertExists()
+        rule.onNodeWithText("Solo tema oscuro").assertExists()
     }
 }
