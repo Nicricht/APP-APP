@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.provider.MediaStore
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -114,5 +115,10 @@ class NavegacionCamaraPersistenciaTest {
             assertTrue(db.listarEvidencias(casoId!!, Asegurado.JORGE).isEmpty())
         }
         rule.onNodeWithText("Evidencias guardadas: ${previo + 1}/15").assertExists()
+        rule.onNodeWithText("Ver imagen").performScrollTo().performClick()
+        rule.waitUntil(15000) {
+            rule.onAllNodesWithContentDescription("Vista previa: $documento")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }
