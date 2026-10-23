@@ -2,11 +2,11 @@ package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasRole
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNode
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -80,7 +80,7 @@ class FormulariosLiquidadorLimitesTest {
                 null
             }
         )
-        rule.onNode(hasRole(Role.Checkbox)).performScrollTo().performClick()
+        rule.onNode(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)).performScrollTo().performClick()
         rule.onNodeWithText("Gestión interna").assertExists()
         rule.onNodeWithText("Descripción de gestión")
             .performScrollTo().performTextInput("Revisión privada del documento")
