@@ -12,7 +12,8 @@ data class CuentaLocal(
     val correo: String,
     val telefono: String,
     val rol: RolCuenta,
-    val equipo: String?
+    val equipo: String?,
+    val foto: ByteArray? = null
 )
 
 fun CuentaLocal.comoAsegurado(): Asegurado = Asegurado(

@@ -22,6 +22,7 @@ import cl.duocuc.segurosbpo.ui.screens.HistorialSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.EditarSiniestroScreen
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
 import cl.duocuc.segurosbpo.ui.screens.MisSiniestrosScreen
+import cl.duocuc.segurosbpo.ui.screens.PerfilCuentaScreen
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
 import cl.duocuc.segurosbpo.model.Liquidador
@@ -90,6 +91,15 @@ fun AppNavegacion() {
         startDestination = if (sesion.rol == RolCuenta.ASEGURADO)
             Ruta.MisSiniestros.ruta else Ruta.Liquidador.ruta
     ) {
+        composable(Ruta.Perfil.ruta) {
+            PerfilCuentaScreen(
+                cuenta = sesion,
+                onGuardarTelefono = cuentaVm::actualizarTelefono,
+                onGuardarFoto = cuentaVm::actualizarFoto,
+                onVolver = { navController.navigateUp() },
+                onCerrarSesion = cuentaVm::cerrarSesion
+            )
+        }
         if (sesion.rol == RolCuenta.ASEGURADO) {
         composable(Ruta.MisSiniestros.ruta) {
             MisSiniestrosScreen(
@@ -106,7 +116,8 @@ fun AppNavegacion() {
                 onVerEstadisticas = { navController.navigate(Ruta.Estadisticas.ruta) },
                 permitirCambioAsegurado = false,
                 permitirGestor = false,
-                onCerrarSesion = cuentaVm::cerrarSesion
+                onCerrarSesion = cuentaVm::cerrarSesion,
+                onVerPerfil = { navController.navigate(Ruta.Perfil.ruta) }
             )
         }
         composable(Ruta.Estadisticas.ruta) {
@@ -142,7 +153,8 @@ fun AppNavegacion() {
                 onCerrarAnticipado = siniestrosVm::cerrarAnticipadoLiquidador,
                 onVolver = { navController.navigateUp() },
                 permitirElegirEquipo = false,
-                onCerrarSesion = cuentaVm::cerrarSesion
+                onCerrarSesion = cuentaVm::cerrarSesion,
+                onVerPerfil = { navController.navigate(Ruta.Perfil.ruta) }
             )
         }
         }

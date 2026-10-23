@@ -1,6 +1,8 @@
 package cl.duocuc.segurosbpo.viewmodel
 
 import android.app.Application
+import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
 import androidx.lifecycle.AndroidViewModel
 import cl.duocuc.segurosbpo.data.CuentaDbHelper
 import cl.duocuc.segurosbpo.model.Asegurado
@@ -86,6 +88,32 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
 
     fun accederLiquidadorDemo(equipo: Liquidador) {
         guardar(crearLiquidadorDemo(equipo))
+    }
+
+    fun actualizarTelefono(telefono: String): String? {
+        val actual = _cuenta.value ?: return "Inicia sesión"
+        if (actual.correo.isBlank()) return "El perfil de demostración no es editable"
+        val resultado = runCatching { db.actualizarTelefono(actual.id, telefono) }
+        resultado.getOrNull()?.let {
+            _cuenta.value = it
+            return null
+        }
+        return resultado.exceptionOrNull()?.message ?: "No se pudo guardar"
+    }
+
+    fun actualizarFoto(bitmap: Bitmap): String? {
+        val actual = _cuenta.value ?: return "Inicia sesión"
+        if (actual.correo.isBlank()) return "El perfil de demostración no es editable"
+        val salida = ByteArrayOutputStream()
+        if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida)) {
+            return "No se pudo procesar la fotografía"
+        }
+        val resultado = runCatching { db.actualizarFoto(actual.id, salida.toByteArray()) }
+        resultado.getOrNull()?.let {
+            _cuenta.value = it
+            return null
+        }
+        return resultado.exceptionOrNull()?.message ?: "No se pudo guardar la foto"
     }
 
     fun cerrarSesion() {

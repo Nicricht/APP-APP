@@ -53,7 +53,8 @@ fun MisSiniestrosScreen(
     onVerEstadisticas: () -> Unit = {},
     permitirCambioAsegurado: Boolean = true,
     permitirGestor: Boolean = true,
-    onCerrarSesion: () -> Unit = {}
+    onCerrarSesion: () -> Unit = {},
+    onVerPerfil: () -> Unit = {}
 ) {
     var mostrarUsuarios by remember { mutableStateOf(false) }
     if (mostrarUsuarios) {
@@ -106,6 +107,7 @@ fun MisSiniestrosScreen(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (permitirGestor) TextButton(onClick = onGestionar) { Text("Liquidador") }
+                TextButton(onClick = onVerPerfil) { Text("Mi perfil") }
                 TextButton(onClick = onVerAvisos) {
                     Text(if (avisosNoLeidos > 0) "Avisos ($avisosNoLeidos)" else "Avisos")
                 }

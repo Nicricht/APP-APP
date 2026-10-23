@@ -58,7 +58,8 @@ fun CasosLiquidadorScreen(
     disponibles: List<Siniestro> = emptyList(),
     onTomarCaso: (Long) -> String? = { "No disponible" },
     permitirElegirEquipo: Boolean = true,
-    onCerrarSesion: () -> Unit = {}
+    onCerrarSesion: () -> Unit = {},
+    onVerPerfil: () -> Unit = {}
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -87,7 +88,10 @@ fun CasosLiquidadorScreen(
             if (permitirElegirEquipo) {
                 TextButton(onClick = onVolver) { Text("Volver a los asegurados") }
             } else {
-                TextButton(onClick = onCerrarSesion) { Text("Cerrar sesión") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onCerrarSesion) { Text("Cerrar sesión") }
+                    TextButton(onClick = onVerPerfil) { Text("Mi perfil") }
+                }
             }
             Text("Perfil de liquidador (simulado)", style = MaterialTheme.typography.titleLarge)
             if (permitirElegirEquipo) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

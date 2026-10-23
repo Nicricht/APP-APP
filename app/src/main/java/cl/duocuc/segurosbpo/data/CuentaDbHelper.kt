@@ -17,7 +17,7 @@ import javax.crypto.spec.PBEKeySpec
 class CuentaDbHelper(
     context: Context,
     nombreBase: String = "cuentas_demo.db"
-) : SQLiteOpenHelper(context, nombreBase, null, 1) {
+) : SQLiteOpenHelper(context, nombreBase, null, 2) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
             CREATE TABLE cuentas (
@@ -29,12 +29,14 @@ class CuentaDbHelper(
                 rol TEXT NOT NULL,
                 equipo TEXT,
                 salt BLOB NOT NULL,
-                clave_hash BLOB NOT NULL
+                clave_hash BLOB NOT NULL,
+                foto BLOB
             )
         """.trimIndent())
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) db.execSQL("ALTER TABLE cuentas ADD COLUMN foto BLOB")
     }
 
     private fun derivar(clave: String, salt: ByteArray): ByteArray {
@@ -56,7 +58,10 @@ class CuentaDbHelper(
             cursor.getString(cursor.getColumnIndexOrThrow("correo")),
             cursor.getString(cursor.getColumnIndexOrThrow("telefono")),
             RolCuenta.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("rol"))),
-            if (cursor.isNull(equipo)) null else cursor.getString(equipo)
+            if (cursor.isNull(equipo)) null else cursor.getString(equipo),
+            cursor.getColumnIndexOrThrow("foto").let { i ->
+                if (cursor.isNull(i)) null else cursor.getBlob(i)
+            }
         )
     }
 
@@ -92,6 +97,28 @@ class CuentaDbHelper(
         } catch (e: android.database.sqlite.SQLiteConstraintException) {
             throw IllegalArgumentException("Ya existe una cuenta con ese correo o RUT", e)
         }
+        return requireNotNull(obtener(id))
+    }
+
+    fun actualizarTelefono(id: String, telefono: String): CuentaLocal {
+        require(telefono.trim().length >= 8) { "El teléfono debe tener al menos 8 caracteres" }
+        val filas = writableDatabase.update(
+            "cuentas", ContentValues().apply { put("telefono", telefono.trim()) },
+            "id = ?", arrayOf(id)
+        )
+        require(filas == 1) { "No se encontró la cuenta" }
+        return requireNotNull(obtener(id))
+    }
+
+    fun actualizarFoto(id: String, imagenJpeg: ByteArray): CuentaLocal {
+        require(imagenJpeg.isNotEmpty() && imagenJpeg.size <= 1024 * 1024) {
+            "La foto no puede superar 1 MB"
+        }
+        val filas = writableDatabase.update(
+            "cuentas", ContentValues().apply { put("foto", imagenJpeg) },
+            "id = ?", arrayOf(id)
+        )
+        require(filas == 1) { "No se encontró la cuenta" }
         return requireNotNull(obtener(id))
     }
 
