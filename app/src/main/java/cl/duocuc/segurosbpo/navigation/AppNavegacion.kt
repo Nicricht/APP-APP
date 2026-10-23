@@ -5,6 +5,19 @@ import android.os.Bundle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.weight
+import androidx.compose.ui.Modifier
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDrawerState
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -91,11 +104,82 @@ fun AppNavegacion() {
         androidx.compose.material3.Text("Preparando la sesión")
         return
     }
-    NavHost(
-        navController = navController,
-        startDestination = if (sesion.rol == RolCuenta.ASEGURADO)
-            Ruta.MisSiniestros.ruta else Ruta.Liquidador.ruta
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val drawerScope = rememberCoroutineScope()
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("Seguros BPO · " + sesion.nombre)
+                if (sesion.rol == RolCuenta.ASEGURADO) {
+                    NavigationDrawerItem(
+                        label = { Text("Mis siniestros") },
+                        selected = false,
+                        onClick = {
+                            navController.navigate(Ruta.MisSiniestros.ruta)
+                            drawerScope.launch { drawerState.close() }
+                        }
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Reportar siniestro") },
+                        selected = false,
+                        onClick = {
+                            navController.navigate(Ruta.Reportar.ruta)
+                            drawerScope.launch { drawerState.close() }
+                        }
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Mis estadísticas") },
+                        selected = false,
+                        onClick = {
+                            navController.navigate(Ruta.Estadisticas.ruta)
+                            drawerScope.launch { drawerState.close() }
+                        }
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Avisos") },
+                        selected = false,
+                        onClick = {
+                            navController.navigate(Ruta.Avisos.ruta)
+                            drawerScope.launch { drawerState.close() }
+                        }
+                    )
+                } else {
+                    NavigationDrawerItem(
+                        label = { Text("Gestión de siniestros") },
+                        selected = false,
+                        onClick = {
+                            navController.navigate(Ruta.Liquidador.ruta)
+                            drawerScope.launch { drawerState.close() }
+                        }
+                    )
+                }
+                NavigationDrawerItem(
+                    label = { Text("Mi perfil") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate(Ruta.Perfil.ruta)
+                        drawerScope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Cerrar sesión") },
+                    selected = false,
+                    onClick = cuentaVm::cerrarSesion
+                )
+            }
+        }
     ) {
+        Column(Modifier.fillMaxSize()) {
+            TextButton(onClick = { drawerScope.launch { drawerState.open() } }) {
+                Text("Abrir menú")
+            }
+            NavHost(
+                modifier = Modifier.weight(1f),
+                navController = navController,
+                startDestination = if (sesion.rol == RolCuenta.ASEGURADO)
+                    Ruta.MisSiniestros.ruta else Ruta.Liquidador.ruta
+            ) {
         composable(Ruta.Perfil.ruta) {
             PerfilCuentaScreen(
                 cuenta = sesion,
@@ -238,5 +322,7 @@ fun AppNavegacion() {
             )
         }
           }
+            }
+        }
     }
 }
