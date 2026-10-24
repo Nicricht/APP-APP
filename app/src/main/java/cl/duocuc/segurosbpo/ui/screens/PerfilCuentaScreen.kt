@@ -62,7 +62,8 @@ fun PerfilCuentaScreen(
     val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) {
         imagen ->
         mensaje = if (imagen == null) "Captura cancelada"
-        else onGuardarFoto(imagen) ?: "Foto actualizada"
+        else runCatching { onGuardarFoto(imagen) ?: "Foto actualizada" }
+            .getOrElse { it.message ?: "No se pudo guardar la foto" }
     }
     val permisoCamara = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -87,7 +88,8 @@ fun PerfilCuentaScreen(
                 val imagen = BitmapFactory.decodeByteArray(
                     archivo.bytes, 0, archivo.bytes.size, opciones
                 ) ?: throw IllegalArgumentException("La imagen no se puede abrir")
-                onGuardarFoto(imagen) ?: "Foto actualizada"
+                runCatching { onGuardarFoto(imagen) ?: "Foto actualizada" }
+                    .getOrElse { it.message ?: "No se pudo guardar la foto" }
             }.getOrElse { it.message ?: "No se pudo abrir la imagen" }
         }
     }

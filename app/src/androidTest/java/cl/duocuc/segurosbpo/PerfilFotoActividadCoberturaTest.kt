@@ -43,6 +43,7 @@ class PerfilFotoActividadCoberturaTest {
         capturas: AtomicInteger = AtomicInteger(0),
         guardadas: AtomicInteger = AtomicInteger(0),
         errorFoto: String? = null,
+        excepcionAlGuardar: Throwable? = null,
         permisoPrevio: Boolean = false,
         peticionesPermiso: AtomicInteger = AtomicInteger(0),
         validarImagen: ((Bitmap) -> Unit)? = null
@@ -108,6 +109,7 @@ class PerfilFotoActividadCoberturaTest {
                     onGuardarFoto = { foto ->
                         validarImagen?.invoke(foto)
                         guardadas.incrementAndGet()
+                        excepcionAlGuardar?.let { throw it }
                         errorFoto
                     },
                     onVolver = {},
@@ -311,5 +313,79 @@ class PerfilFotoActividadCoberturaTest {
         val tamano = dimensiones.get() ?: throw AssertionError("No se entregó ninguna imagen")
         assertTrue(tamano.first in 1..600)
         assertTrue(tamano.second in 1..600)
+    }
+
+    @Test fun excepcionDeGuardadoEnCamaraMuestraErrorSinCerrarPerfil() {
+        val imagen = Bitmap.createBitmap(18, 18, Bitmap.Config.ARGB_8888)
+        try {
+            val guardadas = AtomicInteger()
+            montar(
+                concedido = true,
+                imagen = imagen,
+                guardadas = guardadas,
+                excepcionAlGuardar = IllegalStateException("Error al guardar la foto")
+            )
+            rule.onNodeWithText("Tomar foto de perfil").performScrollTo().performClick()
+            rule.onNodeWithText("Error al guardar la foto").assertExists()
+            rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+            rule.onNodeWithText("Cuenta de prueba").assertExists()
+            assertEquals(1, guardadas.get())
+        } finally {
+            imagen.recycle()
+        }
+    }
+
+    @Test fun errorDeCamaraSinMensajeTieneRespuestaComprensible() {
+        val imagen = Bitmap.createBitmap(18, 18, Bitmap.Config.ARGB_8888)
+        try {
+            montar(
+                concedido = true,
+                imagen = imagen,
+                excepcionAlGuardar = IllegalStateException()
+            )
+            rule.onNodeWithText("Tomar foto de perfil").performScrollTo().performClick()
+            rule.onNodeWithText("No se pudo guardar la foto").assertExists()
+            rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+        } finally {
+            imagen.recycle()
+        }
+    }
+
+    @Test fun errorDeGuardadoDeGaleriaNoSeConfundeConImagenCorrupta() {
+        val imagen = Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_8888)
+        val salida = ByteArrayOutputStream()
+        try {
+            imagen.compress(Bitmap.CompressFormat.JPEG, 86, salida)
+        } finally {
+            imagen.recycle()
+        }
+        val guardadas = AtomicInteger()
+        montar(
+            seleccion = archivo("image/jpeg", salida.toByteArray()),
+            guardadas = guardadas,
+            excepcionAlGuardar = IllegalStateException()
+        )
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("No se pudo guardar la foto").assertExists()
+        rule.onNodeWithText("La imagen no se puede abrir").assertDoesNotExist()
+        rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+        assertEquals(1, guardadas.get())
+    }
+
+    @Test fun errorConMensajeDeGaleriaSeMuestraSinInformarExito() {
+        val imagen = Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_8888)
+        val salida = ByteArrayOutputStream()
+        try {
+            imagen.compress(Bitmap.CompressFormat.JPEG, 86, salida)
+        } finally {
+            imagen.recycle()
+        }
+        montar(
+            seleccion = archivo("image/jpeg", salida.toByteArray()),
+            excepcionAlGuardar = IllegalStateException("Error de almacenamiento")
+        )
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("Error de almacenamiento").assertExists()
+        rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
     }
 }

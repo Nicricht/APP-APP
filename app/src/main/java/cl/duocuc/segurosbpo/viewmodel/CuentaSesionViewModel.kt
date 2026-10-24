@@ -123,7 +123,8 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         val actual = _cuenta.value ?: return "Inicia sesión"
         if (actual.correo.isBlank()) return "El perfil de demostración no es editable"
         val salida = ByteArrayOutputStream()
-        if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida)) {
+        if (!runCatching { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida) }
+                .getOrDefault(false)) {
             return "No se pudo procesar la fotografía"
         }
         val resultado = runCatching { db.actualizarFoto(actual.id, salida.toByteArray()) }

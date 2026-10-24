@@ -271,4 +271,27 @@ class SesionCuentaRealCoberturaTest {
         assertEquals(RolCuenta.ASEGURADO, sesion.cuenta.value?.rol)
         assertEquals(id, sesion.cuenta.value?.id)
     }
+
+    @Test fun bitmapInvalidoNoCierraSesionNiBorraLaFotoGuardada() {
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.registrar(
+            "Ana Prueba", rut, correo, "912345678", "Clave2026", "Clave2026"
+        ))
+        val fotoValida = Bitmap.createBitmap(18, 18, Bitmap.Config.ARGB_8888)
+        try {
+            assertNull(sesion.actualizarFoto(fotoValida))
+        } finally {
+            fotoValida.recycle()
+        }
+        val cuentaId = requireNotNull(sesion.cuenta.value?.id)
+        val anterior = requireNotNull(sesion.cuenta.value?.foto).clone()
+        val corrupta = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888)
+        corrupta.recycle()
+        assertEquals("No se pudo procesar la fotografía", sesion.actualizarFoto(corrupta))
+        assertEquals(cuentaId, sesion.cuenta.value?.id)
+        assertArrayEquals(anterior, sesion.cuenta.value?.foto)
+        CuentaDbHelper(app).use { helper ->
+            assertArrayEquals(anterior, helper.obtener(cuentaId)?.foto)
+        }
+    }
 }

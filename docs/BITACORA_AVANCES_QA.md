@@ -331,8 +331,20 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Nueva regresión en `SesionCuentaRealCoberturaTest.kt`: un asegurado real registrado no obtiene privilegios de liquidador tras editar artificialmente su rol y equipo; al corregir sus datos puede autenticarse de nuevo con su identidad original.
 - Todos los cambios de SQLite de estas pruebas se aplican exclusivamente a registros ficticios `QA_SESION_CORRUPTA` o a una cuenta de prueba eliminada por los métodos de limpieza existentes. No se modifican migraciones ni contraseñas reales. No hay comentarios añadidos al código Kotlin.
 - Ámbito funcional: aplicación local SQLite con dos liquidadores predeterminados. No se presenta como seguridad de servidor ni autorización remota.
-- **Estado de estas cinco pruebas y ajuste de sesión: pendiente de su propia compilación, Android API 30/35, instrumentación y medición JaCoCo para el nuevo SHA.**
+- **Validación aprobada para [7341469a](https://github.com/Nicricht/APP-APP/commit/7341469a809eca245cf65c4c9d498275af784e51)**: [Android Kotlin QA 40130682073](https://github.com/Nicricht/APP-APP/actions/runs/40130682073) e [instrumentación 40130682144](https://github.com/Nicricht/APP-APP/actions/runs/40130682144) **success**, instalación/arranque API 30/35 correctos. JaCoCo **3133/3137 líneas (99,87 %) y 1026/1047 ramas (97,99 %)**, cuatro líneas y 21 ramas sin cubrir.
 - Solo se actualizará `qa`; `main` y `entrega-01` deben permanecer intactas.
+
+## 2026-10-24: tolerancia a errores de compresión y almacenamiento de fotos
+
+- Punto de partida: [7341469a](https://github.com/Nicricht/APP-APP/commit/7341469a809eca245cf65c4c9d498275af784e51), Kotlin QA e instrumentadas `success` con cobertura del 99,87 % de líneas y 97,99 % de ramas. No se altera la regla de validación de identidad por rol.
+- Hallazgo funcional: el callback de cámara de `PerfilCuentaScreen` invocaba `onGuardarFoto` sin capturar excepciones, a diferencia de la selección de galería. Una falla inesperada del almacenamiento podía terminar el flujo de cámara sin mensaje controlado. La galería informaba incorrectamente "No se pudo abrir la imagen" si fallaba específicamente el guardado sin mensaje de excepción.
+- Cambios en `PerfilCuentaScreen`: tanto cámara como galería capturan errores de `onGuardarFoto`, muestran su mensaje y usan "No se pudo guardar la foto" cuando no hay descripción; siguen distinguiendo la selección cancelada, el JPEG dañado y el guardado exitoso.
+- Cambio en `CuentaSesionViewModel.actualizarFoto`: una excepción al comprimir un `Bitmap` inválido se convierte en "No se pudo procesar la fotografía", sin modificar la sesión ni los bytes de la imagen anterior.
+- `PerfilFotoActividadCoberturaTest.kt`: cuatro pruebas nuevas de callback de guardado que lanza excepciones con y sin mensaje, desde cámara y galería. Comprueban que la pantalla permanezca abierta, que no se muestre un falso éxito y que un fallo al guardar no se confunda con un JPEG corrupto.
+- `SesionCuentaRealCoberturaTest.kt`: prueba con bitmap reciclado, exige rechazo controlado y persistencia inalterada de la fotografía anterior tanto en sesión como en SQLite.
+- Solo datos de prueba locales, sin migraciones, sin cambios de permisos y sin añadir comentarios Kotlin. Se mantiene el aislamiento por cuenta y la firma debug actual; no se afirma haber resuelto [issue #7](https://github.com/Nicricht/APP-APP/issues/7).
+- **Estado de este cambio: pendiente de compilación, instalaciones API 30/35 y reporte instrumentado propio del nuevo SHA.**
+- `main` y `entrega-01` permanecen sin modificaciones.
 
 ## Pendientes sin evidencia suficiente
 
