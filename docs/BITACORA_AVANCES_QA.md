@@ -260,7 +260,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - El código de producción, permisos, base SQLite y interfaz permanecen inalterados. La prueba nueva se evaluará con ambas suites y con JaCoCo en el mismo SHA.
 - Condición de aceptación: ambas suites Kotlin/instrumentadas verdes y resultados de cobertura comparables a [0857dc5d](https://github.com/Nicricht/APP-APP/commit/0857dc5d196ea4891708d7521ad56db4a5a223e6), que tenía **3123/3128 líneas (99,84 %) y 1009/1037 ramas (97,30 %)**.
 - No añadir comentarios Kotlin. Cambios y bitácora solo en `qa`; no modificar `main` ni `entrega-01`.
-- Estado del commit con este arreglo: **pendiente de CI de su SHA**.
+- Resultado aprobado del [commit 17148245](https://github.com/Nicricht/APP-APP/commit/1714824522032bafc5fb334736eaed55d1550803): [Kotlin QA 40113342838](https://github.com/Nicricht/APP-APP/actions/runs/40113342838) e [instrumented QA 40113342876](https://github.com/Nicricht/APP-APP/actions/runs/40113342876), ambos **success**. La APK se instaló y abrió en API 30/35; JaCoCo: **3124/3128 líneas (99,87 %) y 1011/1037 ramas (97,49 %)**. Restan **cuatro líneas y 26 ramas**.
+
+## 2026-10-24: refresco de estadísticas y límite real de fotos SQLite
+
+- Línea base comprobada: [17148245](https://github.com/Nicricht/APP-APP/commit/1714824522032bafc5fb334736eaed55d1550803), [Kotlin QA 40113342838](https://github.com/Nicricht/APP-APP/actions/runs/40113342838) y [instrumented QA 40113342876](https://github.com/Nicricht/APP-APP/actions/runs/40113342876), **success**.
+- JaCoCo del mismo SHA: **3124/3128 líneas (99,87 %) y 1011/1037 ramas (97,49 %)**. Restan cuatro líneas y 26 ramas. Se examinó el artifact instrumentado `12567458752` y los faltantes de JaCoCo en ViewModel, SQLite, navegación y parámetros de gráficos.
+- `ResumenGraficosEstadosRealesTest.kt`: dos pruebas nuevas. La primera comprueba que un resumen vacío con título/descripcion/modificador explícitos pase a dos casos reales y luego vuelva a vacío, conservando coherencia de totales, estados, etiquetas y descripción; la segunda comprueba dos casos abiertos, incluyendo uno en LIQUIDACION, sin contarlo como cerrado.
+- `CuentaDbCoberturaRealTest.kt`: prueba límite exacto de fotografía de 1 MiB (válido), rechazo inmediato de 1 MiB + 1 byte sin perder la imagen, recuperación de bytes completos después de cerrar/reabrir SQLite y acceso del mismo usuario con contraseña previa.
+- Motivo: proteger el refresco de gráficos cuando cambia la cartera y los límites de almacenamiento en cuentas, además de ampliar ramas ejecutadas de verdad. Los datos son ficticios, las bases SQLite de las pruebas están aisladas y no hay comentarios nuevos.
+- Alcance del commit que incluye esta entrada: **tres pruebas instrumentadas y documentación, sin cambios de producción**. No modificar `main` ni `entrega-01`.
+- Estado inicial: **pendiente de Kotlin QA e instrumentado para su SHA**. No atribuir una nueva cobertura hasta revisar ambos workflows y el XML instrumentado.
 
 ## Pendientes sin evidencia suficiente
 

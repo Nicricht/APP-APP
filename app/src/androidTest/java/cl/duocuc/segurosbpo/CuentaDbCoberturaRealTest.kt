@@ -158,4 +158,19 @@ class CuentaDbCoberturaRealTest {
         assertEquals("El teléfono debe tener al menos 8 caracteres", error?.message)
         assertEquals("12345678", db.obtener(registrada.id)?.telefono)
     }
+
+    @Test fun imagenEnLimiteExactoDeUnMegabyteSeConservaTrasReabrirBase() {
+        val cuenta = registrar()
+        val imagen = ByteArray(1024 * 1024) { indice -> (indice % 251).toByte() }
+        val guardada = db.actualizarFoto(cuenta.id, imagen)
+        assertArrayEquals(imagen, guardada.foto)
+        assertEquals(1024 * 1024, db.obtener(cuenta.id)?.foto?.size)
+        assertEquals("La foto no puede superar 1 MB", runCatching {
+            db.actualizarFoto(cuenta.id, ByteArray(1024 * 1024 + 1))
+        }.exceptionOrNull()?.message)
+        db.close()
+        db = CuentaDbHelper(contexto, archivo)
+        assertArrayEquals(imagen, db.obtener(cuenta.id)?.foto)
+        assertEquals(cuenta.id, db.iniciarSesion("ana@ejemplo.cl", "Clave2026")?.id)
+    }
 }

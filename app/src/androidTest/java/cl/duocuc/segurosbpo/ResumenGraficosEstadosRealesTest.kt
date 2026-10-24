@@ -1,5 +1,7 @@
 package cl.duocuc.segurosbpo
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -87,5 +89,60 @@ class ResumenGraficosEstadosRealesTest {
         }
         rule.onNodeWithText("Vehículo · choque o colisión: 1").assertDoesNotExist()
         rule.onNodeWithText("10/2026: 1").assertDoesNotExist()
+    }
+
+    @Test fun indicadoresReaccionanAlCambioDeCarteraSinPerderContexto() {
+        val reportes = mutableStateOf(emptyList<Siniestro>())
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = reportes.value,
+                equipo = "Hogar",
+                modifier = Modifier,
+                titulo = "Revisión de cartera",
+                descripcion = "Siniestros del período"
+            )
+        }
+        rule.onNodeWithText("Revisión de cartera").assertExists()
+        rule.onNodeWithText("Siniestros del período: 0").assertExists()
+        rule.onNodeWithText("No hay siniestros para mostrar en los gráficos.").assertExists()
+        rule.runOnIdle {
+            reportes.value = listOf(
+                caso(101, TipoSiniestro.DANO_AGUA, EtapaSiniestro.EVALUACION, "20-10-2026"),
+                caso(102, TipoSiniestro.INCENDIO, EtapaSiniestro.CERRADO, "20-09-2026")
+            )
+        }
+        rule.onNodeWithText("Revisión de cartera").assertExists()
+        rule.onNodeWithText("Siniestros del período: 2").assertExists()
+        rule.onNodeWithText("Abiertos: 1").assertExists()
+        rule.onNodeWithText("Cerrados: 1").assertExists()
+        rule.onNodeWithText("Hogar · daño por agua: 1").assertExists()
+        rule.onNodeWithText("Hogar · incendio: 1").assertExists()
+        rule.onNodeWithText("No hay siniestros para mostrar en los gráficos.").assertDoesNotExist()
+        rule.runOnIdle { reportes.value = emptyList() }
+        rule.onNodeWithText("Siniestros del período: 0").assertExists()
+        rule.onNodeWithText("No hay siniestros para mostrar en los gráficos.").assertExists()
+        rule.onNodeWithText("Abiertos: 1").assertDoesNotExist()
+    }
+
+    @Test fun laEtapaLiquidacionSeIncluyeEnLosTotalesSinConfundirseConCierre() {
+        val casos = listOf(
+            caso(111, TipoSiniestro.CRISTALES, EtapaSiniestro.LIQUIDACION, "21-10-2026"),
+            caso(112, TipoSiniestro.ROBO_VEHICULO, EtapaSiniestro.RECIBIDO, "21-10-2026")
+        )
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = casos,
+                equipo = "Vehículos",
+                modifier = Modifier,
+                titulo = "Estado de liquidación",
+                descripcion = "Casos revisados"
+            )
+        }
+        rule.onNodeWithText("Estado de liquidación").assertExists()
+        rule.onNodeWithText("Casos revisados: 2").assertExists()
+        rule.onNodeWithText("Abiertos: 2").assertExists()
+        rule.onNodeWithText("Cerrados: 0").assertExists()
+        rule.onNodeWithText("Vehículo · rotura de cristales: 1").assertExists()
+        rule.onNodeWithText("Vehículo · robo: 1").assertExists()
     }
 }
