@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo
 
 import android.app.Application
+import android.content.ContentValues
 import android.graphics.Bitmap
 import java.util.Random
 import org.junit.Assert.assertArrayEquals
@@ -176,5 +177,57 @@ class SesionCuentaRealCoberturaTest {
         assertEquals("El teléfono debe tener al menos 8 caracteres",
             sesion.actualizarTelefono("1"))
         assertEquals(actual, sesion.cuenta.value)
+    }
+
+    @Test fun aseguradoConEquipoErroneoNoSeAutenticaNiRestauraSesion() {
+        val vm = CuentaSesionViewModel(app)
+        assertNull(vm.registrar(
+            "Ana Prueba", rut, correo, "912345678", "Clave2026", "Clave2026"
+        ))
+        val id = requireNotNull(vm.cuenta.value?.id)
+        vm.cerrarSesion()
+        CuentaDbHelper(app).use { helper ->
+            assertEquals(1, helper.writableDatabase.update(
+                "cuentas",
+                ContentValues().apply { put("equipo", "HOGAR") },
+                "id = ?", arrayOf(id)
+            ))
+        }
+        assertEquals("La cuenta no tiene una especialidad válida", vm.iniciar(correo, "Clave2026"))
+        assertNull(vm.cuenta.value)
+        app.getSharedPreferences("cuenta_sesion_local", 0).edit()
+            .putString("cuenta_id", id).commit()
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+        app.getSharedPreferences("cuenta_sesion_local", 0).edit()
+            .remove("cuenta_id").commit()
+        CuentaDbHelper(app).use { helper ->
+            assertEquals(1, helper.writableDatabase.update(
+                "cuentas",
+                ContentValues().apply { putNull("equipo") },
+                "id = ?", arrayOf(id)
+            ))
+        }
+        assertNull(vm.iniciar(correo, "Clave2026"))
+        assertEquals(RolCuenta.ASEGURADO, vm.cuenta.value?.rol)
+        assertNull(vm.cuenta.value?.equipo)
+        vm.cerrarSesion()
+    }
+
+    @Test fun cuentaConRolPersistidoIlegibleNoFiltraErroresInternos() {
+        val vm = CuentaSesionViewModel(app)
+        assertNull(vm.registrar(
+            "Ana Prueba", rut, correo, "912345678", "Clave2026", "Clave2026"
+        ))
+        val id = requireNotNull(vm.cuenta.value?.id)
+        vm.cerrarSesion()
+        CuentaDbHelper(app).use { helper ->
+            assertEquals(1, helper.writableDatabase.update(
+                "cuentas",
+                ContentValues().apply { put("rol", "ROL_INEXISTENTE") },
+                "id = ?", arrayOf(id)
+            ))
+        }
+        assertEquals("No se pudo verificar la cuenta", vm.iniciar(correo, "Clave2026"))
+        assertNull(vm.cuenta.value)
     }
 }

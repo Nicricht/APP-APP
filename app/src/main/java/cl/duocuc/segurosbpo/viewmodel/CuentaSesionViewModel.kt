@@ -15,9 +15,10 @@ import kotlinx.coroutines.flow.asStateFlow
 class CuentaSesionViewModel(application: Application) : AndroidViewModel(application) {
     private val db = CuentaDbHelper(application)
     private val preferencias = application.getSharedPreferences("cuenta_sesion_local", 0)
-    private fun equipoValido(cuenta: CuentaLocal): Boolean =
-        cuenta.rol != RolCuenta.LIQUIDADOR ||
-            Liquidador.entries.any { it.name == cuenta.equipo }
+    private fun equipoValido(cuenta: CuentaLocal): Boolean = when (cuenta.rol) {
+        RolCuenta.ASEGURADO -> cuenta.equipo == null
+        RolCuenta.LIQUIDADOR -> Liquidador.entries.any { it.name == cuenta.equipo }
+    }
 
     private val inicial = preferencias.getString("cuenta_id", null)?.let { id ->
         if (id == "DEMO_ASEG_CAMILA") {
@@ -47,7 +48,8 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             guardar(cuentaEncontrada)
             return null
         }
-        return resultado.exceptionOrNull()?.message ?: "Correo o contraseña incorrectos"
+        return if (resultado.isFailure) "No se pudo verificar la cuenta"
+            else "Correo o contraseña incorrectos"
     }
 
     fun registrar(

@@ -282,6 +282,18 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Cambios en el commit: un ViewModel de producción, dos archivos de pruebas instrumentadas y esta bitácora. No se alteran SQLite, Gradle, permisos, tipos o demás pantallas. No se añaden comentarios Kotlin ni se modifican `main` o `entrega-01`.
 - **Pendiente:** completar ambas suites para el SHA que contenga estos cambios antes de atribuirlos a una versión aprobada o actualizar JaCoCo. No se promete 100 % de cobertura sin informe real.
 
+## 2026-10-24: integridad de rol de asegurado y mensajes seguros al iniciar sesión
+
+- Línea base `b3502a85` confirmada: Kotlin QA [40115081060](https://github.com/Nicricht/APP-APP/actions/runs/40115081060) e instrumentado [40115081113](https://github.com/Nicricht/APP-APP/actions/runs/40115081113) **success**. JaCoCo **3124/3128 líneas (99,87 %) y 1011/1037 ramas (97,49 %)**.
+- El commit de otro colaborador [562b5522](https://github.com/Nicricht/APP-APP/commit/562b5522e253b6ee33a3604db5b15ffce0e6021f) añade validación de equipo para el liquidador al iniciar sesión y nuevas pruebas. Sus workflows iniciados [Kotlin QA 40116266674](https://github.com/Nicricht/APP-APP/actions/runs/40116266674) e [instrumentado 40116266530](https://github.com/Nicricht/APP-APP/actions/runs/40116266530) aún no son evidencia de éxito al preparar este cambio.
+- Mejora adicional en `CuentaSesionViewModel.equipoValido`: asegurar también que un registro `ASEGURADO` no tenga asignada una especialidad de liquidador. Mantener las verificaciones ya añadidas para `LIQUIDADOR`.
+- En caso de que SQLite contenga un rol ilegible y la conversión falle durante `iniciar`, mostrar el mensaje controlado `No se pudo verificar la cuenta`, en lugar de revelar texto interno de excepción. Mantener el mensaje actual de especialidad inválida para respetar las pruebas existentes.
+- Dos pruebas nuevas en `SesionCuentaRealCoberturaTest`: asegurado con equipo incorrecto rechazado tanto en restauración como en inicio de sesión y readmitido al reparar sus datos; rol persistido inválido rechazado sin exponer excepción interna.
+- La integración no sobrescribe los archivos de prueba del colaborador; el commit actual parte de su SHA y las nuevas suites de `qa` deben ejecutar todos los casos de ambos trabajos.
+- Código nuevo sin comentarios, registros únicamente ficticios, sin cambios de esquema SQLite, de imágenes ni de permisos.
+- Estado del nuevo commit: **pendiente del resultado real de compilación, instalación Android 11/15 e instrumentado y de la cobertura medida para el mismo SHA**.
+- `main` y `entrega-01` no se modifican.
+
 ## Pendientes sin evidencia suficiente
 
 1. Seguir midiendo JaCoCo por SHA completo y cubrir únicamente rutas reales en CuentaSesionViewModel, gráficos, perfiles y navegación.
