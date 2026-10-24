@@ -1,5 +1,16 @@
 package cl.duocuc.segurosbpo.model
 
+data class ErroresRegistro(
+    val nombre: String? = null,
+    val rut: String? = null,
+    val correo: String? = null,
+    val telefono: String? = null,
+    val clave: String? = null,
+    val confirmacion: String? = null
+) {
+    fun primerError(): String? = nombre ?: rut ?: correo ?: telefono ?: clave ?: confirmacion
+}
+
 object ValidadorCuenta {
     fun normalizarCorreo(correo: String) = correo.trim().lowercase()
 
@@ -23,6 +34,24 @@ object ValidadorCuenta {
         return partes[1] == dv
     }
 
+    fun erroresRegistro(
+        nombre: String,
+        rut: String,
+        correo: String,
+        telefono: String,
+        clave: String,
+        confirmacion: String
+    ): ErroresRegistro = ErroresRegistro(
+        nombre = if (nombre.trim().length < 3) "Ingresa tu nombre completo" else null,
+        rut = if (!rutValido(rut)) "Ingresa un RUT ficticio válido" else null,
+        correo = if (!Regex("^[^@\\s]+@[^@\\s]+\\.[A-Za-z]{2,}$")
+                .matches(normalizarCorreo(correo))) "Ingresa un correo válido" else null,
+        telefono = if (telefono.trim().length < 8) "Ingresa un teléfono válido" else null,
+        clave = if (clave.length < 8)
+            "Usa una clave de demostración de al menos 8 caracteres" else null,
+        confirmacion = if (clave != confirmacion) "Las claves no coinciden" else null
+    )
+
     fun errorRegistro(
         nombre: String,
         rut: String,
@@ -30,14 +59,5 @@ object ValidadorCuenta {
         telefono: String,
         clave: String,
         confirmacion: String
-    ): String? = when {
-        nombre.trim().length < 3 -> "Ingresa tu nombre completo"
-        !rutValido(rut) -> "Ingresa un RUT ficticio válido"
-        !Regex("^[^@\\s]+@[^@\\s]+\\.[A-Za-z]{2,}$").matches(normalizarCorreo(correo)) ->
-            "Ingresa un correo válido"
-        telefono.trim().length < 8 -> "Ingresa un teléfono válido"
-        clave.length < 8 -> "Usa una clave de demostración de al menos 8 caracteres"
-        clave != confirmacion -> "Las claves no coinciden"
-        else -> null
-    }
+    ): String? = erroresRegistro(nombre, rut, correo, telefono, clave, confirmacion).primerError()
 }

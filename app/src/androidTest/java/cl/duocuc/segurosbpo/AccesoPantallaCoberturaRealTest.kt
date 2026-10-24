@@ -74,6 +74,28 @@ class AccesoPantallaCoberturaRealTest {
         rule.onNodeWithText("RUT ficticio inválido").assertDoesNotExist()
     }
 
+    @Test fun registroInvalidoMuestraErroresPorCampoYActualizaSoloElCorregido() {
+        rule.setContent {
+            AccesoScreen(
+                onIniciar = { _, _ -> null },
+                onRegistrar = { _, _, _, _, _, _ -> "Revisa los datos" },
+                onDemoLiquidador = {}, onDemoAsegurado = {}
+            )
+        }
+        rule.onNodeWithText("Crear cuenta de asegurado").performScrollTo().performClick()
+        rule.onNodeWithText("Crear cuenta").performScrollTo().performClick()
+
+        rule.onNodeWithText("Ingresa tu nombre completo").assertExists()
+        rule.onNodeWithText("Ingresa un RUT ficticio válido").assertExists()
+        rule.onNodeWithText("Ingresa un correo válido").assertExists()
+        rule.onNodeWithText("Revisa los datos").assertExists()
+
+        rule.onNodeWithText("Nombre completo").performScrollTo().performTextInput("Ana Prueba")
+        rule.onNodeWithText("Ingresa tu nombre completo").assertDoesNotExist()
+        rule.onNodeWithText("Ingresa un RUT ficticio válido").assertExists()
+        rule.onNodeWithText("Revisa los datos").assertDoesNotExist()
+    }
+
     @Test fun accesosDemoDistinguenVehiculosYHogar() {
         val elegido = AtomicReference<Liquidador>()
         val camila = AtomicBoolean(false)

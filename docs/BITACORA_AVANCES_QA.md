@@ -385,6 +385,14 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - El [issue #10](https://github.com/Nicricht/APP-APP/issues/10) se cerró con trazabilidad de sus pruebas de rol, especialidad y recuperación de acceso. Continúan abiertos [#6](https://github.com/Nicricht/APP-APP/issues/6) por la meta de cobertura y [#7](https://github.com/Nicricht/APP-APP/issues/7) por firma persistente/ensayo físico.
 - La verificación de `apksigner` fue exitosa, pero **no equivale a una firma persistente**: los secretos de QA y la actualización `adb install -r` preservando SQLite todavía requieren configuración y comprobación. `main` y `entrega-01` siguen intactas.
 
+## 2026-10-24: validación visual de cuentas y auditoría de los siete criterios
+
+- Se revisó la guía maestra y la implementación real de `qa` en `64a6e885`, sin proponer backend ni Java para la evaluación actual.
+- [Auditoría de la pauta](AUDITORIA_PAUTA_DSY1105_2026-10-24.md): evidencia por criterio y riesgos pendientes sin asignar puntaje del docente. Se distingue cobertura de pruebas de evidencia en dispositivo físico y trabajo auténtico del segundo integrante.
+- [PR #11](https://github.com/Nicricht/APP-APP/pull/11), basada **solo en `qa`**: se inició la validación inline del registro con pruebas de campo y Compose, sin cambios a `main` o `entrega-01`.
+- **TDD RED confirmado:** [Android Kotlin QA 40141244228](https://github.com/Nicricht/APP-APP/actions/runs/40141244228) falló en `compileDebugUnitTestKotlin` porque la nueva prueba invocaba `ValidadorCuenta.erroresRegistro` antes de implementarlo. El fallo era el esperado por funcionalidad ausente, no una prueba reportada como verde.
+- La prueba instrumentada cubre múltiples errores y su corrección reactiva; comprobar su ejecución real antes de fusionar. No atribuir éxito a una compilación sola.
+
 ## Pendientes sin evidencia suficiente
 
 1. Seguir midiendo JaCoCo por SHA completo y cubrir únicamente rutas reales en CuentaSesionViewModel, gráficos, perfiles y navegación.
