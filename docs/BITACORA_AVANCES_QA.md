@@ -86,6 +86,24 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Código de producción y esquema SQLite: sin cambios. Test data generado y en proveedor instrumentado propio, sin datos reales.
 - Estado al registrar: **pendiente de ejecución Android Kotlin QA e instrumentada del commit asociado**.
 
+## 2026-10-24: cierre de QA en menú por roles y galería
+
+- Commit verificado: [e2b54ead](https://github.com/Nicricht/APP-APP/commit/e2b54eadd215ffa97b10d7f8c6312463e9a309eb).
+- [Android Kotlin QA 40087227507](https://github.com/Nicricht/APP-APP/actions/runs/40087227507) e [instrumented QA 40087227435](https://github.com/Nicricht/APP-APP/actions/runs/40087227435): ambas correctas.
+- Cobertura instrumentada: **3052/3087 líneas (98,87 %)** y **950/1005 ramas (94,53 %)**.
+- Se verificaron menú lateral de asegurado y liquidador y cuatro escenarios del selector de imágenes de perfil. Los huecos principales quedan en `FormularioScreenKt`, `SiniestroDbHelper` y ramas de sesión.
+
+## 2026-10-24: BPO-03, validación de datos en SQLite
+
+- Hallazgo P0 documentado: [issue #8](https://github.com/Nicricht/APP-APP/issues/8).
+- Archivo modificado: `app/src/main/java/cl/duocuc/segurosbpo/data/SiniestroDbHelper.kt`.
+- Reglas nuevas en `registrar`: fecha válida y no futura, comuna no vacía, descripción no vacía, compañía activa y confirmación explícita. La comprobación es previa a abrir la transacción y no altera bases ya existentes.
+- Archivo nuevo: `app/src/androidTest/java/cl/duocuc/segurosbpo/RegistroSiniestroValidacionDbTest.kt`.
+- Casos de prueba: siete formularios inválidos sin efectos persistidos en siniestros, gestiones ni avisos; uno válido con limpieza de espacios y número único; uno fuera de 30 días aceptado con advertencia de plazo.
+- Fixtures actualizados para exigir confirmación también en las pruebas antiguas: `BusquedaSeguraCoberturaTest`, `DecisionesSQLiteAdicionalesTest`, `FlujoViewModelCoberturaTest`, `ImagenesSQLiteLimitesTest`.
+- Validación: **pendiente de resultado de ambos workflows para el commit de este cambio**. No confundir con QA verde del commit anterior.
+- Ningún comentario agregado al código. Las ramas `main` y `entrega-01` no se tocan.
+
 ## Pendientes sin evidencia suficiente
 
 1. Comprobar el informe de JaCoCo del nuevo SHA; seguir con perfil, navegación, formularios y ViewModel.

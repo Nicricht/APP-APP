@@ -37,7 +37,8 @@ class ImagenesSQLiteLimitesTest {
             asegurado = Asegurado.CAMILA,
             fechaOcurrencia = "20-10-2026",
             comuna = "Quilicura",
-            descripcion = "Prueba de resolución de imagen"
+            descripcion = "Prueba de resolución de imagen",
+            datosCorrectos = true
         ))
         val foto = Bitmap.createBitmap(1500, 1200, Bitmap.Config.ARGB_8888)
         try {
@@ -63,7 +64,8 @@ class ImagenesSQLiteLimitesTest {
             asegurado = Asegurado.CAMILA,
             fechaOcurrencia = "20-10-2026",
             comuna = "Santiago",
-            descripcion = "Archivo inválido guardado localmente"
+            descripcion = "Archivo inválido guardado localmente",
+            datosCorrectos = true
         ))
         db.guardarEvidencia(
             caso.id,
@@ -81,7 +83,8 @@ class ImagenesSQLiteLimitesTest {
             asegurado = Asegurado.CAMILA,
             fechaOcurrencia = "20-10-2026",
             comuna = "Santiago",
-            descripcion = "Comprobación de una fotografía vertical"
+            descripcion = "Comprobación de una fotografía vertical",
+            datosCorrectos = true
         ))
         val foto = Bitmap.createBitmap(480, 1800, Bitmap.Config.ARGB_8888)
         try {

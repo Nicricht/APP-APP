@@ -93,7 +93,8 @@ class FlujoViewModelCoberturaTest {
                 asegurado = Asegurado.CAMILA,
                 fechaOcurrencia = "20-10-2026",
                 comuna = "Puente Alto",
-                descripcion = "Fotografía y documento de prueba"
+                descripcion = "Fotografía y documento de prueba",
+                datosCorrectos = true
             )
         )
         val caso = vm.siniestros.value.single { it.numero == numero }
@@ -212,7 +213,8 @@ class FlujoViewModelCoberturaTest {
             asegurado = Asegurado.CAMILA,
             fechaOcurrencia = "20-10-2026",
             comuna = "La Florida",
-            descripcion = "Reporte de prueba"
+            descripcion = "Reporte de prueba",
+            datosCorrectos = true
         )
         vm.seleccionarAsegurado(Asegurado.JORGE)
         assertNull(vm.buscarPosibleDuplicado(formulario))

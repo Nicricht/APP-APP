@@ -41,7 +41,8 @@ class DecisionesSQLiteAdicionalesTest {
                 huboTerceros = true,
                 fechaOcurrencia = "21-10-2026",
                 comuna = "Santiago",
-                descripcion = "Reporte con terceros"
+                descripcion = "Reporte con terceros",
+                datosCorrectos = true
             )
         )
         assertTrue(nuevo.huboTerceros)

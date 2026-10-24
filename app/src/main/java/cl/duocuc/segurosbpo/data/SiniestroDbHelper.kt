@@ -20,6 +20,7 @@ import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ReglasEtapa
 import cl.duocuc.segurosbpo.model.ValidadorEvidencia
 import cl.duocuc.segurosbpo.model.FormularioUiState
+import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.TipoSiniestro
 import java.text.SimpleDateFormat
@@ -248,6 +249,14 @@ class SiniestroDbHelper(
         ).use { if (it.moveToFirst()) it.getString(0) else null }
 
     fun registrar(formulario: FormularioUiState): Siniestro {
+        val error = listOfNotNull(
+            ValidadorSiniestro.errorFecha(formulario.fechaOcurrencia),
+            ValidadorSiniestro.errorComuna(formulario.comuna),
+            ValidadorSiniestro.errorDescripcion(formulario.descripcion),
+            ValidadorSiniestro.errorCompania(formulario.compania),
+            if (!formulario.datosCorrectos) "Debes confirmar que los datos son correctos" else null
+        ).firstOrNull()
+        require(error == null) { error ?: "Datos del siniestro inválidos" }
         val db = writableDatabase
         db.beginTransaction()
         try {

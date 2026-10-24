@@ -46,7 +46,8 @@ class BusquedaSeguraCoberturaTest {
                 asegurado = Asegurado.JORGE,
                 fechaOcurrencia = "20-10-2026",
                 comuna = "Quilicura",
-                descripcion = "Registro de prueba"
+                descripcion = "Registro de prueba",
+                datosCorrectos = true
             )
         )
         assertEquals(1, db.listar(Asegurado.JORGE, reporte.numero).size)
