@@ -49,6 +49,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     val liquidador = _liquidador.asStateFlow()
     private val _casosLiquidador = MutableStateFlow(db.listarAsignados(Liquidador.VEHICULOS))
     val casosLiquidador = _casosLiquidador.asStateFlow()
+    private val _seguimientosVencidos = MutableStateFlow(db.listarSeguimientosVencidos(Liquidador.VEHICULOS))
+    val seguimientosVencidos = _seguimientosVencidos.asStateFlow()
     private val _disponiblesLiquidador = MutableStateFlow(db.listarDisponibles(Liquidador.VEHICULOS))
     val disponiblesLiquidador = _disponiblesLiquidador.asStateFlow()
     private val _gestionesLiquidador = MutableStateFlow<List<Gestion>>(emptyList())
@@ -70,6 +72,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun refrescarAsignados() {
         _casosLiquidador.value = db.listarAsignados(_liquidador.value)
         _disponiblesLiquidador.value = db.listarDisponibles(_liquidador.value)
+        _seguimientosVencidos.value = db.listarSeguimientosVencidos(_liquidador.value)
     }
 
     fun tomarCasoLiquidador(id: Long): String? {

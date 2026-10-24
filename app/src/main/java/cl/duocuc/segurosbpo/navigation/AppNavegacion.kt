@@ -83,6 +83,7 @@ fun AppNavegacion() {
     val gestiones by siniestrosVm.gestiones.collectAsStateWithLifecycle()
     val liquidador by siniestrosVm.liquidador.collectAsStateWithLifecycle()
     val casosLiquidador by siniestrosVm.casosLiquidador.collectAsStateWithLifecycle()
+    val seguimientosVencidos by siniestrosVm.seguimientosVencidos.collectAsStateWithLifecycle()
     val disponiblesLiquidador by siniestrosVm.disponiblesLiquidador.collectAsStateWithLifecycle()
     val gestionesLiquidador by siniestrosVm.gestionesLiquidador.collectAsStateWithLifecycle()
 
@@ -230,6 +231,7 @@ fun AppNavegacion() {
                 liquidador = liquidador,
                 casos = casosLiquidador,
                 disponibles = disponiblesLiquidador,
+                seguimientosVencidos = seguimientosVencidos,
                 onTomarCaso = siniestrosVm::tomarCasoLiquidador,
                 gestiones = gestionesLiquidador,
                 solicitudes = solicitudesLiquidador,

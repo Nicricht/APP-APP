@@ -359,6 +359,21 @@ class SiniestroDbHelper(
         }
     }
 
+    fun listarSeguimientosVencidos(
+        liquidador: Liquidador,
+        fechaConsulta: Date = Date()
+    ): Set<Long> = listarAsignados(liquidador)
+        .asSequence()
+        .filter { it.etapa != EtapaSiniestro.CERRADO }
+        .filter { caso ->
+            val ultimaVisible = listarGestionesAsignadas(caso.id, liquidador)
+                .firstOrNull { it.visibleAsegurado }?.fecha
+                ?: caso.fechaReporte
+            ControlPlazos.diasCorridos(ultimaVisible, fechaConsulta) >= 7
+        }
+        .map { it.id }
+        .toSet()
+
     fun listarAsignados(liquidador: Liquidador): List<Siniestro> {
         val casos = mutableListOf<Siniestro>()
         readableDatabase.query(

@@ -56,6 +56,7 @@ fun CasosLiquidadorScreen(
     onCerrarAnticipado: (Long, String, String) -> String?,
     onVolver: () -> Unit,
     disponibles: List<Siniestro> = emptyList(),
+    seguimientosVencidos: Set<Long> = emptySet(),
     onTomarCaso: (Long) -> String? = { "No disponible" },
     permitirElegirEquipo: Boolean = true,
     onCerrarSesion: () -> Unit = {},
@@ -130,6 +131,12 @@ fun CasosLiquidadorScreen(
                         Text(siniestro.numero, style = MaterialTheme.typography.titleMedium)
                         Text(siniestro.tipo.etiqueta)
                         Text("Etapa: " + siniestro.etapa.etiqueta)
+                        if (siniestro.id in seguimientosVencidos) {
+                            Text(
+                                "Seguimiento pendiente: registra una gestión visible",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
                 }
@@ -138,6 +145,12 @@ fun CasosLiquidadorScreen(
                 TextButton(onClick = { casoId = null }) { Text("Volver a la lista de casos") }
                 Text("Gestionar: " + caso.numero, style = MaterialTheme.typography.titleLarge)
                 Text("Etapa actual: " + caso.etapa.etiqueta)
+                if (caso.id in seguimientosVencidos) {
+                    Text(
+                        "Seguimiento pendiente: registra una gestión visible",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
                 if (caso.etapa == EtapaSiniestro.CERRADO) {
                     Text("Este siniestro está cerrado. No se admiten modificaciones.")
                     Text("Resultado: " + (caso.resultadoCierre ?: "No disponible"))
@@ -152,6 +165,10 @@ fun CasosLiquidadorScreen(
                         supportingText = { Text("Obligatorio, hasta 500 caracteres") },
                         minLines = 2
                     )
+                    TextButton(onClick = {
+                        descripcion = "Sin novedades"
+                        visible = true
+                    }) { Text("Completar con Sin novedades") }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Checkbox(checked = visible, onCheckedChange = { visible = it })
                         Text(if (visible) "Visible para el asegurado" else "Gestión interna",

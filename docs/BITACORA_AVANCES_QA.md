@@ -158,8 +158,21 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Nueva clase `BandejaLiquidadorYEstadisticasLimitesTest.kt`: bandeja con siniestro disponible y manejador de toma no suministrado muestra "No disponible" y no simula una asignación; la tarjeta estadística sin casos distingue un título/descripción alternativos; la evolución mensual ignora fechas malformadas sin alterar conteos reales.
 - Fundamento: el XML JaCoCo indicó decisiones pendientes en `PerfilCuentaScreen`, `CasosLiquidadorScreen`, `ResumenGraficosCasos` y `EstadisticasCasos`. Se comprueban estados útiles al usuario, sin trampas para subir cobertura.
 - Archivos de producción: **sin cambios**. Se agregan 6 tests instrumentados y esta entrada.
-- Estado: pruebas nuevas **pendientes de CI de este commit**. No afirmar cobertura ni verde antes de completar las dos suites.
+- Resultado del commit [`c38b0910`](https://github.com/Nicricht/APP-APP/commit/c38b0910c2a0f4072aa3911f5079464ed3cde69b): [Kotlin QA 40093887015](https://github.com/Nicricht/APP-APP/actions/runs/40093887015) e [instrumentado 40093887054](https://github.com/Nicricht/APP-APP/actions/runs/40093887054) **success**. JaCoCo: **3088/3095 líneas (99,77 %) y 980/1013 ramas (96,74 %)**, quedan siete líneas y 33 ramas. Instalación API 30/35 aprobada.
 - Ramas `main` y `entrega-01`: no modificar. No insertar comentarios en código Kotlin.
+
+## 2026-10-24: seguimiento de gestiones cada siete días, fase funcional
+
+- Requisito del plan maestro: [issue #9](https://github.com/Nicricht/APP-APP/issues/9) y sección 10 de `PLAN_MAESTRO_FINALIZACION.md`.
+- `SiniestroDbHelper.listarSeguimientosVencidos`: busca solo casos **asignados al liquidador consultado** y abiertos; examina la última gestión visible a partir del historial persistido, y devuelve los IDs cuya fecha supera o alcanza siete días corridos. Las gestiones internas no reinician el plazo. No escribe avisos ni falsifica registros de seguimiento.
+- `SiniestrosViewModel`: añade `seguimientosVencidos` reactivo por liquidador. Refresca al seleccionar equipo o registrar una gestión; no permite que la consulta cruce especialidades.
+- `AppNavegacion` y `CasosLiquidadorScreen`: muestran un mensaje en la lista y en el detalle cuando se requiere gestión visible. La acción "Completar con Sin novedades" llena la descripción y marca visibilidad, pero **no crea la gestión hasta pulsar "Registrar gestión"**.
+- Pruebas nuevas: `SeguimientoSemanalDbTest` (6/7/14 días, privacidad por equipo, gestión interna frente a visible, caso cerrado), `SeguimientoSemanalViewModelTest` (actualización de estado tras acción) y `SeguimientoSemanalPantallaTest` (alerta en listado/detalle, estado al día y confirmación explícita de "Sin novedades").
+- Alcance: comprobación al **abrir o actualizar la aplicación SQLite local**. No se garantiza programación en segundo plano, push remoto ni sincronización entre dispositivos. No se agrega un cron ni un servicio de red inexistente.
+- Esquema SQLite y migraciones: sin cambios. Se agregan pruebas instrumentadas con bases exclusivas y fechas controladas.
+- Estado: **pendiente de compilación, instrumentadas y medición del commit que contiene esta entrada**.
+- Verificar antes de cerrar el [issue #9](https://github.com/Nicricht/APP-APP/issues/9) que el texto e interfaz muestran suficiente contexto de plazo. No declarar finalizado un requisito parcial.
+- Se respeta la convención de no añadir comentarios Kotlin; solo se modifica `qa`, sin tocar `main` ni `entrega-01`.
 
 ## Pendientes sin evidencia suficiente
 
