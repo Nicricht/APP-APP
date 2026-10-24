@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Liquidador
+import cl.duocuc.segurosbpo.model.ValidadorCuenta
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +43,10 @@ fun AccesoScreen(
     var clave by remember { mutableStateOf("") }
     var confirmacion by remember { mutableStateOf("") }
     var mensaje by remember { mutableStateOf<String?>(null) }
+    var mostrarErroresRegistro by rememberSaveable { mutableStateOf(false) }
+    val erroresRegistro = if (registro && mostrarErroresRegistro) {
+        ValidadorCuenta.erroresRegistro(nombre, rut, correo, telefono, clave, confirmacion)
+    } else null
 
     Scaffold(topBar = { TopAppBar(title = { Text("Seguros BPO") }) }) { margen ->
         Column(
@@ -59,38 +64,62 @@ fun AccesoScreen(
             )
             if (registro) {
                 OutlinedTextField(
-                    value = nombre, onValueChange = { nombre = it },
-                    label = { Text("Nombre completo") }, modifier = Modifier.fillMaxWidth()
+                    value = nombre, onValueChange = { nombre = it; mensaje = null },
+                    label = { Text("Nombre completo") }, modifier = Modifier.fillMaxWidth(),
+                    isError = erroresRegistro?.nombre != null,
+                    supportingText = if (erroresRegistro?.nombre != null) {
+                        { Text(erroresRegistro?.nombre.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    } else null
                 )
                 OutlinedTextField(
-                    value = rut, onValueChange = { rut = it },
-                    label = { Text("RUT ficticio") }, modifier = Modifier.fillMaxWidth()
+                    value = rut, onValueChange = { rut = it; mensaje = null },
+                    label = { Text("RUT ficticio") }, modifier = Modifier.fillMaxWidth(),
+                    isError = erroresRegistro?.rut != null,
+                    supportingText = if (erroresRegistro?.rut != null) {
+                        { Text(erroresRegistro?.rut.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    } else null
                 )
             }
             OutlinedTextField(
-                value = correo, onValueChange = { correo = it },
+                value = correo, onValueChange = { correo = it; mensaje = null },
                 label = { Text("Correo electrónico") },
-                singleLine = true, modifier = Modifier.fillMaxWidth()
+                singleLine = true, modifier = Modifier.fillMaxWidth(),
+                isError = erroresRegistro?.correo != null,
+                supportingText = if (erroresRegistro?.correo != null) {
+                    { Text(erroresRegistro?.correo.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                } else null
             )
             if (registro) {
                 OutlinedTextField(
-                    value = telefono, onValueChange = { telefono = it },
+                    value = telefono, onValueChange = { telefono = it; mensaje = null },
                     label = { Text("Teléfono") }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = erroresRegistro?.telefono != null,
+                    supportingText = if (erroresRegistro?.telefono != null) {
+                        { Text(erroresRegistro?.telefono.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    } else null
                 )
             }
             OutlinedTextField(
-                value = clave, onValueChange = { clave = it },
+                value = clave, onValueChange = { clave = it; mensaje = null },
                 label = { Text("Contraseña de demostración") },
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = erroresRegistro?.clave != null,
+                supportingText = if (erroresRegistro?.clave != null) {
+                    { Text(erroresRegistro?.clave.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                } else null
             )
             if (registro) {
                 OutlinedTextField(
-                    value = confirmacion, onValueChange = { confirmacion = it },
+                    value = confirmacion, onValueChange = { confirmacion = it; mensaje = null },
                     label = { Text("Confirmar contraseña") },
                     visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = erroresRegistro?.confirmacion != null,
+                    supportingText = if (erroresRegistro?.confirmacion != null) {
+                        { Text(erroresRegistro?.confirmacion.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    } else null
                 )
             }
             mensaje?.let {
@@ -99,9 +128,11 @@ fun AccesoScreen(
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    mensaje = if (registro) {
+                    val resultado = if (registro) {
                         onRegistrar(nombre, rut, correo, telefono, clave, confirmacion)
                     } else onIniciar(correo, clave)
+                    mensaje = resultado
+                    mostrarErroresRegistro = registro && resultado != null
                 }
             ) {
                 Text(if (registro) "Crear cuenta" else "Iniciar sesión")
@@ -110,6 +141,7 @@ fun AccesoScreen(
                 onClick = {
                     registro = !registro
                     mensaje = null
+                    mostrarErroresRegistro = false
                     clave = ""
                     confirmacion = ""
                 }
