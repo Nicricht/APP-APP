@@ -16,6 +16,7 @@ import cl.duocuc.segurosbpo.model.TipoSiniestro
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 import cl.duocuc.segurosbpo.ui.screens.CasosLiquidadorScreen
 import org.junit.Assert.assertEquals
+import java.util.concurrent.atomic.AtomicLong
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,5 +92,32 @@ class BandejaLiquidadorYEstadisticasLimitesTest {
         assertEquals("10/2026", puntos[1].etiqueta)
         assertEquals(1, puntos[0].cantidad)
         assertEquals(1, puntos[1].cantidad)
+    }
+
+    @Test fun tomarCasoExitosoConfirmaResultadoSinUsarIdEquivocado() {
+        val idSolicitado = AtomicLong(-1L)
+        rule.setContent {
+            CasosLiquidadorScreen(
+                liquidador = Liquidador.VEHICULOS,
+                casos = emptyList(),
+                disponibles = listOf(reporte()),
+                gestiones = emptyList(),
+                solicitudes = emptyList(),
+                onTomarCaso = { id ->
+                    idSolicitado.set(id)
+                    null
+                },
+                onSolicitarDocumento = { _, _, _ -> null },
+                onSeleccionarLiquidador = {},
+                onCargarGestiones = {},
+                onRegistrarGestion = { _, _, _ -> null },
+                onAvanzar = { _, _, _ -> null },
+                onCerrarAnticipado = { _, _, _ -> null },
+                onVolver = {}
+            )
+        }
+        rule.onNodeWithText("Tomar caso").performScrollTo().performClick()
+        rule.onNodeWithText("Caso asignado. Ya puedes gestionarlo.").assertExists()
+        assertEquals(84L, idSolicitado.get())
     }
 }

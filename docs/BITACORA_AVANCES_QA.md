@@ -241,7 +241,16 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Ampliación de `CuentaDbCoberturaRealTest.kt`: migración idempotente desde versión actual sin borrar cuentas ni reiniciar contraseñas; validación exacta de ocho caracteres de teléfono y conservación del valor previo tras intento inválido.
 - Los datos de prueba se identifican como `QA_SESION_CORRUPTA` y se limpian antes y después; no se modifican cuentas reales ni se suben claves o fotografías privadas.
 - No se alteran esquemas ni migraciones existentes, permisos Android, reglas de siniestros o dependencias. Sin comentarios en código Kotlin. Modificaciones exclusivamente en rama `qa`; `main` y `entrega-01` permanecen intactas.
-- **Estado:** pendiente de pruebas de compilación, instalación API 30/35 e instrumentadas para el commit que introduce este cambio. Registrar aquí los resultados medidos después de CI.
+- **Resultado final:** [commit 0857dc5d](https://github.com/Nicricht/APP-APP/commit/0857dc5d196ea4891708d7521ad56db4a5a223e6), [Kotlin QA 40108173355](https://github.com/Nicricht/APP-APP/actions/runs/40108173355) e [instrumentadas 40108173380](https://github.com/Nicricht/APP-APP/actions/runs/40108173380) **ambas success**. Instalación/arranque API 30 y 35 correctos. JaCoCo **3123/3128 líneas (99,84 %) y 1009/1037 ramas (97,30 %)**. Quedan cinco líneas y 28 ramas.
+
+## 2026-10-24: imagen grande de perfil y confirmación de toma de caso
+
+- Código productivo y esquema SQLite: **sin cambios** desde el commit de sesión validado `0857dc5d`.
+- `PerfilFotoActividadCoberturaTest.kt`: nueva prueba instrumentada con JPEG real de 1600 x 1200 píxeles seleccionado desde galería. Captura la imagen entregada al callback y exige dimensiones positivas y máximas de 600 píxeles por lado, un solo intento de guardar y confirmación visible. Valida que una foto grande no se procese íntegra en el formulario de perfil.
+- `BandejaLiquidadorYEstadisticasLimitesTest.kt`: prueba del callback de tomar caso exitoso con ID 84, y del mensaje de confirmación de asignación visible para el liquidador. Complementa la prueba previa del rechazo de la misma acción sin asignador.
+- Aportación principal: estados de UI que faltan en el XML JaCoCo de `0857dc5d`, con comprobaciones útiles y sin manipular el código de producción para inflar cobertura.
+- Se agregan **dos pruebas** y esta entrada documental, sin comentarios Kotlin nuevos y sin tocar `main` ni `entrega-01`.
+- Estado del commit asociado: **pendiente de Kotlin QA, instalación Android API 30/35 e instrumentadas y cobertura JaCoCo**. No se heredan como propios los números de la ejecución anterior.
 
 ## Pendientes sin evidencia suficiente
 

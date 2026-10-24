@@ -25,10 +25,12 @@ import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
 import cl.duocuc.segurosbpo.ui.screens.PerfilCuentaScreen
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(AndroidJUnit4::class)
 class PerfilFotoActividadCoberturaTest {
@@ -42,7 +44,8 @@ class PerfilFotoActividadCoberturaTest {
         guardadas: AtomicInteger = AtomicInteger(0),
         errorFoto: String? = null,
         permisoPrevio: Boolean = false,
-        peticionesPermiso: AtomicInteger = AtomicInteger(0)
+        peticionesPermiso: AtomicInteger = AtomicInteger(0),
+        validarImagen: ((Bitmap) -> Unit)? = null
     ) {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
         val sinPermiso = object : ContextWrapper(contexto) {
@@ -102,7 +105,8 @@ class PerfilFotoActividadCoberturaTest {
                 PerfilCuentaScreen(
                     cuenta = cuenta,
                     onGuardarTelefono = { null },
-                    onGuardarFoto = {
+                    onGuardarFoto = { foto ->
+                        validarImagen?.invoke(foto)
                         guardadas.incrementAndGet()
                         errorFoto
                     },
@@ -281,5 +285,31 @@ class PerfilFotoActividadCoberturaTest {
         assertEquals(0, peticiones.get())
         assertEquals(1, capturas.get())
         assertEquals(0, guardadas.get())
+    }
+
+    @Test fun fotoGrandeDeGaleriaSeReduceAntesDeGuardarse() {
+        val original = Bitmap.createBitmap(1600, 1200, Bitmap.Config.ARGB_8888)
+        val salida = ByteArrayOutputStream()
+        try {
+            original.eraseColor(android.graphics.Color.BLUE)
+            original.compress(Bitmap.CompressFormat.JPEG, 85, salida)
+        } finally {
+            original.recycle()
+        }
+        val dimensiones = AtomicReference<Pair<Int, Int>?>()
+        val guardadas = AtomicInteger()
+        montar(
+            seleccion = archivo("image/jpeg", salida.toByteArray()),
+            guardadas = guardadas,
+            validarImagen = { imagen ->
+                dimensiones.set(imagen.width to imagen.height)
+            }
+        )
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("Foto actualizada").assertExists()
+        assertEquals(1, guardadas.get())
+        val tamano = dimensiones.get() ?: throw AssertionError("No se entregó ninguna imagen")
+        assertTrue(tamano.first in 1..600)
+        assertTrue(tamano.second in 1..600)
     }
 }
