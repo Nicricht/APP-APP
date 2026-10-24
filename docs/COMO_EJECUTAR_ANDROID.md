@@ -83,6 +83,31 @@ adb shell pidof cl.duocuc.segurosbpo.prueba
 
 Una prueba en emulador no demuestra que el teléfono particular del equipo esté validado. Registrar en la [Bitácora QA](BITACORA_AVANCES_QA.md) el modelo de Android, la versión del sistema, el SHA, resultado de instalación y evidencias sin capturar datos personales.
 
+## 5.1. Firma persistente opcional para actualizar una APK QA
+
+El workflow `Android Kotlin QA` admite una **clave de firma de pruebas reutilizable**, conservada en GitHub Actions Secrets. Esto no convierte la variante `debug` en una versión de producción y no modifica el paquete `cl.duocuc.segurosbpo.prueba`.
+
+Una persona con acceso de administración al repositorio debe crear un almacén de claves exclusivo para QA fuera del repositorio. En una terminal segura con Java instalado, puede crear uno nuevo:
+
+~~~bash
+keytool -genkeypair -v -keystore seguros-bpo-qa.jks -alias segurosbpoqa -keyalg RSA -keysize 3072 -validity 3650
+~~~
+
+**La clave, el archivo JKS y sus contraseñas son secretos.** No adjuntarlos a GitHub Issues, commits, conversaciones ni artifacts. No utilizar una clave productiva o de Play Store. En **Settings → Secrets and variables → Actions → Repository secrets**, configurar conjuntamente:
+
+| Secret | Contenido |
+|---|---|
+| `QA_KEYSTORE_BASE64` | Contenido binario del JKS codificado como Base64 en una sola línea |
+| `QA_SIGNING_STORE_PASSWORD` | Contraseña del almacén |
+| `QA_SIGNING_KEY_ALIAS` | Alias de la clave, por ejemplo `segurosbpoqa` |
+| `QA_SIGNING_KEY_PASSWORD` | Contraseña de esa clave |
+
+En Linux, para generar el primer valor localmente: `base64 -w 0 seguros-bpo-qa.jks`. Ese texto es **secreto** y debe copiarse únicamente en el campo seguro de GitHub. Guardar una copia cifrada de la clave en una ubicación administrada por el equipo, fuera del repositorio, para evitar perderla.
+
+Al compilar un push de `qa`, Actions decodifica temporalmente el JKS, Gradle firma el APK de pruebas con esa identidad y el runner publica un artifact `firma-publica-apk-qa` que contiene **solo la huella pública SHA-256 del certificado**, nunca la clave privada. Si no existe ningún secreto configurado, la compilación sigue con la firma de depuración temporal y lo advierte en el resumen del workflow. Si faltan algunos secretos, falla explícitamente. En solicitudes `pull_request` no se inyecta la firma privada.
+
+Para comprobar una actualización segura, comparar las huellas públicas de dos ejecuciones distintas firmadas con los mismos secretos. Deben coincidir. A continuación, instalar la primera APK en un emulador, crear un registro ficticio y ejecutar `adb install -r app-debug.apk` con la segunda. Abrir la aplicación y comprobar que el registro sigue presente. Repetir en Android 11 y 15 y solo después ensayar el dispositivo físico. **Sin esas pruebas y la configuración de secretos, el problema de actualización incompatible sigue pendiente.**
+
 ## 6. Pruebas del repositorio
 
 Para revisar la versión de `qa` localmente:

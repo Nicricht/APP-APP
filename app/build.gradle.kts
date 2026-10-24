@@ -21,8 +21,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        val rutaAlmacen = System.getenv("QA_SIGNING_KEYSTORE")
+        if (!rutaAlmacen.isNullOrBlank()) {
+            create("qaPersistente") {
+                storeFile = file(rutaAlmacen)
+                storePassword = requireNotNull(System.getenv("QA_SIGNING_STORE_PASSWORD"))
+                keyAlias = requireNotNull(System.getenv("QA_SIGNING_KEY_ALIAS"))
+                keyPassword = requireNotNull(System.getenv("QA_SIGNING_KEY_PASSWORD"))
+            }
+        }
+    }
+
     buildTypes {
         debug {
+            signingConfigs.findByName("qaPersistente")?.let { signingConfig = it }
             applicationIdSuffix = ".prueba"
             versionNameSuffix = "-prueba"
             enableUnitTestCoverage = true

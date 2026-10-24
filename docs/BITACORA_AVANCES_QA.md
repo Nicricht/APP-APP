@@ -346,6 +346,18 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - **Estado de este cambio: pendiente de compilación, instalaciones API 30/35 y reporte instrumentado propio del nuevo SHA.**
 - `main` y `entrega-01` permanecen sin modificaciones.
 
+## 2026-10-24: infraestructura para firma persistente de APK QA
+
+- Punto de partida auditado: [commit 4af2d34b](https://github.com/Nicricht/APP-APP/commit/4af2d34b7cc6e8723ad5a3528cca589111027dfd), [Kotlin QA 40131796693](https://github.com/Nicricht/APP-APP/actions/runs/40131796693) e [instrumentadas 40131796599](https://github.com/Nicricht/APP-APP/actions/runs/40131796599), ambas **success** con instalación API 30/35. JaCoCo **3137/3140 líneas (99,90 %) y 1037/1057 ramas (98,11 %)**. Faltan tres líneas y veinte ramas; no se altera el código Kotlin de siniestros ni se excluye ningún paquete.
+- Hallazgo abierto: las APK de desarrollo generadas en runners diferentes llevan certificados debug efímeros distintos, lo que puede provocar `INSTALL_FAILED_UPDATE_INCOMPATIBLE` al instalar encima de una versión anterior y perder SQLite si se opta por desinstalar. Referencia: [issue #7](https://github.com/Nicricht/APP-APP/issues/7).
+- `app/build.gradle.kts`: firma `qaPersistente` **opcional y exclusiva de la variante debug**. Solo se activa cuando existe la ruta a un almacén preparada por el workflow; en su ausencia se mantiene la firma debug normal. No se toca la firma release ni se incluye ninguna clave privada.
+- `.github/workflows/android-qa.yml`: en pushes a `qa` y no en PR, decodifica un JKS a `RUNNER_TEMP` únicamente si se configuraron conjuntamente cuatro secretos `QA_KEYSTORE_BASE64`, `QA_SIGNING_STORE_PASSWORD`, `QA_SIGNING_KEY_ALIAS` y `QA_SIGNING_KEY_PASSWORD`. Si todos faltan, mantiene la firma efímera y lo comunica; una configuración parcial produce error.
+- El workflow valida la firma pública de cada APK con `apksigner verify --print-certs` y publica el artifact `firma-publica-apk-qa` para comparar fingerprints SHA-256 entre compilaciones. Solo se publica información pública del certificado, jamás material de claves ni contraseñas.
+- `docs/COMO_EJECUTAR_ANDROID.md`: procedimiento para el administrador, generación y almacenamiento seguro del JKS de pruebas, comprobación de fingerprints y prueba `adb install -r` conservando la base de datos.
+- **Limitación explícita:** los Secrets deben ser añadidos por quien administre GitHub. Hasta que se configuren y se compruebe la actualización entre dos ejecuciones con la misma firma, el problema de compatibilidad de APK **no está resuelto**. La verificación en el teléfono del equipo también queda pendiente.
+- Cambios limitados al Gradle de firma debug, workflow de CI y documentación en `qa`. `main` y `entrega-01` no se modifican. Código Kotlin sin comentarios nuevos.
+- **Estado del commit de infraestructura: pendiente de nuevas ejecuciones Kotlin QA e instrumentadas**; no heredar porcentajes de otro SHA.
+
 ## Pendientes sin evidencia suficiente
 
 1. Seguir midiendo JaCoCo por SHA completo y cubrir únicamente rutas reales en CuentaSesionViewModel, gráficos, perfiles y navegación.
