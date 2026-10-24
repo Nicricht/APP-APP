@@ -53,6 +53,9 @@ Las comprobaciones se pueden ver en [GitHub Actions](../../actions). La compilac
 
 ## Documentación
 
+- [Bitácora de avances de QA](docs/BITACORA_AVANCES_QA.md): historial de cada cambio, commit, pruebas y pendientes.
+
+
 - [Control final de los 100 puntos](docs/CONTROL_FINAL_100_PUNTOS.md).
 - [Guía para explicar el proyecto en la presentación](docs/GUIA_DEFENSA_ORAL.md).
 - [Guía completa del caso y pauta](docs/GUIA_MAESTRA_DSY1105.md).
