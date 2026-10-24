@@ -174,6 +174,18 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Verificar antes de cerrar el [issue #9](https://github.com/Nicricht/APP-APP/issues/9) que el texto e interfaz muestran suficiente contexto de plazo. No declarar finalizado un requisito parcial.
 - Se respeta la convención de no añadir comentarios Kotlin; solo se modifica `qa`, sin tocar `main` ni `entrega-01`.
 
+## 2026-10-24: diagnóstico real del CI de seguimiento semanal y corrección del retroceso Android
+
+- Commit examinado: [3e919b79](https://github.com/Nicricht/APP-APP/commit/3e919b79b9a6ed9b1ce9eaa1e834fd1e47d0bd77).
+- [Kotlin QA 40094763773](https://github.com/Nicricht/APP-APP/actions/runs/40094763773): **success** con compilación, unitarias e instalación/arranque API 30 y 35.
+- [Instrumented QA 40094763734](https://github.com/Nicricht/APP-APP/actions/runs/40094763734): **failure**, 276 de 277 pruebas aprobadas. Se descargó el artefacto `informes-android-instrumentado` ID `12561100899` y se revisó el XML de resultados.
+- La falla se limitó a `ConfirmacionDuplicadosFormularioTest.retrocesoDeAndroidCierraDialogoSinRegistrarCaso`: `RootViewWithoutFocusException` de Espresso al llamar a `Espresso.pressBack()` sobre un diálogo que tiene el foco en otra ventana. Es una prueba antigua, no una excepción de la lógica semanal.
+- Pruebas nuevas del seguimiento: `SeguimientoSemanalDbTest` **3/3**, `SeguimientoSemanalViewModelTest` **1/1** y `SeguimientoSemanalPantallaTest` **3/3**, todas aprobadas en ese mismo informe.
+- Corrección aplicada a la prueba antigua: sustituir `Espresso.pressBack()` por una pulsación real `KEYCODE_BACK` inyectada a través de `InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync`, esperando primero a que Compose quede inactivo. Se mantiene la comprobación de que Atrás descarta la advertencia sin registrar el caso.
+- No eliminar, ignorar ni desactivar pruebas. No modificar código productivo. Nuevo resultado instrumentado y JaCoCo **pendientes del commit con esta corrección**.
+- El resultado instrumentado fallido no acredita cobertura nueva; la línea base verde anterior continúa en 3088/3095 líneas (99,77 %) y 980/1013 ramas (96,74 %).
+- Solo rama `qa`, `main` y `entrega-01` intactas; sin comentarios añadidos al código.
+
 ## Pendientes sin evidencia suficiente
 
 1. Volver a medir JaCoCo en el SHA que valida los recordatorios; continuar con ramas de CuentaSesionViewModel y otros flujos sin cubrir.

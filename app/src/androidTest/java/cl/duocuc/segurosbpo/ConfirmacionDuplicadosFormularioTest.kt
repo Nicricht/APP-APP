@@ -4,7 +4,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.test.espresso.Espresso
+import android.view.KeyEvent
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.FormularioUiState
@@ -72,7 +73,8 @@ class ConfirmacionDuplicadosFormularioTest {
         montar(formularioValido(), registros)
         rule.onNodeWithText("Reportar").performScrollTo().performClick()
         rule.onNodeWithText("Posible siniestro duplicado").assertExists()
-        Espresso.pressBack()
+        rule.waitForIdle()
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         rule.waitForIdle()
         rule.onNodeWithText("Posible siniestro duplicado").assertDoesNotExist()
         assertEquals(0, registros.get())
