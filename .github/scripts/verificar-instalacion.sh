@@ -30,6 +30,16 @@ adb shell am force-stop "$paquete"
 adb shell am start -n "$actividad"
 sleep 5
 adb shell pidof "$paquete"
-adb shell uiautomator dump /sdcard/ventana-reinicio.xml
-adb pull /sdcard/ventana-reinicio.xml "evidencia-apk/reinicio-$api.xml"
-grep -q 'Correo electrónico' "evidencia-apk/reinicio-$api.xml"
+reinicio_verificado=0
+for intento in 1 2 3 4 5; do
+  adb shell rm -f /sdcard/ventana-reinicio.xml
+  if adb shell uiautomator dump /sdcard/ventana-reinicio.xml &&
+     adb pull /sdcard/ventana-reinicio.xml "evidencia-apk/reinicio-$api.xml" &&
+     grep -q 'Correo electrónico' "evidencia-apk/reinicio-$api.xml"; then
+    reinicio_verificado=1
+    break
+  fi
+  adb shell pidof "$paquete" > /dev/null
+  sleep 4
+done
+test "$reinicio_verificado" -eq 1

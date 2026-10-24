@@ -3,6 +3,14 @@ on:
   workflow_dispatch:
   push:
     branches: [qa]
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - 'build.gradle.kts'
+      - 'settings.gradle.kts'
+      - '.github/workflows/android-instrumented.yml'
+      - '.github/workflows/android-qa.yml'
+      - '.github/scripts/**'
 permissions:
   contents: read
 concurrency:

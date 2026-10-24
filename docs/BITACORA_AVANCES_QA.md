@@ -213,14 +213,25 @@ documentan junto con el código en el mismo commit cuando sea posible.
 ## 2026-10-24: regresión de gráficos, perfiles y plazos con pruebas funcionales
 
 - Base de comparación: [5d02cfef](https://github.com/Nicricht/APP-APP/commit/5d02cfef8b07c462fd64f5db10a1501823c117a6), [Kotlin QA 40102197681](https://github.com/Nicricht/APP-APP/actions/runs/40102197681) e [instrumentado 40102197652](https://github.com/Nicricht/APP-APP/actions/runs/40102197652), ambas verdes. JaCoCo: **3119/3125 líneas (99,81 %) y 995/1027 ramas (96,88 %)**.
-- El commit documental [bd3de296](https://github.com/Nicricht/APP-APP/commit/bd3de296ff833b2abb35ab96bebd57cf71fe1d27) solo cambió esta bitácora y disparó instrumentación [40103276895](https://github.com/Nicricht/APP-APP/actions/runs/40103276895); conservar su resultado antes de publicar este siguiente conjunto de pruebas.
+- El commit documental [bd3de296](https://github.com/Nicricht/APP-APP/commit/bd3de296ff833b2abb35ab96bebd57cf71fe1d27) solo cambió esta bitácora y disparó [instrumentación 40103276895](https://github.com/Nicricht/APP-APP/actions/runs/40103276895), que terminó **success** antes de publicar estas pruebas, manteniendo la cobertura inicial.
 - Archivo nuevo `ResumenGraficosEstadosRealesTest.kt`: cuatro pruebas instrumentadas verifican gráfica vacía sin cifras inventadas, total de tres casos en distintas etapas y tipos, conjunto totalmente cerrado con cero abiertos y funciones de distribución/evolución sin datos.
 - Ampliación `SesionCuentaRealCoberturaTest.kt`: dos pruebas sobre cuenta local eliminada después de iniciar sesión y credenciales rechazadas. Comprueban que el ViewModel no confirme modificación de teléfono/fotografía cuando no existe la cuenta, ni reemplace sesión válida con contraseña incorrecta.
 - Ampliación `AreasYPlazosLimitesTest.kt`: comprobar comportamiento de `ControlPlazos.diasCorridos` con fecha actual por defecto, fecha antigua, fecha futura e inválida.
 - Motivo: nuevas verificaciones de UI y persistencia para el informe JaCoCo actual, especialmente gráficos, errores del ViewModel y cálculo de plazos; no añadir tests únicamente para ejecutar bytecode irrelevante.
 - **Sin cambios en el código de producción**, dependencias, permisos ni datos persistidos por la app. Tests sobre registros ficticios.
-- Estado de este siguiente commit: **pendiente de ejecución completa de Kotlin QA e instrumentadas en el SHA que contenga estos archivos**. No declarar incremento de cobertura sin el XML correspondiente.
+- Resultado real de [29e1c571](https://github.com/Nicricht/APP-APP/commit/29e1c57153dd8b8946a58f5c34f594c63d6d3c9e): [Android instrumented QA 40104316078](https://github.com/Nicricht/APP-APP/actions/runs/40104316078) **success** con todas las pruebas, JaCoCo **3120/3125 líneas (99,84 %) y 998/1027 ramas (97,18 %)**. [Kotlin QA 40104316083](https://github.com/Nicricht/APP-APP/actions/runs/40104316083) **failure** por el verificador de reinicio de Android 15, aunque compilación/unitarias e instalación API 30 aprobaron. Es incorrecto declarar este SHA completamente verde.
 - Respetar ramas: cambios únicamente en `qa`. `main` y `entrega-01` intactas; ningún comentario nuevo en Kotlin.
+
+## 2026-10-24: estabilizar verificación de instalación Android 15
+
+- El commit `29e1c571` tiene pruebas instrumentadas verdes ([run 40104316078](https://github.com/Nicricht/APP-APP/actions/runs/40104316078)), con **3120/3125 líneas (99,84 %) y 998/1027 ramas (97,18 %)**. Faltan **5 líneas y 29 ramas**.
+- Su [Kotlin QA 40104316083](https://github.com/Nicricht/APP-APP/actions/runs/40104316083) compiló y ejecutó unitarias correctamente, generó APK, e instaló/arrancó API 30 (**success**), pero falló la comprobación de segunda apertura en API 35. Job `120903539247`: `ERROR: null root node returned by UiTestAutomationBridge`, después `adb: error: failed to stat remote object '/sdcard/ventana-reinicio.xml'`. La lectura inicial del XML de acceso ya había aprobado.
+- Cambio en `.github/scripts/verificar-instalacion.sh`: reintentar hasta cinco veces el volcado XML de la segunda apertura; borrar antes el volcado anterior, exigir `Correo electrónico` en el XML nuevo y verificar que el proceso de la app continúa vivo. No se acepta un XML viejo ni se oculta un cierre de la aplicación.
+- Cambio en `.github/workflows/android-qa.yml`: disparar compilación e instalaciones al modificar los scripts de verificación `.github/scripts/**`, evitando que el arreglo de instalación quede sin pruebas.
+- Cambio en `.github/workflows/android-instrumented.yml`: conservar activación manual e iniciar instrumentación automática para código, Gradle, scripts y workflows, no para commits exclusivamente documentales. Esto evita cancelar/gastar pruebas instrumentadas con cambios que no afectan a la APK.
+- Código Android de producción, lógica SQLite y tests Kotlin: **sin cambios** en el arreglo de CI; no se excluyen clases del informe ni se baja el rigor de las verificaciones.
+- Estado del nuevo arreglo de scripts/workflows: **pendiente de CI del commit que contiene esta bitácora**. La instalación API 35 no se considera reparada hasta que el workflow confirme arranque y reinicio.
+- Sin comentarios añadidos al código y sin alteraciones de `main` ni `entrega-01`.
 
 ## Pendientes sin evidencia suficiente
 

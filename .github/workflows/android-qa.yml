@@ -8,12 +8,14 @@ on:
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - '.github/workflows/android-qa.yml'
+      - '.github/scripts/**'
   pull_request:
     paths:
       - 'app/**'
       - 'gradle/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
+      - '.github/scripts/**'
 permissions:
   contents: read
 concurrency:
