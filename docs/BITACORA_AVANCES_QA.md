@@ -101,8 +101,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Archivo nuevo: `app/src/androidTest/java/cl/duocuc/segurosbpo/RegistroSiniestroValidacionDbTest.kt`.
 - Casos de prueba: siete formularios inválidos sin efectos persistidos en siniestros, gestiones ni avisos; uno válido con limpieza de espacios y número único; uno fuera de 30 días aceptado con advertencia de plazo.
 - Fixtures actualizados para exigir confirmación también en las pruebas antiguas: `BusquedaSeguraCoberturaTest`, `DecisionesSQLiteAdicionalesTest`, `FlujoViewModelCoberturaTest`, `ImagenesSQLiteLimitesTest`.
-- Validación: **pendiente de resultado de ambos workflows para el commit de este cambio**. No confundir con QA verde del commit anterior.
+- Validación **aprobada**: [Kotlin QA 40088035332](https://github.com/Nicricht/APP-APP/actions/runs/40088035332) e [instrumented QA 40088035341](https://github.com/Nicricht/APP-APP/actions/runs/40088035341), ambas verdes para `3789287d`. JaCoCo instrumentado: **3060/3095 líneas (98,87 %) y 957/1013 ramas (94,47 %)**. Instalación y arranque API 30 y 35 correctos. [Issue #8 cerrado](https://github.com/Nicricht/APP-APP/issues/8).
 - Ningún comentario agregado al código. Las ramas `main` y `entrega-01` no se tocan.
+
+## 2026-10-24: confirmación de posible duplicado y botón Atrás
+
+- Archivo nuevo: `app/src/androidTest/java/cl/duocuc/segurosbpo/ConfirmacionDuplicadosFormularioTest.kt`.
+- Caso SIN-006: antes de registrar un posible duplicado se abre el diálogo, se muestra el número de caso existente y se exige pulsar **Continuar de todos modos** para registrar. **Revisar datos** cierra la advertencia sin ejecutar el callback de registro.
+- Caso UX: pulsar **Atrás** del sistema mientras está abierto el diálogo lo cierra sin registrar el caso. Es una prueba de interacción Android real, no una llamada aislada al ViewModel.
+- Objetivo de cobertura: rutas de `FormularioScreenKt` (15 líneas y 2 ramas que estaban sin ejecutar en el informe del SHA `3789287d`).
+- Estado al subir este archivo: **pendiente de su propia ejecución Kotlin e instrumentada**. No se modifica código de producción, y el test usa siniestros ficticios.
+- Importante sobre APK: la comparación de certificados de dos builds distintas confirmó firmas debug diferentes; documentado con hashes SHA-256 en [issue #7](https://github.com/Nicricht/APP-APP/issues/7). Una instalación previa con firma distinta puede bloquear la actualización. No desinstalar si se necesitan sus datos locales.
 
 ## Pendientes sin evidencia suficiente
 
