@@ -38,12 +38,20 @@ fun DetalleSiniestroScreen(
     LaunchedEffect(siniestro?.id) {
         if (siniestro != null) onCargarSolicitudes()
     }
-    Scaffold(topBar = { TopAppBar(title = { Text("Detalle del siniestro") }) }) { margen ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Detalle del siniestro") },
+                navigationIcon = {
+                    TextButton(onClick = onVolver) { Text("Volver") }
+                }
+            )
+        }
+    ) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextButton(onClick = onVolver) { Text("Volver") }
             if (siniestro == null) {
                 Text("No se encontró el siniestro de este asegurado")
             } else {
