@@ -2,6 +2,8 @@ package cl.duocuc.segurosbpo
 
 import android.app.Application
 import android.graphics.Bitmap
+import java.util.Random
+import org.junit.Assert.assertArrayEquals
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import cl.duocuc.segurosbpo.data.CuentaDbHelper
@@ -87,5 +89,53 @@ class SesionCuentaRealCoberturaTest {
         assertEquals(RolCuenta.ASEGURADO, sesion.cuenta.value?.rol)
         sesion.cerrarSesion()
         assertNull(CuentaSesionViewModel(app).cuenta.value)
+    }
+
+    @Test fun fotoDePerfilRequiereSesionRealEditable() {
+        val sesion = CuentaSesionViewModel(app)
+        val foto = Bitmap.createBitmap(12, 12, Bitmap.Config.ARGB_8888)
+        try {
+            assertEquals("Inicia sesión", sesion.actualizarFoto(foto))
+            sesion.accederAseguradoDemo()
+            assertEquals("El perfil de demostración no es editable", sesion.actualizarFoto(foto))
+            sesion.accederLiquidadorDemo(cl.duocuc.segurosbpo.model.Liquidador.HOGAR)
+            assertEquals("El perfil de demostración no es editable", sesion.actualizarFoto(foto))
+            sesion.cerrarSesion()
+            assertNull(sesion.cuenta.value)
+        } finally {
+            foto.recycle()
+        }
+    }
+
+    @Test fun fotoGrandeRechazadaConservaLaImagenGuardada() {
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.registrar(
+            "Ana Prueba", rut, correo, "912345678", "Clave2026", "Clave2026"
+        ))
+        val pequena = Bitmap.createBitmap(12, 12, Bitmap.Config.ARGB_8888)
+        try {
+            assertNull(sesion.actualizarFoto(pequena))
+        } finally {
+            pequena.recycle()
+        }
+        val anterior = sesion.cuenta.value!!.foto!!.clone()
+        val grande = Bitmap.createBitmap(1800, 1800, Bitmap.Config.ARGB_8888)
+        val generador = Random(2026L)
+        val pixeles = IntArray(1800)
+        try {
+            for (fila in 0 until 1800) {
+                for (i in pixeles.indices) {
+                    pixeles[i] = generador.nextInt() or -0x1000000
+                }
+                grande.setPixels(pixeles, 0, 1800, 0, fila, 1800, 1)
+            }
+            assertEquals("La foto no puede superar 1 MB", sesion.actualizarFoto(grande))
+            assertArrayEquals(anterior, sesion.cuenta.value!!.foto)
+            CuentaDbHelper(app).use { helper ->
+                assertArrayEquals(anterior, helper.obtener(sesion.cuenta.value!!.id)!!.foto)
+            }
+        } finally {
+            grande.recycle()
+        }
     }
 }

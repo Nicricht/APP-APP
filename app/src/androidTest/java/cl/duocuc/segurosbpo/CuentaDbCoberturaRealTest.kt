@@ -100,4 +100,40 @@ class CuentaDbCoberturaRealTest {
         assertEquals("VEHICULOS", db.obtener("LIQ_VEHICULOS")?.equipo)
         assertEquals("HOGAR", db.obtener("LIQ_HOGAR")?.equipo)
     }
+
+    @Test fun migracionDesdeVersionDosConservaFotoYAgregaLiquidadores() {
+        db.close()
+        contexto.deleteDatabase(archivo)
+        val antigua = contexto.openOrCreateDatabase(archivo, Context.MODE_PRIVATE, null)
+        antigua.execSQL("""
+            CREATE TABLE cuentas (
+                id TEXT PRIMARY KEY NOT NULL,
+                nombre TEXT NOT NULL,
+                rut TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                correo TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                telefono TEXT NOT NULL,
+                rol TEXT NOT NULL,
+                equipo TEXT,
+                salt BLOB NOT NULL,
+                clave_hash BLOB NOT NULL,
+                foto BLOB
+            )
+        """.trimIndent())
+        antigua.execSQL("""
+            INSERT INTO cuentas(id,nombre,rut,correo,telefono,rol,equipo,salt,clave_hash,foto)
+            VALUES('LEGADO_V2','Cuenta recuperada','11.111.111-1','legacy2@ejemplo.cl',
+                '988776655','ASEGURADO',NULL,x'0102',x'0304',x'ffd8ffd9')
+        """.trimIndent())
+        antigua.version = 2
+        antigua.close()
+        db = CuentaDbHelper(contexto, archivo)
+        assertEquals(3, db.readableDatabase.version)
+        assertEquals("Cuenta recuperada", db.obtener("LEGADO_V2")?.nombre)
+        assertArrayEquals(
+            byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xD9.toByte()),
+            db.obtener("LEGADO_V2")?.foto
+        )
+        assertEquals("VEHICULOS", db.obtener("LIQ_VEHICULOS")?.equipo)
+        assertEquals("HOGAR", db.obtener("LIQ_HOGAR")?.equipo)
+    }
 }

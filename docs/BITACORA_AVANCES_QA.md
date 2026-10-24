@@ -128,8 +128,18 @@ documentan junto con el código en el mismo commit cuando sea posible.
   2. Entrega comprobada del documento: no aviso a los 30 días.
   3. Cierre anticipado en evaluación manteniendo la solicitud en histórico: ningún recordatorio posterior, conservando el aviso de cierre.
 - No se cambian el esquema de base, sus migraciones, las etapas ni sus resultados permitidos; solo se evita una notificación incoherente con el estado final.
-- Estado: implementado en `qa` en el mismo commit de esta bitácora, **pendiente del resultado propio de Kotlin QA e instrumentadas**.
+- Resultado **aprobado**: [Kotlin QA 40090100375](https://github.com/Nicricht/APP-APP/actions/runs/40090100375) e [instrumented QA 40090100332](https://github.com/Nicricht/APP-APP/actions/runs/40090100332), ambas verdes para `c0e18be3`. JaCoCo instrumentado: **3082/3095 líneas (99,58 %) y 964/1013 ramas (95,16 %)**. Instalaciones/API 30 y 35 correctas.
 - No se añaden comentarios al código. `main` y `entrega-01` permanecen sin modificaciones.
+
+## 2026-10-24: sesiones, fotografías, migración v2 y clasificación por áreas
+
+- Cambios exclusivamente en pruebas instrumentadas Android y esta bitácora; **ningún archivo de producción**.
+- `SesionCuentaRealCoberturaTest.kt`: verifica que sin sesión y en perfiles de demostración no se puedan guardar fotografías. Verifica además que el límite de 1 MB rechace JPEG grandes, manteniendo en SQLite la fotografía anterior.
+- `CuentaDbCoberturaRealTest.kt`: comprueba migración incremental de `cuentas` versión 2 a 3 conservando foto, perfil, teléfono y creación de los dos liquidadores de prueba.
+- Nuevo `AreasYPlazosLimitesTest.kt`: comprueba la clasificación de los seis tipos en las áreas correctas, pertenencia exclusiva, equipos y cálculo UTC de 0, 14, 15 y 30 días, además de fechas futuras o inválidas.
+- Justificación: tras superar el 99 % de líneas, los siguientes huecos de ramas se concentran en estados de cuenta, migraciones y plazos. Estas pruebas verifican reglas útiles y persistencia, sin aumentar cobertura mediante ejecuciones vacías.
+- Estado del commit que contiene estas pruebas: **pendiente de Kotlin QA e instrumentadas para el nuevo SHA**; no se atribuyen resultados de `c0e18be3`.
+- No se añaden comentarios al código ni se modifican `main` y `entrega-01`.
 
 ## Pendientes sin evidencia suficiente
 
