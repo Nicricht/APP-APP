@@ -363,8 +363,18 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Problema localizado en [Android Kotlin QA 40134281461](https://github.com/Nicricht/APP-APP/actions/runs/40134281461), job `120992370862`: Gradle completó el build en 3m59s y el paso nuevo `Comprobar firma pública de APK` finalizó con código 1. La llamada original a `apksigner verify --print-certs` enviaba su salida a `firma-qa.txt`, por lo que GitHub no mostró el texto que permite distinguir una APK realmente inválida de un formato de huella distinto.
 - `.github/workflows/android-qa.yml`: conservar `apksigner verify` como **condición obligatoria**, capturar y mostrar su salida pública también ante error, y aceptar las variantes habituales `SHA-256` / `SHA256` mediante comprobación de formato flexible. El paso sigue fallando si la APK no verifica o no muestra huella SHA-256.
 - No se elude la firma, no se publica material privado y no se cambia código productivo. El modo sin secretos continúa con firma debug temporal declarada.
-- **Estado:** cambio de diagnóstico preparado, pendiente de una nueva ejecución con resultado de verificación, instalación Android API 30/35 y JaCoCo instrumentado; conservar resultados del commit anterior antes de publicarlo.
+- **Verificado:** [commit 40a48870](https://github.com/Nicricht/APP-APP/commit/40a48870d562d448f44b7a904e332ba339be4b10), [Android Kotlin QA 40134854466](https://github.com/Nicricht/APP-APP/actions/runs/40134854466) e [instrumentadas 40134854475](https://github.com/Nicricht/APP-APP/actions/runs/40134854475) **success** para el mismo SHA. La firma pública de APK se comprobó con `apksigner`, la instalación/arranque pasó en API 30 y 35, y JaCoCo informó **3137/3140 líneas (99,90 %) y 1037/1057 ramas (98,11 %)**. Quedan tres líneas y veinte ramas.
 - `main` y `entrega-01` permanecen intocadas.
+
+## 2026-10-24: persistencia de cuentas si una escritura es invalidada después de insertar
+
+- Punto de partida: [40a48870](https://github.com/Nicricht/APP-APP/commit/40a48870d562d448f44b7a904e332ba339be4b10), Kotlin QA [40134854466](https://github.com/Nicricht/APP-APP/actions/runs/40134854466) e instrumentación [40134854475](https://github.com/Nicricht/APP-APP/actions/runs/40134854475) ambas verdes. JaCoCo **3137/3140 líneas (99,90 %) y 1037/1057 ramas (98,11 %)**.
+- Nuevo archivo `RegistroCuentaIntegridadTest.kt`: dos pruebas instrumentadas sobre la integridad del registro de cuentas en SQLite. Un disparador de prueba elimina exclusivamente una cuenta ficticia recién insertada y permite comprobar la postcondición de lectura de la capa de datos.
+- Caso 1: `CuentaDbHelper.registrarAsegurado` debe rechazar el alta si no puede recuperar el ID generado; no deja cuenta de acceso, no afecta al liquidador Hogar y no permite iniciar sesión con la cuenta descartada.
+- Caso 2: `CuentaSesionViewModel.registrar` debe trasladar el error a la interfaz, no guardar una sesión activa, no persistir su ID en preferencias y no crear privilegios al reiniciar el ViewModel.
+- Las bases de prueba se separan por nombre, y el trigger específico sobre la base por defecto se elimina en `@After` junto con su identidad de prueba. No se manipula ningún siniestro ni archivo del usuario.
+- Sin modificaciones al código Kotlin de producción, base/versión/migración, permisos Android ni configuración de firma. El nuevo test no introduce comentarios Kotlin. Solo `qa`; `main` y `entrega-01` intactas.
+- **Resultado de este nuevo commit:** pendiente de las dos suites y de la cobertura JaCoCo del SHA exacto. No considerar la base a 100 % ni afirmar firma persistente hasta configurar los Secrets del issue #7.
 
 ## Pendientes sin evidencia suficiente
 
