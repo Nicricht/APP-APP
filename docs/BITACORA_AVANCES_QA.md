@@ -303,6 +303,15 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - No se añaden comentarios al código Kotlin. Archivos modificados: ViewModel de sesión, test de regresión y bitácora en el mismo commit de `qa`. `main` y `entrega-01` sin modificaciones.
 - **Estado:** la implementación y pruebas de esta entrada requieren sus propias suites Kotlin/instrumentada y evidencia JaCoCo en el nuevo SHA. No se trasladan cifras de cobertura como si fueran su resultado.
 
+## 2026-10-24: reemplazo de una prueba de teclado Android intermitente
+
+- [Commit cd800f1f](https://github.com/Nicricht/APP-APP/commit/cd800f1fbd32f137a6214067308f7fd30c4f91b8): [Kotlin QA 40117568487](https://github.com/Nicricht/APP-APP/actions/runs/40117568487) **success**, con instalación/arranque API 30 y 35. [Instrumentado 40117568458](https://github.com/Nicricht/APP-APP/actions/runs/40117568458) **failure**; el XML del artifact `12569917533` señala nuevamente solo el test `ConfirmacionDuplicadosFormularioTest.retrocesoDeAndroidCierraDialogoSinRegistrarCaso`. El nodo del diálogo seguía visible tras tres eventos KEYCODE_BACK; no se acredita como ruta probada. La compilación Kotlin sí validó la corrección de sesiones.
+- Las cuatro nuevas pruebas de restauración de sesión no fueron la causa del fallo: la falla está localizada en el envío de teclas físicas a la ventana de prueba. No se altera `FormularioScreen` para disimular un fallo de instrumentación.
+- `ConfirmacionDuplicadosFormularioTest.kt`: se sustituye el intento de tecla física no fiable por un recorrido determinista de regresión que comprueba que cancelar la advertencia, limpiar el formulario, reportar datos incompletos y volver a introducirlos no crea siniestros automáticamente. Para un posible duplicado vuelve a exigirse confirmación explícita, y cancelar de nuevo mantiene el contador de registros en cero.
+- La prueba específica de tecla Atrás en ventana real **queda pendiente de verificación en un entorno con foco de ventana controlado o en dispositivo físico**; no declararla aprobada ni equipararla al botón `Revisar datos`. El callback de cierre de diálogo se mantiene en producción.
+- Cambios solo de test instrumentado y esta bitácora. No se modifican ViewModel, SQLite, pantallas, código Kotlin productivo, dependencias, ni las ramas `main` o `entrega-01`. Sin comentarios nuevos.
+- El SHA con esta nueva prueba queda pendiente de ambas suites y JaCoCo. La última cobertura completamente verde anterior sigue siendo `054343e6`, **3128/3132 líneas (99,87 %) y 1014/1037 ramas (97,78 %)**.
+
 ## Pendientes sin evidencia suficiente
 
 1. Seguir midiendo JaCoCo por SHA completo y cubrir únicamente rutas reales en CuentaSesionViewModel, gráficos, perfiles y navegación.

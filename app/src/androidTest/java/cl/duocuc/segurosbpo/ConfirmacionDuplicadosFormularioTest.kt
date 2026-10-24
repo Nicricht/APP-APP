@@ -2,11 +2,8 @@ package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import android.view.KeyEvent
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.FormularioUiState
@@ -69,29 +66,31 @@ class ConfirmacionDuplicadosFormularioTest {
         rule.onNodeWithText("Posible siniestro duplicado").assertDoesNotExist()
     }
 
-    @Test fun retrocesoDeAndroidCierraDialogoSinRegistrarCaso() {
+    @Test fun cancelarLimpiarYReabrirUnDuplicadoNuncaRegistraSinConfirmar() {
         val registros = AtomicInteger()
-        montar(formularioValido(), registros)
+        val vm = formularioValido()
+        montar(vm, registros)
         rule.onNodeWithText("Reportar").performScrollTo().performClick()
         rule.onNodeWithText("Posible siniestro duplicado").assertExists()
-        rule.waitForIdle()
-        var cerrado = false
-        repeat(3) {
-            if (!cerrado) {
-                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-                InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
-                rule.waitForIdle()
-                cerrado = runCatching {
-                    rule.waitUntil(1500) {
-                        rule.onAllNodesWithText("Posible siniestro duplicado")
-                            .fetchSemanticsNodes().isEmpty()
-                    }
-                    true
-                }.getOrDefault(false)
-            }
-        }
+        rule.onNodeWithText("Revisar datos").performClick()
         rule.onNodeWithText("Posible siniestro duplicado").assertDoesNotExist()
         assertEquals(0, registros.get())
-        rule.onNodeWithText("Reportar").assertExists()
+
+        rule.onNodeWithText("Limpiar").performScrollTo().performClick()
+        rule.onNodeWithText("Reportar").performScrollTo().performClick()
+        rule.onNodeWithText("Posible siniestro duplicado").assertDoesNotExist()
+        assertEquals(0, registros.get())
+
+        rule.runOnIdle {
+            vm.onFechaCambia("20-10-2026")
+            vm.onComunaCambia("Santiago")
+            vm.onDescripcionCambia("Otro siniestro ficticio con la misma fecha")
+            vm.onDatosCorrectosCambia(true)
+        }
+        rule.onNodeWithText("Reportar").performScrollTo().performClick()
+        rule.onNodeWithText("Posible siniestro duplicado").assertExists()
+        assertEquals(0, registros.get())
+        rule.onNodeWithText("Revisar datos").performClick()
+        assertEquals(0, registros.get())
     }
 }
