@@ -1,6 +1,11 @@
 name: Android instrumented QA
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [qa]
+    paths:
+      - 'app/**'
+      - '.github/workflows/android-instrumented.yml'
   push:
     branches: [qa]
     paths:
