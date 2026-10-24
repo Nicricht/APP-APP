@@ -44,7 +44,9 @@ class DialogosRetrocesoCoberturaTest {
                 AccessibilityService.GLOBAL_ACTION_BACK
             )
         )
-        rule.waitForIdle()
+        rule.waitUntil(6000) {
+            rule.onAllNodesWithText("Selecciona un asegurado ficticio").fetchSemanticsNodes().isEmpty()
+        }
         rule.onNodeWithText("Selecciona un asegurado ficticio").assertDoesNotExist()
         rule.onNodeWithText("Asegurado: ${Asegurado.CAMILA.etiqueta}").assertExists()
         assertEquals(0, cambios.get())
