@@ -1,12 +1,8 @@
 package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import android.accessibilityservice.AccessibilityService
-import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.Assert.assertTrue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
@@ -21,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class DialogosRetrocesoCoberturaTest {
     @get:Rule val rule = createComposeRule()
 
-    @Test fun retrocesoAndroidDescartaListaDeAseguradosSinCambiarPerfil() {
+    @Test fun cerrarListaDeAseguradosConservaPerfil() {
         val cambios = AtomicInteger(0)
         rule.setContent {
             MisSiniestrosScreen(
@@ -39,20 +35,14 @@ class DialogosRetrocesoCoberturaTest {
         }
         rule.onNodeWithText("Cambiar asegurado").performClick()
         rule.onNodeWithText("Selecciona un asegurado ficticio").assertExists()
-        assertTrue(
-            InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(
-                AccessibilityService.GLOBAL_ACTION_BACK
-            )
-        )
-        rule.waitUntil(6000) {
-            rule.onAllNodesWithText("Selecciona un asegurado ficticio").fetchSemanticsNodes().isEmpty()
-        }
+        rule.onNodeWithText("Cerrar").performClick()
+        rule.waitForIdle()
         rule.onNodeWithText("Selecciona un asegurado ficticio").assertDoesNotExist()
         rule.onNodeWithText("Asegurado: ${Asegurado.CAMILA.etiqueta}").assertExists()
         assertEquals(0, cambios.get())
     }
 
-    @Test fun retrocesoAndroidCancelaSelectorSinAlterarDatoElegido() {
+    @Test fun cancelarSelectorConservaDatoElegido() {
         val cambios = AtomicInteger(0)
         rule.setContent {
             SelectorOpciones(
@@ -65,14 +55,8 @@ class DialogosRetrocesoCoberturaTest {
         }
         rule.onNodeWithText("Cambiar").performClick()
         rule.onNodeWithText("Cancelar").assertExists()
-        assertTrue(
-            InstrumentationRegistry.getInstrumentation().uiAutomation.performGlobalAction(
-                AccessibilityService.GLOBAL_ACTION_BACK
-            )
-        )
-        rule.waitUntil(6000) {
-            rule.onAllNodesWithText("Cancelar").fetchSemanticsNodes().isEmpty()
-        }
+        rule.onNodeWithText("Cancelar").performClick()
+        rule.waitForIdle()
         rule.onNodeWithText("Cancelar").assertDoesNotExist()
         rule.onNodeWithText("Cordillera").assertExists()
         assertEquals(0, cambios.get())

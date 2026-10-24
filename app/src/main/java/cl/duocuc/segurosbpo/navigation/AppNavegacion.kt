@@ -268,9 +268,10 @@ fun AppNavegacion() {
                 solicitudes = solicitudes,
                 onCargarSolicitudes = { siniestrosVm.refrescarEvidencias(id) },
                 onVolver = {
-                    navController.navigate(Ruta.MisSiniestros.ruta) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = false }
-                        launchSingleTop = true
+                    if (!navController.popBackStack(Ruta.MisSiniestros.ruta, false)) {
+                        navController.navigate(Ruta.MisSiniestros.ruta) {
+                            launchSingleTop = true
+                        }
                     }
                 },
                 onEditar = { navController.navigate(Ruta.Editar.crear(id)) },

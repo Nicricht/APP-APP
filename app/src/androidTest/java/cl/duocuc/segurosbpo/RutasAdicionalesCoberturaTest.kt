@@ -64,8 +64,8 @@ class RutasAdicionalesCoberturaTest {
         rule.onNodeWithText("Detalle del siniestro").assertIsDisplayed()
         rule.onNodeWithText("Volver").performClick()
         rule.waitUntil(8000) {
-            rule.onAllNodesWithText("Seguimiento de seguros").fetchSemanticsNodes().isNotEmpty()
+            rule.onAllNodesWithText("Mis siniestros").fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("Seguimiento de seguros").assertExists()
+        rule.onNodeWithText("Mis siniestros").assertIsDisplayed()
     }
 }
