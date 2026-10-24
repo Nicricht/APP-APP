@@ -376,6 +376,15 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Sin modificaciones al código Kotlin de producción, base/versión/migración, permisos Android ni configuración de firma. El nuevo test no introduce comentarios Kotlin. Solo `qa`; `main` y `entrega-01` intactas.
 - **Resultado de este nuevo commit:** pendiente de las dos suites y de la cobertura JaCoCo del SHA exacto. No considerar la base a 100 % ni afirmar firma persistente hasta configurar los Secrets del issue #7.
 
+## 2026-10-24: verificación completa de integridad de altas SQLite
+
+- Commit verificado: [`eeb8e3c4`](https://github.com/Nicricht/APP-APP/commit/eeb8e3c42d8c62c8f3fede875c275ff684f9d987). Las dos pruebas nuevas de `RegistroCuentaIntegridadTest` comprueban que un alta SQLite descartada no otorgue una sesión fantasma.
+- [Android Kotlin QA 40136075333](https://github.com/Nicricht/APP-APP/actions/runs/40136075333): **success**, con compilación, unitarias, comprobación de firma pública de APK e instalaciones/reinicios en emuladores API 30 y 35.
+- [Android instrumented QA 40136075394](https://github.com/Nicricht/APP-APP/actions/runs/40136075394): **success**. JaCoCo de esa misma ejecución: **3137/3140 líneas (99,90 %) y 1038/1057 ramas (98,20 %)**. Restan tres líneas y diecinueve ramas; una rama más cubierta que en `40a48870`. Evidencia: log del job `pruebas-en-emulador` y [artifact 12577370713](https://github.com/Nicricht/APP-APP/actions/runs/40136075394/artifacts/12577370713).
+- Faltantes de mayor peso: `CuentaSesionViewModel` (6 ramas), `ResumenGraficosCasosKt` (5), `AppNavegacionKt` (2), `PerfilCuentaScreenKt` (2), `ControlPlazos` (2). Revisar si son condiciones alcanzables y relevantes; no introducir caminos artificiales ni debilitar reglas para inflar la métrica.
+- El [issue #10](https://github.com/Nicricht/APP-APP/issues/10) se cerró con trazabilidad de sus pruebas de rol, especialidad y recuperación de acceso. Continúan abiertos [#6](https://github.com/Nicricht/APP-APP/issues/6) por la meta de cobertura y [#7](https://github.com/Nicricht/APP-APP/issues/7) por firma persistente/ensayo físico.
+- La verificación de `apksigner` fue exitosa, pero **no equivale a una firma persistente**: los secretos de QA y la actualización `adb install -r` preservando SQLite todavía requieren configuración y comprobación. `main` y `entrega-01` siguen intactas.
+
 ## Pendientes sin evidencia suficiente
 
 1. Seguir midiendo JaCoCo por SHA completo y cubrir únicamente rutas reales en CuentaSesionViewModel, gráficos, perfiles y navegación.
