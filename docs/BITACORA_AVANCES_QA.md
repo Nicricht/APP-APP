@@ -113,10 +113,28 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Estado al subir este archivo: **pendiente de su propia ejecución Kotlin e instrumentada**. No se modifica código de producción, y el test usa siniestros ficticios.
 - Importante sobre APK: la comparación de certificados de dos builds distintas confirmó firmas debug diferentes; documentado con hashes SHA-256 en [issue #7](https://github.com/Nicricht/APP-APP/issues/7). Una instalación previa con firma distinta puede bloquear la actualización. No desinstalar si se necesitan sus datos locales.
 
+## 2026-10-24: cierre de pruebas de duplicados y cobertura vigente
+
+- Commit [550e174c](https://github.com/Nicricht/APP-APP/commit/550e174c5c83bd029f18963920a337674e39c50f) validado por [Kotlin QA 40088816862](https://github.com/Nicricht/APP-APP/actions/runs/40088816862) e [instrumented QA 40088816856](https://github.com/Nicricht/APP-APP/actions/runs/40088816856), ambos terminados con éxito.
+- JaCoCo instrumentado: **3073/3095 líneas (99,29 %) y 959/1013 ramas (94,67 %)**. Restan 22 líneas y 54 ramas.
+- El diálogo de reporte duplicado solicita confirmación explícita; Revisar datos y el botón Atrás no registran.
+- Se descargó y analizó el XML de cobertura de ese mismo run, que ubica nueve líneas pendientes en `SiniestroDbHelper` concentradas en la creación de recordatorios de solicitudes a los quince días.
+
+## 2026-10-24: recordatorios de quince días y cierre anticipado
+
+- Cambio de producción: `SiniestroDbHelper.generarRecordatorios` consulta únicamente solicitudes sin entregar **de siniestros que continúan abiertos**. Un cierre anticipado por Desistido/Rechazado no debe crear avisos posteriores de documentos ya irrelevantes.
+- Test nuevo `RecordatoriosPendientesPlazosTest.kt` con SQLite independiente y fechas UTC controladas:
+  1. Día 14: no aviso. Día 15: un aviso y una gestión visible. Días 16/30: no duplicados, aislado del otro asegurado.
+  2. Entrega comprobada del documento: no aviso a los 30 días.
+  3. Cierre anticipado en evaluación manteniendo la solicitud en histórico: ningún recordatorio posterior, conservando el aviso de cierre.
+- No se cambian el esquema de base, sus migraciones, las etapas ni sus resultados permitidos; solo se evita una notificación incoherente con el estado final.
+- Estado: implementado en `qa` en el mismo commit de esta bitácora, **pendiente del resultado propio de Kotlin QA e instrumentadas**.
+- No se añaden comentarios al código. `main` y `entrega-01` permanecen sin modificaciones.
+
 ## Pendientes sin evidencia suficiente
 
-1. Comprobar el informe de JaCoCo del nuevo SHA; seguir con perfil, navegación, formularios y ViewModel.
-2. Ensayar simultaneidad real de asignación si se requiere ASI-004, sin confundirla con acceso secuencial desde dos conexiones.
+1. Volver a medir JaCoCo en el SHA que valida los recordatorios; continuar con ramas de CuentaSesionViewModel y otros flujos sin cubrir.
+2. El escenario de dos conexiones/hilos simultáneos quedó probado en `be7d1ea7` con suite instrumentada verde. Para usuarios distintos del mismo equipo haría falta ampliar el modelo local de liquidadores.
 3. Ejecutar recorrido completo de la APK en dispositivo físico: cámara, galería, PDF, permisos, cierre de sesión, reinicio y persistencia.
 4. Revisar seguridad de propiedad por cuenta, experiencia accesible en pantallas pequeñas y evidencia de colaboración del equipo.
 5. Registrar cualquier error en GitHub Actions con run ID y SHA y corregirlo en `qa` antes de darlo por cerrado.

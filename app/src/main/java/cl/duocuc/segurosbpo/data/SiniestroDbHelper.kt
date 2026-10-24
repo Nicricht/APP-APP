@@ -627,10 +627,11 @@ class SiniestroDbHelper(
             data class Pendiente(val id: Long, val siniestroId: Long, val tipo: String, val fecha: String)
             val pendientes = mutableListOf<Pendiente>()
             db.rawQuery("""
-                SELECT id, siniestro_id, tipo, fecha_solicitud
-                FROM solicitudes_documentos
-                WHERE fecha_entrega IS NULL
-            """.trimIndent(), null).use { c ->
+                SELECT d.id, d.siniestro_id, d.tipo, d.fecha_solicitud
+                FROM solicitudes_documentos d
+                JOIN siniestros s ON s.id = d.siniestro_id
+                WHERE d.fecha_entrega IS NULL AND s.etapa <> ?
+            """.trimIndent(), arrayOf(EtapaSiniestro.CERRADO.name)).use { c ->
                 while (c.moveToNext()) {
                     pendientes.add(Pendiente(c.getLong(0), c.getLong(1), c.getString(2), c.getString(3)))
                 }
