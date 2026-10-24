@@ -356,7 +356,15 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - `docs/COMO_EJECUTAR_ANDROID.md`: procedimiento para el administrador, generación y almacenamiento seguro del JKS de pruebas, comprobación de fingerprints y prueba `adb install -r` conservando la base de datos.
 - **Limitación explícita:** los Secrets deben ser añadidos por quien administre GitHub. Hasta que se configuren y se compruebe la actualización entre dos ejecuciones con la misma firma, el problema de compatibilidad de APK **no está resuelto**. La verificación en el teléfono del equipo también queda pendiente.
 - Cambios limitados al Gradle de firma debug, workflow de CI y documentación en `qa`. `main` y `entrega-01` no se modifican. Código Kotlin sin comentarios nuevos.
-- **Estado del commit de infraestructura: pendiente de nuevas ejecuciones Kotlin QA e instrumentadas**; no heredar porcentajes de otro SHA.
+- Resultado inicial de [72d6e07d](https://github.com/Nicricht/APP-APP/commit/72d6e07df541e36cd4b0f710a305a953f9b4ff6b): [Kotlin QA 40134281461](https://github.com/Nicricht/APP-APP/actions/runs/40134281461) **failure en el nuevo paso `Comprobar firma pública de APK`**; la compilación y unitarias sí terminaron `BUILD SUCCESSFUL` y aún no se ejecutaron instalaciones porque dependen del job. El comando `apksigner` se ejecutó redirigiendo su salida y el error no quedó visible. La instrumentación [40134281486](https://github.com/Nicricht/APP-APP/actions/runs/40134281486) sigue en curso. No declarar esta versión verde.
+
+## 2026-10-24: diagnóstico visible del certificado APK
+
+- Problema localizado en [Android Kotlin QA 40134281461](https://github.com/Nicricht/APP-APP/actions/runs/40134281461), job `120992370862`: Gradle completó el build en 3m59s y el paso nuevo `Comprobar firma pública de APK` finalizó con código 1. La llamada original a `apksigner verify --print-certs` enviaba su salida a `firma-qa.txt`, por lo que GitHub no mostró el texto que permite distinguir una APK realmente inválida de un formato de huella distinto.
+- `.github/workflows/android-qa.yml`: conservar `apksigner verify` como **condición obligatoria**, capturar y mostrar su salida pública también ante error, y aceptar las variantes habituales `SHA-256` / `SHA256` mediante comprobación de formato flexible. El paso sigue fallando si la APK no verifica o no muestra huella SHA-256.
+- No se elude la firma, no se publica material privado y no se cambia código productivo. El modo sin secretos continúa con firma debug temporal declarada.
+- **Estado:** cambio de diagnóstico preparado, pendiente de una nueva ejecución con resultado de verificación, instalación Android API 30/35 y JaCoCo instrumentado; conservar resultados del commit anterior antes de publicarlo.
+- `main` y `entrega-01` permanecen intocadas.
 
 ## Pendientes sin evidencia suficiente
 
