@@ -5,6 +5,8 @@ import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Base64
+import java.io.ByteArrayOutputStream
 import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.ActivityResultRegistryOwner
@@ -140,6 +142,58 @@ class PerfilFotoActividadCoberturaTest {
         montar(guardadas = guardadas)
         rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
         rule.onNodeWithText("Selección cancelada").assertExists()
+        assertEquals(0, guardadas.get())
+    }
+
+    private fun archivo(mime: String, contenido: ByteArray): Uri = Uri.Builder()
+        .scheme("content")
+        .authority("cl.duocuc.segurosbpo.qa.archivos")
+        .appendPath("documento")
+        .appendQueryParameter("mime", mime)
+        .appendQueryParameter("nombre", "perfil")
+        .appendQueryParameter(
+            "contenido",
+            Base64.encodeToString(contenido, Base64.URL_SAFE or Base64.NO_WRAP)
+        )
+        .build()
+
+    @Test fun galeriaGuardaJpegValidoYConfirmaElResultado() {
+        val imagen = Bitmap.createBitmap(24, 24, Bitmap.Config.ARGB_8888)
+        val salida = ByteArrayOutputStream()
+        try {
+            imagen.compress(Bitmap.CompressFormat.JPEG, 85, salida)
+        } finally {
+            imagen.recycle()
+        }
+        val guardadas = AtomicInteger()
+        montar(seleccion = archivo("image/jpeg", salida.toByteArray()), guardadas = guardadas)
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("Foto actualizada").assertExists()
+        assertEquals(1, guardadas.get())
+    }
+
+    @Test fun galeriaNoPermiteSeleccionarPdfComoFotoDePerfil() {
+        val guardadas = AtomicInteger()
+        montar(seleccion = archivo("application/pdf", "%PDF-1.4".toByteArray()), guardadas = guardadas)
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("Debes seleccionar una imagen").assertExists()
+        assertEquals(0, guardadas.get())
+    }
+
+    @Test fun galeriaRechazaContenidoConFirmaDistintaAlMime() {
+        val guardadas = AtomicInteger()
+        montar(seleccion = archivo("image/jpeg", "%PDF-1.4".toByteArray()), guardadas = guardadas)
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("El contenido del archivo no coincide con su formato").assertExists()
+        assertEquals(0, guardadas.get())
+    }
+
+    @Test fun galeriaRechazaJpegNoDecodificable() {
+        val guardadas = AtomicInteger()
+        val contenido = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xD9.toByte())
+        montar(seleccion = archivo("image/jpeg", contenido), guardadas = guardadas)
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("La imagen no se puede abrir").assertExists()
         assertEquals(0, guardadas.get())
     }
 }

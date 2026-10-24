@@ -75,8 +75,16 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Ampliación: `FlujoViewModelCoberturaTest.kt`. Comprueba toma exitosa, rechazo de reasignación, restricciones entre áreas, rollback visible en ViewModel ante error de aviso y búsqueda de duplicados limitada al propietario activo.
 - Limitación: el modelo académico solo tiene un liquidador definido por área; la prueba concurrente comprueba exclusión en almacenamiento, **no** la competencia entre dos usuarios distintos de la misma especialidad, que requiere ampliar el modelo.
 - Punto de referencia: [QA instrumentado del commit documental 242e4966](https://github.com/Nicricht/APP-APP/actions/runs/40070639355) terminado correctamente. Ese cambio solo contenía documentación.
-- Estado de las pruebas nuevas: **pendientes de CI para el commit que contenga esta entrada**.
+- Resultado: [Android Kotlin QA 40086509540](https://github.com/Nicricht/APP-APP/actions/runs/40086509540) y [Android instrumented QA 40086509545](https://github.com/Nicricht/APP-APP/actions/runs/40086509545), ambas correctas en `be7d1ea7`. JaCoCo: **3009/3087 líneas (97,47 %) y 939/1005 ramas (93,43 %)**. APK instalada/abierta en emuladores API 30 y 35.
 - No se crean comentarios en el código ni se tocan `main` y `entrega-01`.
+
+## 2026-10-24: menú por roles y galería validada con archivos reales
+
+- Archivo nuevo: `app/src/androidTest/java/cl/duocuc/segurosbpo/MenuLateralRolesCoberturaTest.kt`. Ejercita opciones del menú lateral de asegurado (reporte, estadísticas, avisos, perfil, panel y cierre de sesión) y liquidador (panel de trabajo, perfil y salida), comprobando pantallas de destino.
+- Archivo ampliado: `app/src/androidTest/java/cl/duocuc/segurosbpo/PerfilFotoActividadCoberturaTest.kt`. Agrega JPEG válido, PDF rechazado para foto, MIME JPEG con contenido PDF y cabecera JPEG con contenido no decodificable. Verifica resultado visual y ausencia de guardados no autorizados.
+- Justificación: el informe JaCoCo de `242e4966` mostró acciones de menú lateral no ejecutadas y el recorrido de galería sin cubrir. Las pruebas se enfocan en comportamiento observable, no en llamadas artificiales.
+- Código de producción y esquema SQLite: sin cambios. Test data generado y en proveedor instrumentado propio, sin datos reales.
+- Estado al registrar: **pendiente de ejecución Android Kotlin QA e instrumentada del commit asociado**.
 
 ## Pendientes sin evidencia suficiente
 
