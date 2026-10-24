@@ -3,6 +3,7 @@ package cl.duocuc.segurosbpo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -63,8 +64,11 @@ class RutasAdicionalesCoberturaTest {
         rule.onNodeWithText("Volver al siniestro").performClick()
         rule.onNodeWithText("Detalle del siniestro").assertIsDisplayed()
         rule.onNodeWithText("Volver").performClick()
+        rule.waitForIdle()
+        rule.onRoot(useUnmergedTree = true).printToLog("BPO_NAVEGACION_REGRESO")
         rule.waitUntil(8000) {
-            rule.onAllNodesWithText("Mis siniestros").fetchSemanticsNodes().isNotEmpty()
+            rule.onAllNodesWithText("Mis siniestros", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
         }
         rule.onNodeWithText("Mis siniestros").assertIsDisplayed()
     }

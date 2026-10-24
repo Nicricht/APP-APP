@@ -268,7 +268,7 @@ fun AppNavegacion() {
                 solicitudes = solicitudes,
                 onCargarSolicitudes = { siniestrosVm.refrescarEvidencias(id) },
                 onVolver = {
-                    if (!navController.popBackStack(Ruta.MisSiniestros.ruta, false)) {
+                    if (!navController.popBackStack()) {
                         navController.navigate(Ruta.MisSiniestros.ruta) {
                             launchSingleTop = true
                         }
