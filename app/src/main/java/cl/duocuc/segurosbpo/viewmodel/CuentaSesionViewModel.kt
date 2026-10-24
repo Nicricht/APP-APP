@@ -16,8 +16,11 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
     private val db = CuentaDbHelper(application)
     private val preferencias = application.getSharedPreferences("cuenta_sesion_local", 0)
     private fun equipoValido(cuenta: CuentaLocal): Boolean = when (cuenta.rol) {
-        RolCuenta.ASEGURADO -> cuenta.equipo == null
-        RolCuenta.LIQUIDADOR -> Liquidador.entries.any { it.name == cuenta.equipo }
+        RolCuenta.ASEGURADO ->
+            cuenta.equipo == null && cuenta.id.startsWith("USR_")
+        RolCuenta.LIQUIDADOR ->
+            Liquidador.entries.any { it.name == cuenta.equipo } &&
+                cuenta.id == "LIQ_" + cuenta.equipo
     }
 
     private val inicial = preferencias.getString("cuenta_id", null)?.let { id ->

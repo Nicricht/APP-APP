@@ -230,4 +230,45 @@ class SesionCuentaRealCoberturaTest {
         assertEquals("No se pudo verificar la cuenta", vm.iniciar(correo, "Clave2026"))
         assertNull(vm.cuenta.value)
     }
+
+    @Test fun unaCuentaAseguradaNoPuedeConvertirseEnLiquidadorPorDatosAlterados() {
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.registrar(
+            "Ana Prueba", rut, correo, "912345678", "Clave2026", "Clave2026"
+        ))
+        val id = requireNotNull(sesion.cuenta.value?.id)
+        assertTrue(id.startsWith("USR_"))
+        sesion.cerrarSesion()
+        CuentaDbHelper(app).use { helper ->
+            assertEquals(1, helper.writableDatabase.update(
+                "cuentas",
+                ContentValues().apply {
+                    put("rol", RolCuenta.LIQUIDADOR.name)
+                    put("equipo", "HOGAR")
+                },
+                "id = ?", arrayOf(id)
+            ))
+        }
+        assertEquals(
+            "La cuenta no tiene una especialidad válida",
+            sesion.iniciar(correo, "Clave2026")
+        )
+        assertNull(sesion.cuenta.value)
+        app.getSharedPreferences("cuenta_sesion_local", 0).edit()
+            .putString("cuenta_id", id).commit()
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+        CuentaDbHelper(app).use { helper ->
+            assertEquals(1, helper.writableDatabase.update(
+                "cuentas",
+                ContentValues().apply {
+                    put("rol", RolCuenta.ASEGURADO.name)
+                    putNull("equipo")
+                },
+                "id = ?", arrayOf(id)
+            ))
+        }
+        assertNull(sesion.iniciar(correo, "Clave2026"))
+        assertEquals(RolCuenta.ASEGURADO, sesion.cuenta.value?.rol)
+        assertEquals(id, sesion.cuenta.value?.id)
+    }
 }

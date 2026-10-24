@@ -148,4 +148,60 @@ class RestauracionSesionCorruptaTest {
         assertEquals("LIQ_HOGAR", restaurada.cuenta.value?.id)
         sesion.cerrarSesion()
     }
+
+    @Test fun aseguradoConIdentificadorDeOtroTipoNoRecuperaSesion() {
+        cuentaLocal(RolCuenta.ASEGURADO.name, null)
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.cuenta.value)
+        assertNull(preferencias.getString("cuenta_id", null))
+    }
+
+    @Test fun liquidadorConEquipoReconocidoPeroIdentificadorAjenoNoRecuperaPrivilegios() {
+        cuentaLocal(RolCuenta.LIQUIDADOR.name, "HOGAR")
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.cuenta.value)
+        assertNull(preferencias.getString("cuenta_id", null))
+    }
+
+    @Test fun credencialesDeLiquidadorNoAutorizanUnaIdentidadDeOtroEquipo() {
+        CuentaDbHelper(app).use { helper ->
+            helper.writableDatabase.execSQL("""
+                INSERT INTO cuentas
+                    (id,nombre,rut,correo,telefono,rol,equipo,salt,clave_hash)
+                SELECT 'QA_SESION_CORRUPTA', 'Liquidador alterado',
+                    'QA-SESION-CORRUPTA', 'qa.corrupta@ejemplo.cl',
+                    telefono, 'LIQUIDADOR', 'VEHICULOS', salt, clave_hash
+                FROM cuentas WHERE id = 'LIQ_HOGAR'
+            """.trimIndent())
+        }
+        val sesion = CuentaSesionViewModel(app)
+        assertEquals(
+            "La cuenta no tiene una especialidad válida",
+            sesion.iniciar("qa.corrupta@ejemplo.cl", "Demo2026!")
+        )
+        assertNull(sesion.cuenta.value)
+        preferencias.edit().putString("cuenta_id", idPrueba).commit()
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+        assertNull(preferencias.getString("cuenta_id", null))
+    }
+
+    @Test fun credencialesValidasNoConviertenUnIdLiquidadorEnAsegurado() {
+        CuentaDbHelper(app).use { helper ->
+            helper.writableDatabase.execSQL("""
+                INSERT INTO cuentas
+                    (id,nombre,rut,correo,telefono,rol,equipo,salt,clave_hash)
+                SELECT 'QA_SESION_CORRUPTA', 'Asegurado alterado',
+                    'QA-SESION-CORRUPTA', 'qa.corrupta@ejemplo.cl',
+                    telefono, 'ASEGURADO', NULL, salt, clave_hash
+                FROM cuentas WHERE id = 'LIQ_HOGAR'
+            """.trimIndent())
+        }
+        val sesion = CuentaSesionViewModel(app)
+        assertEquals(
+            "La cuenta no tiene una especialidad válida",
+            sesion.iniciar("qa.corrupta@ejemplo.cl", "Demo2026!")
+        )
+        assertNull(sesion.cuenta.value)
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+    }
 }

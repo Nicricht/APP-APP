@@ -319,8 +319,20 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Nueva prueba `CuentaDesaparecidaEnActualizacionTest.kt`: dos pruebas SQLite con base aislada y triggers de simulación, una para cambio de teléfono y otra para foto. Reproducen la desaparición de una cuenta entre `UPDATE` y `SELECT`; exigen **un error**, nunca un éxito ficticio ni una sesión autenticada.
 - `ResumenGraficosEstadosRealesTest.kt`: tres pruebas Compose de título y descripción personalizados con combinaciones de parámetros no cubiertas antes. Verifican que el equipo, las cifras y el mensaje de ausencia de datos sean coherentes.
 - No se añaden comentarios al código Kotlin. Las pruebas usan exclusivamente cuentas ficticias y bases temporales. Se cambia solo `qa`, nunca `main` ni `entrega-01`.
-- **Pendiente de validación del SHA nuevo**: compilación, instalación Android 11/15, suite instrumentada y nueva medición JaCoCo. No atribuir la cobertura del SHA anterior a estos cambios.
+- **Validación aprobada de [86675449](https://github.com/Nicricht/APP-APP/commit/866754494a4073e7b043f320a474e925efd26c59)**: [Android Kotlin QA 40122492110](https://github.com/Nicricht/APP-APP/actions/runs/40122492110) e [instrumentado 40122492065](https://github.com/Nicricht/APP-APP/actions/runs/40122492065), ambos **success**. JaCoCo del mismo SHA: **3132/3136 líneas (99,87 %) y 1020/1041 ramas (97,98 %)**, faltan cuatro líneas y 21 ramas. Instalación y arranque API 30/35 correctos.
 - Importante: la prueba del botón Atrás físico sobre `AlertDialog` sigue pendiente de comprobación en un teléfono o en instrumentación con foco controlado. El test de cancelación determinista no sustituye ese requisito.
+
+## 2026-10-24: comprobar correspondencia de identidad y rol antes de restaurar privilegios
+
+- Base de código [86675449](https://github.com/Nicricht/APP-APP/commit/866754494a4073e7b043f320a474e925efd26c59) validada con Android Kotlin QA y pruebas instrumentadas verdes. JaCoCo real del artifact `12571498973`: **3132/3136 líneas (99,87 %) y 1020/1041 ramas (97,98 %)**.
+- Hallazgo: la validación de sesión verificaba que la especialidad de un liquidador existiese o que el equipo del asegurado fuese nulo, pero no que el identificador correspondiese a la identidad. Una base alterada podía permitir que la cuenta `USR_` se restaurase como liquidador o que una cuenta ajena al padrón de liquidadores se autenticase con un equipo válido.
+- Cambio en `CuentaSesionViewModel.equipoValido`: para cuentas persistidas, el asegurado debe tener equipo nulo e ID `USR_`; el liquidador debe poseer una especialidad reconocida e ID `LIQ_` seguido exactamente por esa especialidad. Los accesos de demostración usan rutas explícitas y no pierden su funcionamiento.
+- Nuevas regresiones en `RestauracionSesionCorruptaTest.kt`: asegurado con identificador ajeno, liquidador con especialidad reconocida pero identificador ajeno, credenciales de liquidador con equipo/ID incongruentes y credenciales conocidas con identidad de asegurado incongruente.
+- Nueva regresión en `SesionCuentaRealCoberturaTest.kt`: un asegurado real registrado no obtiene privilegios de liquidador tras editar artificialmente su rol y equipo; al corregir sus datos puede autenticarse de nuevo con su identidad original.
+- Todos los cambios de SQLite de estas pruebas se aplican exclusivamente a registros ficticios `QA_SESION_CORRUPTA` o a una cuenta de prueba eliminada por los métodos de limpieza existentes. No se modifican migraciones ni contraseñas reales. No hay comentarios añadidos al código Kotlin.
+- Ámbito funcional: aplicación local SQLite con dos liquidadores predeterminados. No se presenta como seguridad de servidor ni autorización remota.
+- **Estado de estas cinco pruebas y ajuste de sesión: pendiente de su propia compilación, Android API 30/35, instrumentación y medición JaCoCo para el nuevo SHA.**
+- Solo se actualizará `qa`; `main` y `entrega-01` deben permanecer intactas.
 
 ## Pendientes sin evidencia suficiente
 
