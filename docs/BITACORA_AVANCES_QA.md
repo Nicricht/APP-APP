@@ -197,8 +197,18 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - `SeguimientoSemanalDbTest.kt`: cuando todas las gestiones son internas, la regla de siete días se calcula desde el reporte original, sin reiniciar el plazo por acciones privadas ni filtrar casos de otra especialidad.
 - `ContratosModelosVisualesTest.kt`: restauración de todos los asegurados conocidos, reconocimiento de cuenta local `USR_` y rechazo de códigos desconocidos o de liquidadores tratados como asegurados.
 - Solo se modifican **cuatro archivos de pruebas instrumentadas y esta bitácora**. Sin cambios de código de producción, SQLite ni permisos Android, sin comentarios nuevos.
-- Estado al registrar: **pendiente de compilación, instalaciones y ejecución instrumentada para el SHA de este commit**. No se atribuye la cobertura nueva hasta verificarla.
+- Estado verificado para [5d02cfef](https://github.com/Nicricht/APP-APP/commit/5d02cfef8b07c462fd64f5db10a1501823c117a6): [Android Kotlin QA 40102197681](https://github.com/Nicricht/APP-APP/actions/runs/40102197681) e [instrumented QA 40102197652](https://github.com/Nicricht/APP-APP/actions/runs/40102197652), ambas **success**. La instalación/arranque pasó en API 30 y 35. JaCoCo instrumentado: **3119/3125 líneas (99,81 %) y 995/1027 ramas (96,88 %)**; faltan **6 líneas y 32 ramas**.
 - `main` y `entrega-01` permanecen intocadas.
+
+## 2026-10-24: cierre formal del commit 5d02cfef y APK
+
+- Código de producción sin modificaciones respecto de [0c3b8170](https://github.com/Nicricht/APP-APP/commit/0c3b817013d71a7170b0c85f294f296818fca911); solo pruebas e instrumentación.
+- Las seis pruebas nuevas pasaron y se confirmó JaCoCo instrumentado **3119/3125 líneas (99,81 %)** y **995/1027 ramas (96,88 %)**. Faltan seis líneas y 32 ramas para la meta interna.
+- Artifact `SegurosBPO-debug-apk` de [Android Kotlin QA 40102197681](https://github.com/Nicricht/APP-APP/actions/runs/40102197681), ID `12563183155`. Archivo extraído: `app-debug.apk`, SHA-256 `c6afc0e0015419f8143fe003f2903b717138c12d609c4826dd3534c15714e1ab`. Se verificó el contenedor ZIP, `AndroidManifest.xml`, `resources.arsc` y DEX.
+- Evidencia de instalación: trabajos `instalar-android (30)` e `instalar-android (35)` del mismo SHA completados correctamente. **No equivale a una prueba física en el dispositivo del equipo**.
+- Diagnóstico de APK: permanece [issue #7](https://github.com/Nicricht/APP-APP/issues/7) por firma de debug variable entre runners. **No desinstalar una app con datos locales sin respaldo**.
+- Seguimiento semanal local documentado como completado en [issue #9](https://github.com/Nicricht/APP-APP/issues/9); continúa el [issue #6](https://github.com/Nicricht/APP-APP/issues/6) de cobertura.
+- Cambio de esta entrada: **solo documentación**, sin Kotlin ni alteración de `main` o `entrega-01`. Una nueva suite instrumentada de GitHub puede ejecutarse por dispararse en cualquier push a `qa`.
 
 ## Pendientes sin evidencia suficiente
 
