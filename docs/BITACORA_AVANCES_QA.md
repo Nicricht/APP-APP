@@ -138,8 +138,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - `CuentaDbCoberturaRealTest.kt`: comprueba migración incremental de `cuentas` versión 2 a 3 conservando foto, perfil, teléfono y creación de los dos liquidadores de prueba.
 - Nuevo `AreasYPlazosLimitesTest.kt`: comprueba la clasificación de los seis tipos en las áreas correctas, pertenencia exclusiva, equipos y cálculo UTC de 0, 14, 15 y 30 días, además de fechas futuras o inválidas.
 - Justificación: tras superar el 99 % de líneas, los siguientes huecos de ramas se concentran en estados de cuenta, migraciones y plazos. Estas pruebas verifican reglas útiles y persistencia, sin aumentar cobertura mediante ejecuciones vacías.
-- Estado del commit que contiene estas pruebas: **pendiente de Kotlin QA e instrumentadas para el nuevo SHA**; no se atribuyen resultados de `c0e18be3`.
+- Validación aprobada para [d42af29d](https://github.com/Nicricht/APP-APP/commit/d42af29d5ca56d4c74a35e042fcda43a028fec9f): [Kotlin QA 40090923765](https://github.com/Nicricht/APP-APP/actions/runs/40090923765) e [instrumented QA 40090923786](https://github.com/Nicricht/APP-APP/actions/runs/40090923786), ambas **success**. JaCoCo instrumentado: **3086/3095 líneas (99,71 %) y 975/1013 ramas (96,25 %)**. Instalación y arranque en emuladores API 30/35 aprobados.
 - No se añaden comentarios al código ni se modifican `main` y `entrega-01`.
+
+## 2026-10-24: reporte de cobertura y artefacto descargable
+
+- Último commit con cambios Kotlin verificados: [d42af29d](https://github.com/Nicricht/APP-APP/commit/d42af29d5ca56d4c74a35e042fcda43a028fec9f).
+- La nueva cobertura llegó al 99,71 % de líneas y 96,25 % de ramas. Restan 9 líneas y 38 ramas en JaCoCo instrumentado; pendiente continuar sin falsificar exclusiones.
+- Artefacto APK generado por el workflow de `d42af29d`: `SegurosBPO-debug-apk`, artifact de GitHub Actions `12559042677`. Se verificó la extracción directa del archivo `app-debug.apk` (15.303.602 bytes) y su SHA-256: `c979de88eeee4b68f9a801bdba5283711420308ef29453212d32e0a468c7f3ef`.
+- El APK se instaló y abrió en los emuladores Android API 30 y 35; no hay evidencia de instalación en el teléfono físico particular.
+- La firma `debug` puede variar entre runners: una actualización sobre la app instalada con otra firma puede fallar incluso si ambos APK son válidos. Diagnóstico y evidencias en [issue #7](https://github.com/Nicricht/APP-APP/issues/7).
+- Esta entrada es solo documental; no modifica código de producción, código de pruebas, `main` ni `entrega-01`.
 
 ## Pendientes sin evidencia suficiente
 
