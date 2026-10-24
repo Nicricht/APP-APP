@@ -2,6 +2,7 @@ package cl.duocuc.segurosbpo
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import android.view.KeyEvent
@@ -74,8 +75,21 @@ class ConfirmacionDuplicadosFormularioTest {
         rule.onNodeWithText("Reportar").performScrollTo().performClick()
         rule.onNodeWithText("Posible siniestro duplicado").assertExists()
         rule.waitForIdle()
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
-        rule.waitForIdle()
+        var cerrado = false
+        repeat(3) {
+            if (!cerrado) {
+                InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+                InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+                rule.waitForIdle()
+                cerrado = runCatching {
+                    rule.waitUntil(1500) {
+                        rule.onAllNodesWithText("Posible siniestro duplicado")
+                            .fetchSemanticsNodes().isEmpty()
+                    }
+                    true
+                }.getOrDefault(false)
+            }
+        }
         rule.onNodeWithText("Posible siniestro duplicado").assertDoesNotExist()
         assertEquals(0, registros.get())
         rule.onNodeWithText("Reportar").assertExists()

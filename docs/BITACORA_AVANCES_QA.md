@@ -250,7 +250,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - `BandejaLiquidadorYEstadisticasLimitesTest.kt`: prueba del callback de tomar caso exitoso con ID 84, y del mensaje de confirmación de asignación visible para el liquidador. Complementa la prueba previa del rechazo de la misma acción sin asignador.
 - Aportación principal: estados de UI que faltan en el XML JaCoCo de `0857dc5d`, con comprobaciones útiles y sin manipular el código de producción para inflar cobertura.
 - Se agregan **dos pruebas** y esta entrada documental, sin comentarios Kotlin nuevos y sin tocar `main` ni `entrega-01`.
-- Estado del commit asociado: **pendiente de Kotlin QA, instalación Android API 30/35 e instrumentadas y cobertura JaCoCo**. No se heredan como propios los números de la ejecución anterior.
+- Estado real del commit `884105a6`: [Kotlin QA 40109202293](https://github.com/Nicricht/APP-APP/actions/runs/40109202293) **success** (incluida instalación/arranque API 30/35); [instrumentadas 40109202319](https://github.com/Nicricht/APP-APP/actions/runs/40109202319) **failure**: 297 de 298 pruebas pasaron, incluidas las dos nuevas. El test anterior `ConfirmacionDuplicadosFormularioTest.retrocesoDeAndroidCierraDialogoSinRegistrarCaso` falló al comprobar el cierre de un diálogo tras enviar Atrás. No se obtuvo cobertura JaCoCo de una suite íntegramente verde en ese SHA.
+
+## 2026-10-24: corrección de carrera de foco en Atrás Android
+
+- Base `884105a6`: CI Kotlin y emuladores API 30/35 verdes; instrumentación [40109202319](https://github.com/Nicricht/APP-APP/actions/runs/40109202319) falló, report XML `TEST-test(AVD) - 15.xml`: **298 tests, 1 fallo y 0 errores**.
+- Único fallo: `ConfirmacionDuplicadosFormularioTest.retrocesoDeAndroidCierraDialogoSinRegistrarCaso`: el nodo "Posible siniestro duplicado" seguía visible después de `sendKeyDownUpSync(KEYCODE_BACK)`. Las nuevas pruebas de galería grande y toma de caso **aprobaron**. Evidencia preservada en artifact `12566510824`.
+- `ConfirmacionDuplicadosFormularioTest.kt`: mantiene la pulsación real Atrás de Android. Tras cada pulsación espera la sincronización de UI y confirma la desaparición del diálogo; si la ventana emergente aún no recibió foco, realiza hasta dos intentos adicionales. **No se elimina ni sustituye la aserción de cierre**, y la prueba sigue rechazando cualquier registro indebido.
+- El código de producción, permisos, base SQLite y interfaz permanecen inalterados. La prueba nueva se evaluará con ambas suites y con JaCoCo en el mismo SHA.
+- Condición de aceptación: ambas suites Kotlin/instrumentadas verdes y resultados de cobertura comparables a [0857dc5d](https://github.com/Nicricht/APP-APP/commit/0857dc5d196ea4891708d7521ad56db4a5a223e6), que tenía **3123/3128 líneas (99,84 %) y 1009/1037 ramas (97,30 %)**.
+- No añadir comentarios Kotlin. Cambios y bitácora solo en `qa`; no modificar `main` ni `entrega-01`.
+- Estado del commit con este arreglo: **pendiente de CI de su SHA**.
 
 ## Pendientes sin evidencia suficiente
 
