@@ -59,4 +59,10 @@ class AreasYPlazosLimitesTest {
         assertEquals(0L, ControlPlazos.diasCorridos("31-02-2026", fecha(15)))
         assertEquals(0L, ControlPlazos.diasCorridos("sin fecha", fecha(15)))
     }
+
+    @Test fun fechaActualPorDefectoDetectaCasosAntiguosSinHoraExterna() {
+        assertTrue(ControlPlazos.diasCorridos("01-01-2020") >= 2000L)
+        assertEquals(0L, ControlPlazos.diasCorridos("01-01-2099"))
+        assertEquals(0L, ControlPlazos.diasCorridos("fecha incompleta"))
+    }
 }

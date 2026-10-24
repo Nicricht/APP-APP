@@ -210,9 +210,21 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Seguimiento semanal local documentado como completado en [issue #9](https://github.com/Nicricht/APP-APP/issues/9); continúa el [issue #6](https://github.com/Nicricht/APP-APP/issues/6) de cobertura.
 - Cambio de esta entrada: **solo documentación**, sin Kotlin ni alteración de `main` o `entrega-01`. Una nueva suite instrumentada de GitHub puede ejecutarse por dispararse en cualquier push a `qa`.
 
+## 2026-10-24: regresión de gráficos, perfiles y plazos con pruebas funcionales
+
+- Base de comparación: [5d02cfef](https://github.com/Nicricht/APP-APP/commit/5d02cfef8b07c462fd64f5db10a1501823c117a6), [Kotlin QA 40102197681](https://github.com/Nicricht/APP-APP/actions/runs/40102197681) e [instrumentado 40102197652](https://github.com/Nicricht/APP-APP/actions/runs/40102197652), ambas verdes. JaCoCo: **3119/3125 líneas (99,81 %) y 995/1027 ramas (96,88 %)**.
+- El commit documental [bd3de296](https://github.com/Nicricht/APP-APP/commit/bd3de296ff833b2abb35ab96bebd57cf71fe1d27) solo cambió esta bitácora y disparó instrumentación [40103276895](https://github.com/Nicricht/APP-APP/actions/runs/40103276895); conservar su resultado antes de publicar este siguiente conjunto de pruebas.
+- Archivo nuevo `ResumenGraficosEstadosRealesTest.kt`: cuatro pruebas instrumentadas verifican gráfica vacía sin cifras inventadas, total de tres casos en distintas etapas y tipos, conjunto totalmente cerrado con cero abiertos y funciones de distribución/evolución sin datos.
+- Ampliación `SesionCuentaRealCoberturaTest.kt`: dos pruebas sobre cuenta local eliminada después de iniciar sesión y credenciales rechazadas. Comprueban que el ViewModel no confirme modificación de teléfono/fotografía cuando no existe la cuenta, ni reemplace sesión válida con contraseña incorrecta.
+- Ampliación `AreasYPlazosLimitesTest.kt`: comprobar comportamiento de `ControlPlazos.diasCorridos` con fecha actual por defecto, fecha antigua, fecha futura e inválida.
+- Motivo: nuevas verificaciones de UI y persistencia para el informe JaCoCo actual, especialmente gráficos, errores del ViewModel y cálculo de plazos; no añadir tests únicamente para ejecutar bytecode irrelevante.
+- **Sin cambios en el código de producción**, dependencias, permisos ni datos persistidos por la app. Tests sobre registros ficticios.
+- Estado de este siguiente commit: **pendiente de ejecución completa de Kotlin QA e instrumentadas en el SHA que contenga estos archivos**. No declarar incremento de cobertura sin el XML correspondiente.
+- Respetar ramas: cambios únicamente en `qa`. `main` y `entrega-01` intactas; ningún comentario nuevo en Kotlin.
+
 ## Pendientes sin evidencia suficiente
 
-1. Volver a medir JaCoCo en el SHA que valida los recordatorios; continuar con ramas de CuentaSesionViewModel y otros flujos sin cubrir.
+1. Seguir midiendo JaCoCo por SHA completo y cubrir únicamente rutas reales en CuentaSesionViewModel, gráficos, perfiles y navegación.
 2. El escenario de dos conexiones/hilos simultáneos quedó probado en `be7d1ea7` con suite instrumentada verde. Para usuarios distintos del mismo equipo haría falta ampliar el modelo local de liquidadores.
 3. Ejecutar recorrido completo de la APK en dispositivo físico: cámara, galería, PDF, permisos, cierre de sesión, reinicio y persistencia.
 4. Revisar seguridad de propiedad por cuenta, experiencia accesible en pantallas pequeñas y evidencia de colaboración del equipo.

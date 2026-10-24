@@ -138,4 +138,43 @@ class SesionCuentaRealCoberturaTest {
             grande.recycle()
         }
     }
+
+    @Test fun sesionConCuentaEliminadaNoAutorizaActualizarPerfil() {
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.registrar(
+            "Ana Prueba", rut, correo, "912345678", "Clave2026", "Clave2026"
+        ))
+        val id = sesion.cuenta.value!!.id
+        CuentaDbHelper(app).use { helper ->
+            assertEquals(1, helper.writableDatabase.delete(
+                "cuentas", "id = ?", arrayOf(id)
+            ))
+        }
+        assertEquals("No se encontró la cuenta", sesion.actualizarTelefono("987654321"))
+        assertEquals("912345678", sesion.cuenta.value?.telefono)
+        val foto = Bitmap.createBitmap(12, 12, Bitmap.Config.ARGB_8888)
+        try {
+            assertEquals("No se encontró la cuenta", sesion.actualizarFoto(foto))
+        } finally {
+            foto.recycle()
+        }
+        assertNull(sesion.cuenta.value?.foto)
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+        sesion.cerrarSesion()
+    }
+
+    @Test fun erroresDeAccesoNoReemplazanCuentaNiRestauranPrivilegios() {
+        val sesion = CuentaSesionViewModel(app)
+        assertEquals("Correo o contraseña incorrectos", sesion.iniciar("", ""))
+        assertNull(sesion.cuenta.value)
+        assertNull(sesion.registrar(
+            "Ana Prueba", rut, correo, "912345678", "Clave2026", "Clave2026"
+        ))
+        val actual = sesion.cuenta.value
+        assertEquals("Correo o contraseña incorrectos", sesion.iniciar(correo, "Incorrecta"))
+        assertEquals(actual, sesion.cuenta.value)
+        assertEquals("El teléfono debe tener al menos 8 caracteres",
+            sesion.actualizarTelefono("1"))
+        assertEquals(actual, sesion.cuenta.value)
+    }
 }
