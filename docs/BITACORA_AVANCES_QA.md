@@ -186,6 +186,20 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - El resultado instrumentado fallido no acredita cobertura nueva; la línea base verde anterior continúa en 3088/3095 líneas (99,77 %) y 980/1013 ramas (96,74 %).
 - Solo rama `qa`, `main` y `entrega-01` intactas; sin comentarios añadidos al código.
 
+## 2026-10-24: restauración de identidades, permisos ya concedidos y seguimiento sin historial visible
+
+- Punto de partida verificado: [commit 0c3b8170](https://github.com/Nicricht/APP-APP/commit/0c3b817013d71a7170b0c85f294f296818fca911).
+- Workflows verdes del mismo SHA: [Android Kotlin QA 40095884513](https://github.com/Nicricht/APP-APP/actions/runs/40095884513) e [instrumented QA 40095884692](https://github.com/Nicricht/APP-APP/actions/runs/40095884692), con instalación automatizada en API 30/35.
+- JaCoCo instrumentado del mismo SHA: **3117/3125 líneas (99,74 %) y 992/1027 ramas (96,59 %)**. Restan ocho líneas y 35 ramas.
+- Se investigó el XML real del artifact `informes-android-instrumentado` ID `12561370927` para localizar decisiones no cubiertas en sesión, perfil y SQLite.
+- `PerfilFotoActividadCoberturaTest.kt`: se agregan pruebas de cámara con permiso ya otorgado, tanto foto guardada como captura cancelada. Se verifica que **no se vuelve a solicitar autorización**, y que el guardado se ejecuta solo cuando hay imagen.
+- `SesionRestauracionTest.kt`: recuperación real del asegurado demo y del liquidador de Vehículos tras reiniciar el ViewModel, con mantenimiento de identidad, rol, especialidad y cierre de sesión.
+- `SeguimientoSemanalDbTest.kt`: cuando todas las gestiones son internas, la regla de siete días se calcula desde el reporte original, sin reiniciar el plazo por acciones privadas ni filtrar casos de otra especialidad.
+- `ContratosModelosVisualesTest.kt`: restauración de todos los asegurados conocidos, reconocimiento de cuenta local `USR_` y rechazo de códigos desconocidos o de liquidadores tratados como asegurados.
+- Solo se modifican **cuatro archivos de pruebas instrumentadas y esta bitácora**. Sin cambios de código de producción, SQLite ni permisos Android, sin comentarios nuevos.
+- Estado al registrar: **pendiente de compilación, instalaciones y ejecución instrumentada para el SHA de este commit**. No se atribuye la cobertura nueva hasta verificarla.
+- `main` y `entrega-01` permanecen intocadas.
+
 ## Pendientes sin evidencia suficiente
 
 1. Volver a medir JaCoCo en el SHA que valida los recordatorios; continuar con ramas de CuentaSesionViewModel y otros flujos sin cubrir.

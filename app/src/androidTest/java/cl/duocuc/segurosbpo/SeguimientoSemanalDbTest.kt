@@ -88,4 +88,23 @@ class SeguimientoSemanalDbTest {
         assertEquals(EtapaSiniestro.CERRADO, db.obtener(id, Asegurado.JORGE)?.etapa)
         assertFalse(id in db.listarSeguimientosVencidos(Liquidador.HOGAR, fecha(30)))
     }
+
+    @Test fun sinGestionVisibleCalculaPlazoDesdeReporteYNoDesdeActividadPrivada() {
+        val caso = db.listar(Asegurado.JORGE).single()
+        val datos = ContentValues().apply { put("visible_asegurado", 0) }
+        assertTrue(db.writableDatabase.update(
+            "gestiones", datos, "siniestro_id = ?", arrayOf(caso.id.toString())
+        ) > 0)
+        assertEquals(0, db.listarGestionesAsignadas(caso.id, Liquidador.HOGAR)
+            .count { it.visibleAsegurado })
+        val fechaReporte = ContentValues().apply {
+            put("fecha_reporte", "01-09-2026 10:00")
+        }
+        assertEquals(1, db.writableDatabase.update(
+            "siniestros", fechaReporte, "id = ?", arrayOf(caso.id.toString())
+        ))
+        assertFalse(caso.id in db.listarSeguimientosVencidos(Liquidador.HOGAR, fecha(6)))
+        assertTrue(caso.id in db.listarSeguimientosVencidos(Liquidador.HOGAR, fecha(7)))
+        assertTrue(db.listarSeguimientosVencidos(Liquidador.VEHICULOS, fecha(7)).isEmpty())
+    }
 }

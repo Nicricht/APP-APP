@@ -40,16 +40,24 @@ class PerfilFotoActividadCoberturaTest {
         seleccion: Uri? = null,
         capturas: AtomicInteger = AtomicInteger(0),
         guardadas: AtomicInteger = AtomicInteger(0),
-        errorFoto: String? = null
+        errorFoto: String? = null,
+        permisoPrevio: Boolean = false,
+        peticionesPermiso: AtomicInteger = AtomicInteger(0)
     ) {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
         val sinPermiso = object : ContextWrapper(contexto) {
             override fun checkSelfPermission(permission: String): Int =
-                if (permission == Manifest.permission.CAMERA) PackageManager.PERMISSION_DENIED
+                if (permission == Manifest.permission.CAMERA) {
+                    if (permisoPrevio) PackageManager.PERMISSION_GRANTED
+                    else PackageManager.PERMISSION_DENIED
+                }
                 else super.checkSelfPermission(permission)
 
             override fun checkPermission(permission: String, pid: Int, uid: Int): Int =
-                if (permission == Manifest.permission.CAMERA) PackageManager.PERMISSION_DENIED
+                if (permission == Manifest.permission.CAMERA) {
+                    if (permisoPrevio) PackageManager.PERMISSION_GRANTED
+                    else PackageManager.PERMISSION_DENIED
+                }
                 else super.checkPermission(permission, pid, uid)
         }
         val registro = object : ActivityResultRegistry() {
@@ -60,8 +68,10 @@ class PerfilFotoActividadCoberturaTest {
                 options: ActivityOptionsCompat?
             ) {
                 when (contract) {
-                    is ActivityResultContracts.RequestPermission ->
+                    is ActivityResultContracts.RequestPermission -> {
+                        peticionesPermiso.incrementAndGet()
                         dispatchResult(requestCode, concedido as O)
+                    }
                     is ActivityResultContracts.TakePicturePreview -> {
                         capturas.incrementAndGet()
                         dispatchResult(requestCode, imagen as O)
@@ -231,5 +241,45 @@ class PerfilFotoActividadCoberturaTest {
         rule.onNodeWithText("La foto no puede superar 1 MB").assertExists()
         rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
         assertEquals(1, guardadas.get())
+    }
+
+    @Test fun permisoYaOtorgadoAbreCamaraSinPedirAutorizacionOtraVez() {
+        val foto = Bitmap.createBitmap(22, 22, Bitmap.Config.ARGB_8888)
+        try {
+            val capturas = AtomicInteger()
+            val guardadas = AtomicInteger()
+            val peticiones = AtomicInteger()
+            montar(
+                imagen = foto,
+                capturas = capturas,
+                guardadas = guardadas,
+                permisoPrevio = true,
+                peticionesPermiso = peticiones
+            )
+            rule.onNodeWithText("Tomar foto de perfil").performScrollTo().performClick()
+            rule.onNodeWithText("Foto actualizada").assertExists()
+            assertEquals(0, peticiones.get())
+            assertEquals(1, capturas.get())
+            assertEquals(1, guardadas.get())
+        } finally {
+            foto.recycle()
+        }
+    }
+
+    @Test fun permisoAnteriorNoEximeDeInformarCapturaCancelada() {
+        val capturas = AtomicInteger()
+        val guardadas = AtomicInteger()
+        val peticiones = AtomicInteger()
+        montar(
+            permisoPrevio = true,
+            capturas = capturas,
+            guardadas = guardadas,
+            peticionesPermiso = peticiones
+        )
+        rule.onNodeWithText("Tomar foto de perfil").performScrollTo().performClick()
+        rule.onNodeWithText("Captura cancelada").assertExists()
+        assertEquals(0, peticiones.get())
+        assertEquals(1, capturas.get())
+        assertEquals(0, guardadas.get())
     }
 }

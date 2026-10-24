@@ -62,4 +62,16 @@ class ContratosModelosVisualesTest {
         assertTrue(Dimens.tamanoAvatar > Dimens.tamanoIcono)
         assertTrue(Dimens.alturaBoton > Dimens.espacioPantalla)
     }
+
+    @Test fun idsDeAseguradosRestauranSoloIdentidadesValidas() {
+        Asegurado.entries.forEach { cuenta ->
+            assertEquals(cuenta, Asegurado.valueOf(cuenta.name))
+        }
+        val cuentaPropia = Asegurado.valueOf("USR_ABCD_2026")
+        assertEquals("USR_ABCD_2026", cuentaPropia.name)
+        assertEquals("Asegurado", cuentaPropia.etiqueta)
+        assertEquals("***", cuentaPropia.rutOculto)
+        assertTrue(runCatching { Asegurado.valueOf("LIQ_HOGAR") }.isFailure)
+        assertTrue(runCatching { Asegurado.valueOf("DESCONOCIDO") }.isFailure)
+    }
 }

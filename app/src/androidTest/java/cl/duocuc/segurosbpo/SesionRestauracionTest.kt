@@ -44,4 +44,30 @@ class SesionRestauracionTest {
         preferencias.edit().putString("cuenta_id", "USR_INEXISTENTE").commit()
         assertNull(CuentaSesionViewModel(app).cuenta.value)
     }
+
+    @Test fun aseguradoDemoSeRecuperaSinConvertirseEnOtraCuenta() {
+        val primero = CuentaSesionViewModel(app)
+        primero.accederAseguradoDemo()
+        assertEquals("CAMILA", primero.cuenta.value?.id)
+        assertEquals(RolCuenta.ASEGURADO, primero.cuenta.value?.rol)
+        val restaurado = CuentaSesionViewModel(app)
+        assertEquals("CAMILA", restaurado.cuenta.value?.id)
+        assertEquals("15.842.371-5", restaurado.cuenta.value?.rut)
+        assertEquals("El perfil de demostración no es editable",
+            restaurado.actualizarTelefono("912345678"))
+        restaurado.cerrarSesion()
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+    }
+
+    @Test fun vehiculosDemoSeRecuperaConRolYAreaSinCambiarDeEspecialidad() {
+        val primero = CuentaSesionViewModel(app)
+        primero.accederLiquidadorDemo(Liquidador.VEHICULOS)
+        assertEquals("DEMO_LIQ_VEHICULOS", primero.cuenta.value?.id)
+        val restaurado = CuentaSesionViewModel(app)
+        assertEquals(RolCuenta.LIQUIDADOR, restaurado.cuenta.value?.rol)
+        assertEquals("VEHICULOS", restaurado.cuenta.value?.equipo)
+        assertEquals("DEMO_LIQ_VEHICULOS", restaurado.cuenta.value?.id)
+        restaurado.cerrarSesion()
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+    }
 }
