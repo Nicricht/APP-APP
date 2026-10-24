@@ -37,6 +37,23 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Estado al registrar: **implementadas; esperando resultado de CI para el commit que incluya esta bitácora**.
 - Sin cambios de lógica de producción, esquema SQLite, `main` ni `entrega-01`.
 
+## 2026-10-24: resultado del rollback y cobertura instrumentada
+
+- Commit auditado: [0e2fc9f1](https://github.com/Nicricht/APP-APP/commit/0e2fc9f19411806d1af19dd1ea863b3109480e82).
+- Workflows terminados correctamente: [Kotlin QA 40068907997](https://github.com/Nicricht/APP-APP/actions/runs/40068907997) e [instrumented QA 40068907995](https://github.com/Nicricht/APP-APP/actions/runs/40068907995).
+- Las pruebas de reversión de asignación, recuperación y rechazo de segundas asignaciones pasaron dentro de la suite instrumentada.
+- JaCoCo instrumentado: **2988/3085 líneas (96,86 %)**, **920/1001 ramas (91,91 %)**.
+- Instalación ADB en emuladores API 30 y API 35: correcta para el SHA.
+- No son pruebas en dispositivo físico ni certifican 100 % de cobertura.
+
+## 2026-10-24: mensajes de cámara y galería en perfil
+
+- Código: `ui/screens/PerfilCuentaScreen.kt`.
+- Test: `PerfilFotoActividadCoberturaTest.kt`.
+- Alcance: permiso de cámara denegado, captura cancelada, fotografía aceptada y selector de galería cancelado. En lugar de un silencio de interfaz, se informa el resultado de la acción. Una fotografía guardada sin error presenta `Foto actualizada`.
+- Sin nuevas dependencias, permisos ni cambios en SQLite.
+- Estado al escribir: cambio implementado en `qa`; confirmar resultado mediante CI del commit que contiene esta entrada.
+
 ## Pendientes sin evidencia suficiente
 
 1. Comprobar el informe de JaCoCo del nuevo SHA; seguir con perfil, navegación, formularios y ViewModel.

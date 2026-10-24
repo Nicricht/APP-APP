@@ -60,7 +60,9 @@ fun PerfilCuentaScreen(
         }
     }
     val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) {
-        imagen -> if (imagen != null) mensaje = onGuardarFoto(imagen)
+        imagen ->
+        mensaje = if (imagen == null) "Captura cancelada"
+        else onGuardarFoto(imagen) ?: "Foto actualizada"
     }
     val permisoCamara = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -68,7 +70,9 @@ fun PerfilCuentaScreen(
         if (concedido) camara.launch(null) else mensaje = "No se otorgó permiso de cámara"
     }
     val galeria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) {
+        if (uri == null) {
+            mensaje = "Selección cancelada"
+        } else {
             mensaje = runCatching {
                 val archivo = ProcesadorEvidencia.desdeSelector(contexto, uri)
                 require(archivo.mime.startsWith("image/")) { "Debes seleccionar una imagen" }
@@ -83,7 +87,7 @@ fun PerfilCuentaScreen(
                 val imagen = BitmapFactory.decodeByteArray(
                     archivo.bytes, 0, archivo.bytes.size, opciones
                 ) ?: throw IllegalArgumentException("La imagen no se puede abrir")
-                onGuardarFoto(imagen)
+                onGuardarFoto(imagen) ?: "Foto actualizada"
             }.getOrElse { it.message ?: "No se pudo abrir la imagen" }
         }
     }
