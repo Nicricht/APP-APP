@@ -291,8 +291,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Dos pruebas nuevas en `SesionCuentaRealCoberturaTest`: asegurado con equipo incorrecto rechazado tanto en restauración como en inicio de sesión y readmitido al reparar sus datos; rol persistido inválido rechazado sin exponer excepción interna.
 - La integración no sobrescribe los archivos de prueba del colaborador; el commit actual parte de su SHA y las nuevas suites de `qa` deben ejecutar todos los casos de ambos trabajos.
 - Código nuevo sin comentarios, registros únicamente ficticios, sin cambios de esquema SQLite, de imágenes ni de permisos.
-- Estado del nuevo commit: **pendiente del resultado real de compilación, instalación Android 11/15 e instrumentado y de la cobertura medida para el mismo SHA**.
+- Resultado de [054343e6](https://github.com/Nicricht/APP-APP/commit/054343e63755ec0761993972c9302587a2622eaa): [Kotlin QA 40116523893](https://github.com/Nicricht/APP-APP/actions/runs/40116523893) e [instrumentado 40116523965](https://github.com/Nicricht/APP-APP/actions/runs/40116523965) **success**, incluidas instalaciones API 30 y 35. JaCoCo **3128/3132 líneas (99,87 %) y 1014/1037 ramas (97,78 %)**. Quedan cuatro líneas y 23 ramas.
 - `main` y `entrega-01` no se modifican.
+
+## 2026-10-24: limpiar referencias a sesiones caducadas
+
+- Base verificada: [054343e6](https://github.com/Nicricht/APP-APP/commit/054343e63755ec0761993972c9302587a2622eaa), [Kotlin QA 40116523893](https://github.com/Nicricht/APP-APP/actions/runs/40116523893) e [instrumentación 40116523965](https://github.com/Nicricht/APP-APP/actions/runs/40116523965), ambas aprobadas. Cobertura **3128/3132 líneas (99,87 %) y 1014/1037 ramas (97,78 %)**.
+- Mejora funcional en `CuentaSesionViewModel`: al iniciar, si existe el identificador persistido `cuenta_id` pero la restauración no devuelve una cuenta válida, limpiar **solo ese identificador**. Se evita intentar restaurar repetidamente cuentas eliminadas, corruptas o demos desconocidas. Se conserva toda la base SQLite y otros ajustes.
+- En `RestauracionSesionCorruptaTest.kt` se incorporan cuatro pruebas instrumentadas: referencia de cuenta inexistente, rol ilegible, liquidación demo no reconocida y conservación del identificador de una demo válida.
+- La limpieza no modifica un identificador válido y mantiene las restricciones ya aprobadas para los roles de asegurado y liquidador. No se cambian pantallas, recursos, contraseñas, esquemas, migraciones ni permisos.
+- No se añaden comentarios al código Kotlin. Archivos modificados: ViewModel de sesión, test de regresión y bitácora en el mismo commit de `qa`. `main` y `entrega-01` sin modificaciones.
+- **Estado:** la implementación y pruebas de esta entrada requieren sus propias suites Kotlin/instrumentada y evidencia JaCoCo en el nuevo SHA. No se trasladan cifras de cobertura como si fueran su resultado.
 
 ## Pendientes sin evidencia suficiente
 

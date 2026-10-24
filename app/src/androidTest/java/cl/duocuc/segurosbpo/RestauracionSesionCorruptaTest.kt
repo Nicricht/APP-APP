@@ -77,6 +77,34 @@ class RestauracionSesionCorruptaTest {
         assertNull(restaurada.cuenta.value)
     }
 
+    @Test fun identificadorObsoletoSeDescartaParaEvitarRestauracionesRepetidas() {
+        preferencias.edit().putString("cuenta_id", "USR_QA_NO_EXISTE").commit()
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.cuenta.value)
+        assertNull(preferencias.getString("cuenta_id", null))
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+    }
+
+    @Test fun cuentaCorruptaLimpiaIdentificadorPersistido() {
+        cuentaLocal("ROL_DESCONOCIDO", null)
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+        assertNull(preferencias.getString("cuenta_id", null))
+    }
+
+    @Test fun demoDesconocidaLimpiaSuIdentificadorYNoRestauraPrivilegios() {
+        preferencias.edit().putString("cuenta_id", "DEMO_LIQ_DESCONOCIDO").commit()
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+        assertNull(preferencias.getString("cuenta_id", null))
+    }
+
+    @Test fun demoValidaNoPierdeSuSesionAlRestaurarse() {
+        val primero = CuentaSesionViewModel(app)
+        primero.accederAseguradoDemo()
+        assertEquals("DEMO_ASEG_CAMILA", preferencias.getString("cuenta_id", null))
+        assertEquals("CAMILA", CuentaSesionViewModel(app).cuenta.value?.id)
+        assertEquals("DEMO_ASEG_CAMILA", preferencias.getString("cuenta_id", null))
+    }
+
     @Test fun liquidadorRealValidoSigueRestaurandoSuEspecialidad() {
         CuentaDbHelper(app).use { helper ->
             assertEquals("HOGAR", helper.obtener("LIQ_HOGAR")?.equipo)

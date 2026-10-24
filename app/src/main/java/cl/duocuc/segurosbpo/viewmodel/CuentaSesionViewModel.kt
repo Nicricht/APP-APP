@@ -33,6 +33,12 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
     private val _cuenta = MutableStateFlow(inicial)
     val cuenta = _cuenta.asStateFlow()
 
+    init {
+        if (inicial == null && preferencias.contains("cuenta_id")) {
+            preferencias.edit().remove("cuenta_id").apply()
+        }
+    }
+
     private fun guardar(cuenta: CuentaLocal) {
         preferencias.edit().putString("cuenta_id", cuenta.id).apply()
         _cuenta.value = cuenta
