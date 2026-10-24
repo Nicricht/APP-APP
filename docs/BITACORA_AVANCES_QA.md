@@ -312,6 +312,16 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Cambios solo de test instrumentado y esta bitácora. No se modifican ViewModel, SQLite, pantallas, código Kotlin productivo, dependencias, ni las ramas `main` o `entrega-01`. Sin comentarios nuevos.
 - El SHA con esta nueva prueba queda pendiente de ambas suites y JaCoCo. La última cobertura completamente verde anterior sigue siendo `054343e6`, **3128/3132 líneas (99,87 %) y 1014/1037 ramas (97,78 %)**.
 
+## 2026-10-24: errores explícitos de cuenta desaparecida y variantes de gráficos
+
+- Base confirmada: [19f1899a](https://github.com/Nicricht/APP-APP/commit/19f1899a89dff240f24fd2152ff676b43a0c5ed1), [Kotlin QA 40118863757](https://github.com/Nicricht/APP-APP/actions/runs/40118863757) e [instrumented QA 40118863760](https://github.com/Nicricht/APP-APP/actions/runs/40118863760), ambas **success** con instalaciones API 30/35. Cobertura JaCoCo extraída del XML `12570785854`: **3132/3136 líneas (99,87 %) y 1018/1041 ramas (97,79 %)**; faltan 4 líneas y 23 ramas.
+- `CuentaDbHelper.kt`: el resultado de registro, cambio de teléfono y cambio de foto exige que la cuenta todavía exista tras escribir. En vez de un error genérico de valor nulo, devuelve `No se encontró la cuenta` si el registro desapareció. No cambia el esquema ni debilita la autenticación.
+- Nueva prueba `CuentaDesaparecidaEnActualizacionTest.kt`: dos pruebas SQLite con base aislada y triggers de simulación, una para cambio de teléfono y otra para foto. Reproducen la desaparición de una cuenta entre `UPDATE` y `SELECT`; exigen **un error**, nunca un éxito ficticio ni una sesión autenticada.
+- `ResumenGraficosEstadosRealesTest.kt`: tres pruebas Compose de título y descripción personalizados con combinaciones de parámetros no cubiertas antes. Verifican que el equipo, las cifras y el mensaje de ausencia de datos sean coherentes.
+- No se añaden comentarios al código Kotlin. Las pruebas usan exclusivamente cuentas ficticias y bases temporales. Se cambia solo `qa`, nunca `main` ni `entrega-01`.
+- **Pendiente de validación del SHA nuevo**: compilación, instalación Android 11/15, suite instrumentada y nueva medición JaCoCo. No atribuir la cobertura del SHA anterior a estos cambios.
+- Importante: la prueba del botón Atrás físico sobre `AlertDialog` sigue pendiente de comprobación en un teléfono o en instrumentación con foco controlado. El test de cancelación determinista no sustituye ese requisito.
+
 ## Pendientes sin evidencia suficiente
 
 1. Seguir midiendo JaCoCo por SHA completo y cubrir únicamente rutas reales en CuentaSesionViewModel, gráficos, perfiles y navegación.

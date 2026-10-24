@@ -130,7 +130,7 @@ class CuentaDbHelper(
         } catch (e: android.database.sqlite.SQLiteConstraintException) {
             throw IllegalArgumentException("Ya existe una cuenta con ese correo o RUT", e)
         }
-        return requireNotNull(obtener(id))
+        return requireNotNull(obtener(id)) { "No se encontró la cuenta" }
     }
 
     fun actualizarTelefono(id: String, telefono: String): CuentaLocal {
@@ -140,7 +140,7 @@ class CuentaDbHelper(
             "id = ?", arrayOf(id)
         )
         require(filas == 1) { "No se encontró la cuenta" }
-        return requireNotNull(obtener(id))
+        return requireNotNull(obtener(id)) { "No se encontró la cuenta" }
     }
 
     fun actualizarFoto(id: String, imagenJpeg: ByteArray): CuentaLocal {
@@ -152,7 +152,7 @@ class CuentaDbHelper(
             "id = ?", arrayOf(id)
         )
         require(filas == 1) { "No se encontró la cuenta" }
-        return requireNotNull(obtener(id))
+        return requireNotNull(obtener(id)) { "No se encontró la cuenta" }
     }
 
     fun iniciarSesion(correo: String, clave: String): CuentaLocal? {

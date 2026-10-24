@@ -188,4 +188,46 @@ class ResumenGraficosEstadosRealesTest {
         rule.onNodeWithText("Casos asignados a este liquidador: 0").assertExists()
         rule.onNodeWithText("No hay casos asignados para mostrar en los gráficos.").assertExists()
     }
+
+    @Test fun modificadorYTituloPersonalizadosMantienenDescripcionCorrecta() {
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = emptyList(),
+                equipo = "Hogar",
+                modifier = Modifier,
+                titulo = "Seguimiento personalizado"
+            )
+        }
+        rule.onNodeWithText("Seguimiento personalizado").assertExists()
+        rule.onNodeWithText("Casos asignados a este liquidador: 0").assertExists()
+        rule.onNodeWithText("No hay casos asignados para mostrar en los gráficos.").assertExists()
+    }
+
+    @Test fun modificadorYDescripcionPersonalizadosMantienenTituloDelEquipo() {
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = emptyList(),
+                equipo = "Vehículos",
+                modifier = Modifier,
+                descripcion = "Siniestros inspeccionados"
+            )
+        }
+        rule.onNodeWithText("Resumen del equipo Vehículos").assertExists()
+        rule.onNodeWithText("Siniestros inspeccionados: 0").assertExists()
+        rule.onNodeWithText("No hay siniestros para mostrar en los gráficos.").assertExists()
+    }
+
+    @Test fun tituloYDescripcionPersonalizadosSinModificarPresentacionBase() {
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = emptyList(),
+                equipo = "Hogar",
+                titulo = "Auditoría de siniestros",
+                descripcion = "Casos auditados"
+            )
+        }
+        rule.onNodeWithText("Auditoría de siniestros").assertExists()
+        rule.onNodeWithText("Casos auditados: 0").assertExists()
+        rule.onNodeWithText("No hay siniestros para mostrar en los gráficos.").assertExists()
+    }
 }
