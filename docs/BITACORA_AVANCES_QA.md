@@ -67,6 +67,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - También se verificaron tres recursos originales del ejemplo del profesor por SHA-1 Git: `avatar_usuario.png`, `banner_registro.png` y `portada_perfil.png`, en coincidencia exacta. Esto no demuestra igualdad de todas las pantallas. Seguimiento en [issue #7](https://github.com/Nicricht/APP-APP/issues/7).
 - Estado de esta entrada: cambio documental sobre una versión de código ya verificada; no modifica Kotlin, manifest, gradle, recursos o base SQLite.
 
+## 2026-10-24: asignación simultánea y pruebas reactivas de ViewModel
+
+- Código de producción: **sin cambios**; se verifica el comportamiento existente antes de introducir funciones nuevas.
+- Prueba instrumentada nueva: `TomarCasoConcurrenciaRealTest.kt`.
+- Caso ASI-004: dos hilos, dos instancias de `SiniestroDbHelper` y dos conexiones SQLite compiten por un mismo reporte, coordinados con `CountDownLatch`. Se espera exactamente un éxito y un rechazo, con una sola gestión y un solo aviso.
+- Ampliación: `FlujoViewModelCoberturaTest.kt`. Comprueba toma exitosa, rechazo de reasignación, restricciones entre áreas, rollback visible en ViewModel ante error de aviso y búsqueda de duplicados limitada al propietario activo.
+- Limitación: el modelo académico solo tiene un liquidador definido por área; la prueba concurrente comprueba exclusión en almacenamiento, **no** la competencia entre dos usuarios distintos de la misma especialidad, que requiere ampliar el modelo.
+- Punto de referencia: [QA instrumentado del commit documental 242e4966](https://github.com/Nicricht/APP-APP/actions/runs/40070639355) terminado correctamente. Ese cambio solo contenía documentación.
+- Estado de las pruebas nuevas: **pendientes de CI para el commit que contenga esta entrada**.
+- No se crean comentarios en el código ni se tocan `main` y `entrega-01`.
+
 ## Pendientes sin evidencia suficiente
 
 1. Comprobar el informe de JaCoCo del nuevo SHA; seguir con perfil, navegación, formularios y ViewModel.

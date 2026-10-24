@@ -160,4 +160,65 @@ class FlujoViewModelCoberturaTest {
         assertEquals("Desistido", vm.obtener(caso.id)?.resultadoCierre)
         assertTrue(vm.avisos.value.any { it.mensaje.contains("Desistido") })
     }
+
+    @Test fun tomarCasoActualizaDisponiblesAsignadosYAvisos() {
+        vm.seleccionarAsegurado(Asegurado.CAMILA)
+        vm.seleccionarLiquidador(Liquidador.VEHICULOS)
+        val caso = vm.disponiblesLiquidador.value.single { it.asegurado == Asegurado.CAMILA }
+        val avisosAntes = vm.avisos.value.count { it.siniestroId == caso.id }
+
+        assertNull(vm.tomarCasoLiquidador(caso.id))
+        assertTrue(vm.casosLiquidador.value.any {
+            it.id == caso.id && it.etapa == EtapaSiniestro.EVALUACION
+        })
+        assertFalse(vm.disponiblesLiquidador.value.any { it.id == caso.id })
+        assertEquals(EtapaSiniestro.EVALUACION, vm.obtener(caso.id)?.etapa)
+        assertEquals(avisosAntes + 1, vm.avisos.value.count { it.siniestroId == caso.id })
+        assertTrue(vm.tomarCasoLiquidador(caso.id)?.contains("ya fue tomado") == true)
+        assertEquals(avisosAntes + 1, vm.avisos.value.count { it.siniestroId == caso.id })
+    }
+
+    @Test fun areaDistintaYFalloDeBaseDeDatosNoAsignanCaso() {
+        vm.seleccionarLiquidador(Liquidador.HOGAR)
+        val casa = vm.disponiblesLiquidador.value
+        val vehiculo = vm.siniestros.value.single {
+            it.asegurado == Asegurado.CAMILA && it.etapa == EtapaSiniestro.RECIBIDO
+        }
+        assertTrue(casa.none { it.id == vehiculo.id })
+        assertNotNull(vm.tomarCasoLiquidador(vehiculo.id))
+        vm.seleccionarLiquidador(Liquidador.VEHICULOS)
+
+        SiniestroDbHelper(aplicacion, nombreDb).use { segundo ->
+            segundo.writableDatabase.execSQL("""
+                CREATE TRIGGER qa_rechazar_aviso_vm
+                BEFORE INSERT ON avisos
+                WHEN NEW.siniestro_id = ${vehiculo.id}
+                BEGIN
+                    SELECT RAISE(ABORT, 'Falló el aviso del caso');
+                END
+            """.trimIndent())
+            val error = vm.tomarCasoLiquidador(vehiculo.id)
+            assertTrue(error?.contains("Falló el aviso del caso") == true)
+            assertEquals(EtapaSiniestro.RECIBIDO, vm.obtener(vehiculo.id)?.etapa)
+            assertTrue(vm.disponiblesLiquidador.value.any { it.id == vehiculo.id })
+            segundo.writableDatabase.execSQL("DROP TRIGGER qa_rechazar_aviso_vm")
+        }
+        assertNull(vm.tomarCasoLiquidador(vehiculo.id))
+        assertEquals(EtapaSiniestro.EVALUACION, vm.obtener(vehiculo.id)?.etapa)
+    }
+
+    @Test fun busquedaDeDuplicadoSoloConsultaAlPropietarioActivo() {
+        val formulario = FormularioUiState(
+            asegurado = Asegurado.CAMILA,
+            fechaOcurrencia = "20-10-2026",
+            comuna = "La Florida",
+            descripcion = "Reporte de prueba"
+        )
+        vm.seleccionarAsegurado(Asegurado.JORGE)
+        assertNull(vm.buscarPosibleDuplicado(formulario))
+        vm.seleccionarAsegurado(Asegurado.CAMILA)
+        assertNull(vm.buscarPosibleDuplicado(formulario))
+        val numero = vm.registrar(formulario)
+        assertEquals(numero, vm.buscarPosibleDuplicado(formulario))
+    }
 }
