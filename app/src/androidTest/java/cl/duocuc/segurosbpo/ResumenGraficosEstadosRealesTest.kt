@@ -145,4 +145,47 @@ class ResumenGraficosEstadosRealesTest {
         rule.onNodeWithText("Vehículo · rotura de cristales: 1").assertExists()
         rule.onNodeWithText("Vehículo · robo: 1").assertExists()
     }
+
+    @Test fun tituloPersonalizadoConDescripcionPredeterminadaConservaTotales() {
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = listOf(
+                    caso(121, TipoSiniestro.DANO_AGUA, EtapaSiniestro.EVALUACION, "20-10-2026")
+                ),
+                equipo = "Hogar",
+                titulo = "Panel de seguimiento"
+            )
+        }
+        rule.onNodeWithText("Panel de seguimiento").assertExists()
+        rule.onNodeWithText("Casos asignados a este liquidador: 1").assertExists()
+        rule.onNodeWithText("Abiertos: 1").assertExists()
+        rule.onNodeWithText("Cerrados: 0").assertExists()
+    }
+
+    @Test fun descripcionPersonalizadaSinTituloNoCambiaLaCabeceraDelEquipo() {
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = emptyList(),
+                equipo = "Vehículos",
+                descripcion = "Casos revisados en auditoría"
+            )
+        }
+        rule.onNodeWithText("Resumen del equipo Vehículos").assertExists()
+        rule.onNodeWithText("Casos revisados en auditoría: 0").assertExists()
+        rule.onNodeWithText("No hay siniestros para mostrar en los gráficos.").assertExists()
+        rule.onNodeWithText("Casos por etapa").assertDoesNotExist()
+    }
+
+    @Test fun modificadorExplicitoConValoresPredeterminadosPresentaElEquipoCorrecto() {
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = emptyList(),
+                equipo = "Hogar",
+                modifier = Modifier
+            )
+        }
+        rule.onNodeWithText("Resumen del equipo Hogar").assertExists()
+        rule.onNodeWithText("Casos asignados a este liquidador: 0").assertExists()
+        rule.onNodeWithText("No hay casos asignados para mostrar en los gráficos.").assertExists()
+    }
 }

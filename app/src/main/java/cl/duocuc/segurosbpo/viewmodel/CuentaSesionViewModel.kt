@@ -15,6 +15,10 @@ import kotlinx.coroutines.flow.asStateFlow
 class CuentaSesionViewModel(application: Application) : AndroidViewModel(application) {
     private val db = CuentaDbHelper(application)
     private val preferencias = application.getSharedPreferences("cuenta_sesion_local", 0)
+    private fun equipoValido(cuenta: CuentaLocal): Boolean =
+        cuenta.rol != RolCuenta.LIQUIDADOR ||
+            Liquidador.entries.any { it.name == cuenta.equipo }
+
     private val inicial = preferencias.getString("cuenta_id", null)?.let { id ->
         if (id == "DEMO_ASEG_CAMILA") {
             crearAseguradoDemo()
@@ -23,10 +27,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
                 Liquidador.valueOf(id.removePrefix("DEMO_LIQ_"))
             }.getOrNull()
             equipo?.let { crearLiquidadorDemo(it) }
-        } else runCatching { db.obtener(id) }.getOrNull()?.takeIf { cuenta ->
-            cuenta.rol != RolCuenta.LIQUIDADOR ||
-                Liquidador.entries.any { it.name == cuenta.equipo }
-        }
+        } else runCatching { db.obtener(id) }.getOrNull()?.takeIf(::equipoValido)
     }
     private val _cuenta = MutableStateFlow(inicial)
     val cuenta = _cuenta.asStateFlow()
@@ -40,6 +41,9 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         val resultado = runCatching { db.iniciarSesion(correo, clave) }
         val cuentaEncontrada = resultado.getOrNull()
         if (cuentaEncontrada != null) {
+            if (!equipoValido(cuentaEncontrada)) {
+                return "La cuenta no tiene una especialidad válida"
+            }
             guardar(cuentaEncontrada)
             return null
         }

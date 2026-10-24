@@ -270,7 +270,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - `CuentaDbCoberturaRealTest.kt`: prueba límite exacto de fotografía de 1 MiB (válido), rechazo inmediato de 1 MiB + 1 byte sin perder la imagen, recuperación de bytes completos después de cerrar/reabrir SQLite y acceso del mismo usuario con contraseña previa.
 - Motivo: proteger el refresco de gráficos cuando cambia la cartera y los límites de almacenamiento en cuentas, además de ampliar ramas ejecutadas de verdad. Los datos son ficticios, las bases SQLite de las pruebas están aisladas y no hay comentarios nuevos.
 - Alcance del commit que incluye esta entrada: **tres pruebas instrumentadas y documentación, sin cambios de producción**. No modificar `main` ni `entrega-01`.
-- Estado inicial: **pendiente de Kotlin QA e instrumentado para su SHA**. No atribuir una nueva cobertura hasta revisar ambos workflows y el XML instrumentado.
+- Resultado verificado de [b3502a85](https://github.com/Nicricht/APP-APP/commit/b3502a8508e3f5d6ad6b23e9a75a08315b8d5a3b): [Kotlin QA 40115081060](https://github.com/Nicricht/APP-APP/actions/runs/40115081060) e [instrumentado 40115081113](https://github.com/Nicricht/APP-APP/actions/runs/40115081113) **success**, incluidas instalación/reinicio API 30/35. JaCoCo: **3124/3128 líneas (99,87 %) y 1011/1037 ramas (97,49 %)**, sin cambio de denominador ni de cobertura respecto del anterior.
+
+## 2026-10-24: inicio de sesión coherente con la especialidad y estadísticas parciales
+
+- Base completamente verde: commit [b3502a85](https://github.com/Nicricht/APP-APP/commit/b3502a8508e3f5d6ad6b23e9a75a08315b8d5a3b), [Kotlin QA 40115081060](https://github.com/Nicricht/APP-APP/actions/runs/40115081060) e [instrumentado 40115081113](https://github.com/Nicricht/APP-APP/actions/runs/40115081113). JaCoCo **3124/3128 líneas (99,87 %), 1011/1037 ramas (97,49 %)**. Restan cuatro líneas y 26 ramas.
+- Hallazgo: la restauración de SQLite ya rechazaba liquidadores con `equipo` desconocido, pero `CuentaSesionViewModel.iniciar` admitía esa combinación si la contraseña era válida. Un registro local inconsistente podía crear una sesión con rol asignado y sin especialidad utilizable.
+- Producción: función `equipoValido` usada tanto al restaurar como al autenticar; si la cuenta que pasa la verificación de contraseña declara rol liquidador y equipo ausente/inválido, **no se guarda sesión** y se informa `La cuenta no tiene una especialidad válida`. Las cuentas correctas conservan su recorrido.
+- `RestauracionSesionCorruptaTest.kt`: dos pruebas de regresión, con una cuenta de pruebas que reutiliza el hash de la demostración Hogar pero tiene equipo adulterado, y con liquidación Hogar válida que conserva acceso y restauración. Los registros de prueba se limpian y no se guardan secretos en código.
+- `ResumenGraficosEstadosRealesTest.kt`: tres pruebas Compose de contratos predeterminados y parámetros parciales de `ResumenGraficosCasos`: título personalizado con descripción por defecto, descripción personalizada con título predeterminado y `Modifier` explícito sin alterar etiquetas ni totales.
+- Cambios en el commit: un ViewModel de producción, dos archivos de pruebas instrumentadas y esta bitácora. No se alteran SQLite, Gradle, permisos, tipos o demás pantallas. No se añaden comentarios Kotlin ni se modifican `main` o `entrega-01`.
+- **Pendiente:** completar ambas suites para el SHA que contenga estos cambios antes de atribuirlos a una versión aprobada o actualizar JaCoCo. No se promete 100 % de cobertura sin informe real.
 
 ## Pendientes sin evidencia suficiente
 

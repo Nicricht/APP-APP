@@ -88,4 +88,36 @@ class RestauracionSesionCorruptaTest {
         restaurada.cerrarSesion()
         assertNull(CuentaSesionViewModel(app).cuenta.value)
     }
+
+    @Test fun liquidadorConEquipoCorruptoNoIniciaSesionAunqueClaveSeaCorrecta() {
+        CuentaDbHelper(app).use { helper ->
+            helper.writableDatabase.execSQL("""
+                INSERT INTO cuentas
+                    (id,nombre,rut,correo,telefono,rol,equipo,salt,clave_hash)
+                SELECT 'QA_SESION_CORRUPTA', 'Liquidador de prueba',
+                    'QA-SESION-CORRUPTA', 'qa.corrupta@ejemplo.cl',
+                    telefono, rol, 'EQUIPO_DESCONOCIDO', salt, clave_hash
+                FROM cuentas WHERE id = 'LIQ_HOGAR'
+            """.trimIndent())
+        }
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.cuenta.value)
+        assertEquals(
+            "La cuenta no tiene una especialidad válida",
+            sesion.iniciar("qa.corrupta@ejemplo.cl", "Demo2026!")
+        )
+        assertNull(sesion.cuenta.value)
+        assertNull(CuentaSesionViewModel(app).cuenta.value)
+    }
+
+    @Test fun liquidadorConEspecialidadCorrectaPuedeIniciarSesion() {
+        val sesion = CuentaSesionViewModel(app)
+        assertNull(sesion.iniciar("hogar@segurosbpo.demo", "Demo2026!"))
+        assertEquals(RolCuenta.LIQUIDADOR, sesion.cuenta.value?.rol)
+        assertEquals("HOGAR", sesion.cuenta.value?.equipo)
+        assertEquals("LIQ_HOGAR", sesion.cuenta.value?.id)
+        val restaurada = CuentaSesionViewModel(app)
+        assertEquals("LIQ_HOGAR", restaurada.cuenta.value?.id)
+        sesion.cerrarSesion()
+    }
 }
