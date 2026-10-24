@@ -150,6 +150,17 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - La firma `debug` puede variar entre runners: una actualización sobre la app instalada con otra firma puede fallar incluso si ambos APK son válidos. Diagnóstico y evidencias en [issue #7](https://github.com/Nicricht/APP-APP/issues/7).
 - Esta entrada es solo documental; no modifica código de producción, código de pruebas, `main` ni `entrega-01`.
 
+## 2026-10-24: pruebas de errores visibles de perfil y bandeja de liquidadores
+
+- Base de trabajo: [5d6bf39e](https://github.com/Nicricht/APP-APP/commit/5d6bf39e3bc3a99d366f5c7d9aa4c00f7dd56925), cambio exclusivamente documental con [instrumentadas 40091920366](https://github.com/Nicricht/APP-APP/actions/runs/40091920366) **success**, mismo JaCoCo del código anterior: **3086/3095 líneas (99,71 %) y 975/1013 ramas (96,25 %)**.
+- Nuevas pruebas en `PerfilFotoActividadCoberturaTest.kt`: fallos del callback de guardado tanto desde cámara como desde galería. Verifican mensaje de error y que no se muestre "Foto actualizada".
+- Nueva prueba en `PerfilCuentaCoberturaRealTest.kt`: fotografías previamente persistidas con bytes no decodificables deben permitir consultar el perfil normalmente, sin mostrar imagen inválida ni provocar cierre.
+- Nueva clase `BandejaLiquidadorYEstadisticasLimitesTest.kt`: bandeja con siniestro disponible y manejador de toma no suministrado muestra "No disponible" y no simula una asignación; la tarjeta estadística sin casos distingue un título/descripción alternativos; la evolución mensual ignora fechas malformadas sin alterar conteos reales.
+- Fundamento: el XML JaCoCo indicó decisiones pendientes en `PerfilCuentaScreen`, `CasosLiquidadorScreen`, `ResumenGraficosCasos` y `EstadisticasCasos`. Se comprueban estados útiles al usuario, sin trampas para subir cobertura.
+- Archivos de producción: **sin cambios**. Se agregan 6 tests instrumentados y esta entrada.
+- Estado: pruebas nuevas **pendientes de CI de este commit**. No afirmar cobertura ni verde antes de completar las dos suites.
+- Ramas `main` y `entrega-01`: no modificar. No insertar comentarios en código Kotlin.
+
 ## Pendientes sin evidencia suficiente
 
 1. Volver a medir JaCoCo en el SHA que valida los recordatorios; continuar con ramas de CuentaSesionViewModel y otros flujos sin cubrir.

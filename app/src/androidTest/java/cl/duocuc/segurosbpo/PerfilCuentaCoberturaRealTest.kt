@@ -109,4 +109,20 @@ class PerfilCuentaCoberturaRealTest {
         }
         rule.onNodeWithContentDescription("Foto de perfil").assertIsDisplayed()
     }
+
+    @Test fun fotoGuardadaCorruptaNoCierraPerfilNiMuestraImagenInvalida() {
+        rule.setContent {
+            PerfilCuentaScreen(
+                cuenta = cuenta(foto = byteArrayOf(1, 2, 3, 4)),
+                onGuardarTelefono = { null },
+                onGuardarFoto = { null },
+                onVolver = {},
+                onCerrarSesion = {}
+            )
+        }
+        rule.onNodeWithText("Ana Prueba").assertExists()
+        rule.onNodeWithText("Correo: ana@ejemplo.cl").assertExists()
+        rule.onNodeWithContentDescription("Foto de perfil").assertDoesNotExist()
+        rule.onNodeWithText("Guardar teléfono").assertExists()
+    }
 }

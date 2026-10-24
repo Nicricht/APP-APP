@@ -39,7 +39,8 @@ class PerfilFotoActividadCoberturaTest {
         imagen: Bitmap? = null,
         seleccion: Uri? = null,
         capturas: AtomicInteger = AtomicInteger(0),
-        guardadas: AtomicInteger = AtomicInteger(0)
+        guardadas: AtomicInteger = AtomicInteger(0),
+        errorFoto: String? = null
     ) {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
         val sinPermiso = object : ContextWrapper(contexto) {
@@ -93,7 +94,7 @@ class PerfilFotoActividadCoberturaTest {
                     onGuardarTelefono = { null },
                     onGuardarFoto = {
                         guardadas.incrementAndGet()
-                        null
+                        errorFoto
                     },
                     onVolver = {},
                     onCerrarSesion = {}
@@ -195,5 +196,40 @@ class PerfilFotoActividadCoberturaTest {
         rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
         rule.onNodeWithText("La imagen no se puede abrir").assertExists()
         assertEquals(0, guardadas.get())
+    }
+
+    @Test fun errorAlGuardarDesdeCamaraNoSeConfundeConFotoActualizada() {
+        val foto = Bitmap.createBitmap(20, 20, Bitmap.Config.ARGB_8888)
+        try {
+            val guardadas = AtomicInteger()
+            montar(concedido = true, imagen = foto, guardadas = guardadas,
+                errorFoto = "No se pudo guardar la foto")
+            rule.onNodeWithText("Tomar foto de perfil").performScrollTo().performClick()
+            rule.onNodeWithText("No se pudo guardar la foto").assertExists()
+            rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+            assertEquals(1, guardadas.get())
+        } finally {
+            foto.recycle()
+        }
+    }
+
+    @Test fun errorAlGuardarDesdeGaleriaNoSeConfundeConExito() {
+        val imagen = Bitmap.createBitmap(30, 30, Bitmap.Config.ARGB_8888)
+        val salida = ByteArrayOutputStream()
+        try {
+            imagen.compress(Bitmap.CompressFormat.JPEG, 88, salida)
+        } finally {
+            imagen.recycle()
+        }
+        val guardadas = AtomicInteger()
+        montar(
+            seleccion = archivo("image/jpeg", salida.toByteArray()),
+            guardadas = guardadas,
+            errorFoto = "La foto no puede superar 1 MB"
+        )
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("La foto no puede superar 1 MB").assertExists()
+        rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+        assertEquals(1, guardadas.get())
     }
 }
