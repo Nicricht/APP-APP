@@ -1,56 +1,113 @@
-# Ejecutar Seguros BPO en Android Studio
+# Ejecutar Seguros BPO y probar su APK Android
 
-## Alcance
-Versión local de la primera evaluación, inspirada en `MiRegistroAvatar`: **Kotlin + Jetpack Compose + MVVM + SQLite + cámara + galería**. No usa Spring Boot, Retrofit, API REST ni microservicios.
+**Rama para desarrollar y validar:** `qa`  
+**Aplicación:** `cl.duocuc.segurosbpo` (APK `debug`: `cl.duocuc.segurosbpo.prueba`)  
+**Corte:** 24-10-2026
 
-## Preparar el proyecto
+Esta guía corresponde al código vigente de `qa`. La rama `main` se mantiene para presentación hasta que el equipo apruebe una promoción. No confundir el APK de Seguros BPO con el APK de `MiRegistroAvatar` del profesor. El código de ejemplo se utiliza como referencia, no como sustituto de la aplicación.
 
-1. En GitHub, abrir [APP-APP](https://github.com/Nicricht/APP-APP) en rama `main`.
-2. Clonar o descargar **el proyecto descomprimido** del repositorio. No abrir directamente el archivo `Proyecto_Seguros_BPO-main.zip`, porque ese ZIP conserva la versión original anterior a los cambios.
-3. En **Android Studio → Open**, elegir la carpeta que contiene `settings.gradle.kts` y `gradlew`.
-4. Permitir **Gradle Sync** e instalar los SDK requeridos por el proyecto, incluido Android 37.2 si Android Studio lo solicita.
-5. Ejecutar `app` en un emulador Android compatible o teléfono conectado.
-6. A la primera ejecución, la aplicación crea la BD `seguros_bpo.db`, tablas `siniestros` y `evidencias`, y cinco **siniestros ficticios de demostración** para enseñar las cuatro etapas. **No borra casos al actualizar una versión anterior.**
-7. Elegir uno de los asegurados ficticios. Buscar por número, compañía, tipo o comuna; entrar al detalle.
-8. Pulsar **Reportar**, completar fecha, compañía activa, comuna y descripción. Al registrar se genera un número `SIN-AA-NNNNNN` guardado en SQLite.
-9. Volver a **Mis siniestros**, abrir el nuevo caso, pulsar **Documentos y evidencias**.
-10. Indicar tipo de documento y probar **Tomar fotografía**, **Elegir de la galería** o **Adjuntar PDF**. Se guardan localmente, sin subirlos a ningún servidor.
-11. En la sección de evidencias, pulsar **Ver imagen** para abrir la foto almacenada. Los PDF se guardan en la base local, sin visor interno.
-12. Cerrar y reabrir la aplicación para comprobar persistencia; cambiar asegurado y verificar que no aparezcan los casos de otro.
+## 1. Abrir el código en Android Studio
 
-## Pruebas y artefacto APK
+1. Abrir [APP-APP](https://github.com/Nicricht/APP-APP/tree/qa) y seleccionar la rama `qa`.
+2. Clonar o descargar los archivos de esa rama. No abrir el ZIP `Proyecto_Seguros_BPO-main.zip` incluido en el repositorio, porque es material de referencia antiguo.
+3. En Android Studio, abrir la carpeta que contiene `settings.gradle.kts`, `gradlew` y `app/`.
+4. Esperar Gradle Sync. El workflow de CI usa Java 25 y Android SDK 37.2.
+5. Conectar un teléfono con depuración USB habilitada, o iniciar un emulador. La app declara `minSdk = 24` (Android 7.0), pero las instalaciones automatizadas del equipo se prueban específicamente en API 30 y API 35.
+6. Seleccionar el módulo `app` y ejecutar la variante `debug`.
 
-GitHub Actions ejecuta automáticamente:
+## 2. Recorrido del asegurado
 
-```bash
-./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
-```
+1. Abrir Seguros BPO. El punto de entrada es **Iniciar sesión**.
+2. Para una cuenta nueva, pulsar **Crear cuenta de asegurado**. Completar nombre, RUT ficticio con dígito verificador correcto, correo de prueba, teléfono y contraseña de demostración de al menos ocho caracteres; confirmar contraseña.
+3. Tras registrar la cuenta, se inicia la sesión de ese asegurado. También existe **Continuar como Camila (demo)** para navegar sin crear una cuenta real de prueba.
+4. En **Mis siniestros**, consultar la lista, buscar por número, compañía, tipo, comuna o etapa, y abrir un caso.
+5. Pulsar **Reportar**, elegir compañía activa y tipo de siniestro, añadir fecha de ocurrencia en formato `dd-MM-yyyy`, comuna y descripción y confirmar los datos. Guardar y comprobar el identificador `SIN-AA-NNNNNN`.
+6. Entrar al detalle para comprobar etapa, historial, próxima acción y documentos pendientes. En un siniestro permitido se pueden adjuntar fotos de cámara, imágenes de galería o archivos PDF; todo queda almacenado en SQLite local.
+7. En **Mi perfil**, la cuenta creada puede actualizar teléfono y foto. La cámara requiere permiso; cancelar una captura o selección no debe guardar una imagen.
+8. Consultar **Centro de avisos** y **Ver estadísticas** para ver solo información de la cuenta.
+9. Cerrar sesión, volver a entrar con ese correo y contraseña de prueba, y comprobar que los datos locales siguen disponibles.
 
-Consultar [GitHub Actions](https://github.com/Nicricht/APP-APP/actions). Una ejecución exitosa publica el artefacto **SegurosBPO-debug-apk**, que contiene `app-debug.apk`.
+## 3. Recorrido del liquidador
 
-## Limitaciones y comprobaciones pendientes
+Las cuentas de ensayo instaladas localmente se describen en [Cuentas demo QA](CUENTAS_DEMO_QA.md). Sus credenciales ficticias permiten entrar desde el formulario normal de inicio de sesión. También existen accesos directos a los dos liquidadores de demostración.
 
-- Es un **MVP académico** sin usuarios ni pólizas reales.
-- Selección de asegurado **simulada**, no es autenticación productiva.
-- Sin Internet, la información persistida localmente puede consultarse.
-- Los cambios y evidencias no se sincronizan con otro teléfono.
-- La cámara utiliza `TakePicturePreview`, una captura de tamaño de vista previa.
-- Requiere probar en dispositivo/emulador los permisos de cámara, galería y PDF, navegación, reinicio, migración de BD y accesibilidad.
-- No afirmar cumplimiento de todos los criterios de la pauta sin evidencia del docente, el compañero y las pruebas en teléfono.
+1. Iniciar sesión como liquidador de **Vehículos** o **Hogar**.
+2. Revisar **Disponibles en [área]**: solo aparecen siniestros nuevos de la especialidad correspondiente.
+3. Pulsar **Tomar caso**. La app cambia la etapa a **En evaluación**, asigna al liquidador y genera un movimiento histórico y un aviso para el asegurado.
+4. Comprobar que el caso ya no aparece como disponible y que no puede tomarse otra vez.
+5. Abrir **Mis casos asignados**. Registrar una gestión visible o interna, solicitar documentación y pasar de etapa solo cuando las reglas permitan hacerlo.
+6. Una solicitud documental pendiente impide avanzar de evaluación a liquidación. Los cierres exigen resultado permitido y motivo.
+7. Revisar gráficos de gestión y perfil. Cerrar sesión.
 
-La guía completa de requisitos se conserva en [README.md](../README.md). El registro de cambios está en [ETAPA_1_ANDROID.md](ETAPA_1_ANDROID.md).
+Estos flujos usan dos perfiles de liquidador asociados a enumeraciones locales. Todavía no hay una API remota ni liquidadores independientes y sincronizados en distintos dispositivos.
 
-## Historial y rol liquidador local
+## 4. Obtener e instalar la APK de QA en el teléfono
 
-1. Desde **Mis siniestros**, abre un caso y entra a **Ver historial**. En los nuevos casos se registran el reporte, las correcciones y los documentos adjuntados.
-2. En la lista principal pulsa **Liquidador**; es una selección ficticia como los roles del proyecto del profesor, no un login real.
-3. Elige el equipo **Vehículos** o **Hogar**. Solo se listan sus casos asignados.
-4. Abre un caso en evaluación o liquidación. Escribe una gestión y marca si puede verla el asegurado; pulsa **Registrar gestión**.
-5. Comprueba que solo aparece en el historial del asegurado si se marcó como visible.
-6. Usa **Confirmar avance** para ir a la siguiente etapa. Si vas a cerrar, elige **Aprobado** o **Rechazado** y escribe el mensaje obligatorio.
-7. Vuelve a la vista del asegurado para revisar la nueva etapa, la última actualización y el resultado de cierre.
-8. Reabre la aplicación para comprobar que las gestiones y las etapas sobreviven al reinicio.
+1. Abrir [GitHub Actions](https://github.com/Nicricht/APP-APP/actions) y elegir una ejecución **Android Kotlin QA** de la rama `qa` con resultado **success**. Anotar el SHA; las pruebas instrumentadas deben estar verdes para ese mismo SHA.
+2. En **Artifacts**, descargar **SegurosBPO-debug-apk**. El artefacto descargado es un archivo ZIP; extraer `app-debug.apk`. **No intentar instalar el ZIP**.
+3. Copiar `app-debug.apk` al teléfono. Abrirlo desde Archivos y, si Android lo solicita, permitir instalar aplicaciones de esa fuente. Esta es una APK de desarrollo, no una versión publicada en Play Store.
+4. Comprobar que el instalador muestra Seguros BPO, que se abre la pantalla de inicio de sesión y que el icono no es el Android predeterminado.
+5. Ejecutar los recorridos de los apartados 2 y 3; probar permisos, cámara, galería, PDF, cierre y reinicio en el teléfono real.
 
-**Base de datos:** SQLite está en versión 4. Se conservan las tablas y registros anteriores mediante migraciones incrementales. Los casos existentes sin gestión histórica reciben una anotación informativa, sin inventar eventos previos.
+Los artifacts de Actions de esta rama tienen retención de 14 días. Obtener siempre la APK del SHA que se está auditando.
 
-**Advertencia:** los casos nuevos quedan «Recibido» sin liquidador, como indica el caso académico. La asignación por analista y las solicitudes de documentos pendientes no están implementadas. No dar por terminadas esas funciones ni el bloqueo RN-09 de punta a punta.
+## 5. Diagnosticar «No se instaló» sin perder datos innecesariamente
+
+Si hay un computador con Android Platform Tools y depuración USB, abrir una terminal en la carpeta de la APK:
+
+~~~powershell
+adb devices
+adb install -r app-debug.apk
+~~~
+
+El mensaje concreto de ADB indica la causa:
+
+- `INSTALL_FAILED_UPDATE_INCOMPATIBLE`: ya existe una app con **el mismo paquete** pero firma incompatible. Las builds `debug` realizadas en runners temporales de GitHub pueden usar claves diferentes. **No desinstalar directamente si importa preservar los registros locales**. La desinstalación elimina normalmente los datos SQLite de esa aplicación.
+- `INSTALL_FAILED_VERSION_DOWNGRADE`: versión instalada con `versionCode` mayor. Revisar cuál versión debe mantenerse.
+- `INSTALL_FAILED_INSUFFICIENT_STORAGE`: liberar espacio.
+- `INSTALL_PARSE_FAILED_*` o «archivo no válido»: comprobar que realmente se extrajo `app-debug.apk` y que la transferencia no corrompió el archivo.
+
+**Solo si los datos de la instalación anterior son descartables** y se ha confirmado el error de firma, se puede eliminar la versión `debug` e instalar de nuevo:
+
+~~~powershell
+adb uninstall cl.duocuc.segurosbpo.prueba
+adb install app-debug.apk
+~~~
+
+La variante `debug` usa el paquete `cl.duocuc.segurosbpo.prueba`; no ejecutar este comando contra otro paquete. Para comprobar inicio desde la terminal:
+
+~~~powershell
+adb shell am start -n cl.duocuc.segurosbpo.prueba/cl.duocuc.segurosbpo.MainActivity
+adb shell pidof cl.duocuc.segurosbpo.prueba
+~~~
+
+Una prueba en emulador no demuestra que el teléfono particular del equipo esté validado. Registrar en la [Bitácora QA](BITACORA_AVANCES_QA.md) el modelo de Android, la versión del sistema, el SHA, resultado de instalación y evidencias sin capturar datos personales.
+
+## 6. Pruebas del repositorio
+
+Para revisar la versión de `qa` localmente:
+
+~~~bash
+git fetch origin
+git switch qa
+git pull --ff-only origin qa
+./gradlew :app:assembleDebug :app:assembleDebugAndroidTest :app:createDebugUnitTestCoverageReport --no-daemon
+~~~
+
+Con emulador operativo:
+
+~~~bash
+./gradlew :app:createDebugAndroidTestCoverageReport --no-daemon
+~~~
+
+Revisar los artefactos **cobertura-unitaria-lineas-ramas**, **informes-android-instrumentado**, **seguros-bpo-instalacion-api-30** y **seguros-bpo-instalacion-api-35** de la ejecución correspondiente. Una compilación verde no equivale a 100 % de líneas y ramas.
+
+## 7. Limitaciones actuales
+
+- SQLite guarda los datos en **el teléfono**. No hay sincronización multiusuario o multi-dispositivo ni backend Spring Boot/REST en esta fase.
+- La captura de cámara usa `TakePicturePreview`, no una foto a resolución completa.
+- Los archivos PDF se adjuntan localmente y no existe un visor PDF integrado.
+- Los accesos directos y credenciales demo son para evaluación académica, no para información real.
+- Faltan evidencias de uso completo en teléfono físico, revisión de accesibilidad y cobertura total de las ramas pendientes.
+
+Consultar también el [Protocolo QA](PROTOCOLO_QA_OBLIGATORIO.md) y la [Matriz de aceptación](MATRIZ_ACEPTACION_Y_PRUEBAS.md).

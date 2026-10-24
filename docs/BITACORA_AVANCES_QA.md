@@ -26,7 +26,7 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Archivo añadido: `ValidadorCuentaRamasAndroidTest.kt`.
 - Casos: RUT con estructura errónea, distintos dígitos verificadores, correo, longitud de teléfono, contraseñas, confirmación y registro válido.
 - Android Kotlin QA: [40068165776](https://github.com/Nicricht/APP-APP/actions/runs/40068165776), correcta.
-- Android instrumented QA: [40068165774](https://github.com/Nicricht/APP-APP/actions/runs/40068165774), pendiente de resultado al registrar esta entrada.
+- Android instrumented QA: [40068165774](https://github.com/Nicricht/APP-APP/actions/runs/40068165774), cancelada al recibir el commit posterior. La prueba quedó incluida y aprobada en las ejecuciones posteriores.
 - No se declara un nuevo porcentaje hasta obtener el reporte del SHA.
 
 ## 2026-10-24: integridad transaccional al tomar un siniestro
@@ -34,7 +34,7 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Archivo añadido: `app/src/androidTest/java/cl/duocuc/segurosbpo/TomarCasoRollbackCoberturaTest.kt`.
 - Prueba 1 (ASI-006): se provoca un error de base de datos al crear el aviso y se verifica que **no** quede asignación, cambio de etapa, gestión ni aviso parcial. Se elimina el disparador temporal y se repite la asignación con éxito.
 - Prueba 2 (ASI-005): dos instancias independientes del helper intentan tomar el mismo caso de forma secuencial; solo la primera lo consigue, sin gestiones ni avisos duplicados. **No equivale a una prueba de simultaneidad real**.
-- Estado al registrar: **implementadas; esperando resultado de CI para el commit que incluya esta bitácora**.
+- Resultado posterior: pruebas aprobadas en los workflows [40068907995](https://github.com/Nicricht/APP-APP/actions/runs/40068907995) y [40068907997](https://github.com/Nicricht/APP-APP/actions/runs/40068907997) del commit `0e2fc9f1`.
 - Sin cambios de lógica de producción, esquema SQLite, `main` ni `entrega-01`.
 
 ## 2026-10-24: resultado del rollback y cobertura instrumentada
@@ -53,6 +53,19 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Alcance: permiso de cámara denegado, captura cancelada, fotografía aceptada y selector de galería cancelado. En lugar de un silencio de interfaz, se informa el resultado de la acción. Una fotografía guardada sin error presenta `Foto actualizada`.
 - Sin nuevas dependencias, permisos ni cambios en SQLite.
 - Estado al escribir: cambio implementado en `qa`; confirmar resultado mediante CI del commit que contiene esta entrada.
+
+## 2026-10-24: QA de perfil aprobado y guía de instalación corregida
+
+- Código auditado: [16753db0](https://github.com/Nicricht/APP-APP/commit/16753db0c07a0c7d18839ac59f4373c067543fa4).
+- Workflows aprobados: [Android Kotlin QA 40069761753](https://github.com/Nicricht/APP-APP/actions/runs/40069761753) y [Android instrumented QA 40069761829](https://github.com/Nicricht/APP-APP/actions/runs/40069761829).
+- Instalación y apertura automatizadas: correctas en API 30 y API 35; falta ensayo en el teléfono particular.
+- JaCoCo instrumentado: **2999/3087 líneas (97,15 %)** y **929/1005 ramas (92,44 %)**.
+- Comparado con el commit anterior: +11 líneas cubiertas y +9 ramas cubiertas, con un denominador que aumentó por el nuevo código.
+- El perfil pasa de 26 a 16 líneas no cubiertas en el informe de JaCoCo. Nuevos recorridos confirmados: permiso denegado, cámara cancelada, foto aceptada y galería cancelada.
+- Documento actualizado: [Cómo ejecutar Android](COMO_EJECUTAR_ANDROID.md). Sustituye instrucciones antiguas de simulación de roles por registro/login, casos disponibles por área, toma de casos, descarga de artefacto de `qa`, instalación en teléfono y diagnóstico de firmas APK.
+- Riesgo práctico documentado: los APK de depuración generados por runners temporales pueden tener firmas distintas entre ejecuciones. Ante `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, no desinstalar sin considerar la pérdida de datos SQLite; es necesario confirmar el mensaje ADB del teléfono antes de concluir una causa.
+- También se verificaron tres recursos originales del ejemplo del profesor por SHA-1 Git: `avatar_usuario.png`, `banner_registro.png` y `portada_perfil.png`, en coincidencia exacta. Esto no demuestra igualdad de todas las pantallas. Seguimiento en [issue #7](https://github.com/Nicricht/APP-APP/issues/7).
+- Estado de esta entrada: cambio documental sobre una versión de código ya verificada; no modifica Kotlin, manifest, gradle, recursos o base SQLite.
 
 ## Pendientes sin evidencia suficiente
 
