@@ -23,7 +23,10 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
                 Liquidador.valueOf(id.removePrefix("DEMO_LIQ_"))
             }.getOrNull()
             equipo?.let { crearLiquidadorDemo(it) }
-        } else db.obtener(id)
+        } else runCatching { db.obtener(id) }.getOrNull()?.takeIf { cuenta ->
+            cuenta.rol != RolCuenta.LIQUIDADOR ||
+                Liquidador.entries.any { it.name == cuenta.equipo }
+        }
     }
     private val _cuenta = MutableStateFlow(inicial)
     val cuenta = _cuenta.asStateFlow()

@@ -136,4 +136,26 @@ class CuentaDbCoberturaRealTest {
         assertEquals("VEHICULOS", db.obtener("LIQ_VEHICULOS")?.equipo)
         assertEquals("HOGAR", db.obtener("LIQ_HOGAR")?.equipo)
     }
+
+    @Test fun migracionActualNoEliminaCuentasNiReiniciaContrasenas() {
+        val registrada = registrar()
+        val antes = db.obtener(registrada.id)
+        val demo = db.obtener("LIQ_HOGAR")
+        val sqlite = db.writableDatabase
+        db.onUpgrade(sqlite, 3, 3)
+        assertEquals(3, sqlite.version)
+        assertEquals(antes, db.obtener(registrada.id))
+        assertEquals(demo, db.obtener("LIQ_HOGAR"))
+        assertEquals(registrada.id, db.iniciarSesion("ANA@EJEMPLO.CL", "Clave2026")?.id)
+    }
+
+    @Test fun limiteExactoDeTelefonoAceptaOchoCaracteresSinModificarElAnteriorSiFalla() {
+        val registrada = registrar()
+        assertEquals("12345678", db.actualizarTelefono(registrada.id, " 12345678 ").telefono)
+        val error = runCatching {
+            db.actualizarTelefono(registrada.id, "1234567")
+        }.exceptionOrNull()
+        assertEquals("El teléfono debe tener al menos 8 caracteres", error?.message)
+        assertEquals("12345678", db.obtener(registrada.id)?.telefono)
+    }
 }

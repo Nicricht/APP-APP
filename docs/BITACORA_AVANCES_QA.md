@@ -230,8 +230,18 @@ documentan junto con el código en el mismo commit cuando sea posible.
 - Cambio en `.github/workflows/android-qa.yml`: disparar compilación e instalaciones al modificar los scripts de verificación `.github/scripts/**`, evitando que el arreglo de instalación quede sin pruebas.
 - Cambio en `.github/workflows/android-instrumented.yml`: conservar activación manual e iniciar instrumentación automática para código, Gradle, scripts y workflows, no para commits exclusivamente documentales. Esto evita cancelar/gastar pruebas instrumentadas con cambios que no afectan a la APK.
 - Código Android de producción, lógica SQLite y tests Kotlin: **sin cambios** en el arreglo de CI; no se excluyen clases del informe ni se baja el rigor de las verificaciones.
-- Estado del nuevo arreglo de scripts/workflows: **pendiente de CI del commit que contiene esta bitácora**. La instalación API 35 no se considera reparada hasta que el workflow confirme arranque y reinicio.
+- Resultado de [c59d12a9](https://github.com/Nicricht/APP-APP/commit/c59d12a979855ccf4fbb47dfdd96592cb76f4c04): [Android Kotlin QA 40105437720](https://github.com/Nicricht/APP-APP/actions/runs/40105437720) **success**, incluida instalación/reinicio API 30 y 35; [Android instrumented QA 40105437664](https://github.com/Nicricht/APP-APP/actions/runs/40105437664) **success**. JaCoCo: **3120/3125 líneas (99,84 %) y 998/1027 ramas (97,18 %)**.
 - Sin comentarios añadidos al código y sin alteraciones de `main` ni `entrega-01`.
+
+## 2026-10-24: restauración segura de sesiones con datos SQLite no válidos
+
+- Revisión de la cobertura instrumentada de `c59d12a9`: **99,84 % de líneas y 97,18 % de ramas**. El XML de JaCoCo muestra faltantes en restauración de sesión, cuentas SQLite, selección de estados y navegación. No se excluyen clases ni se modifican umbrales para aparentar el 100 %.
+- Cambio de producción en `CuentaSesionViewModel`: al restaurar una cuenta real desde SQLite, capturar de forma controlada errores de lectura o conversión de rol y rechazar perfiles con rol `LIQUIDADOR` si el equipo no corresponde a una especialidad reconocida. Ante información dañada no se concede acceso ni se presenta como liquidador una identidad incompleta.
+- Nuevo test instrumentado `RestauracionSesionCorruptaTest.kt` con cuatro casos: rol desconocido, liquidador sin especialidad, especialidad inexistente y liquidador real válido. Comprueba que las cuentas dañadas no restauran privilegios y que la recuperación legítima no se rompe.
+- Ampliación de `CuentaDbCoberturaRealTest.kt`: migración idempotente desde versión actual sin borrar cuentas ni reiniciar contraseñas; validación exacta de ocho caracteres de teléfono y conservación del valor previo tras intento inválido.
+- Los datos de prueba se identifican como `QA_SESION_CORRUPTA` y se limpian antes y después; no se modifican cuentas reales ni se suben claves o fotografías privadas.
+- No se alteran esquemas ni migraciones existentes, permisos Android, reglas de siniestros o dependencias. Sin comentarios en código Kotlin. Modificaciones exclusivamente en rama `qa`; `main` y `entrega-01` permanecen intactas.
+- **Estado:** pendiente de pruebas de compilación, instalación API 30/35 e instrumentadas para el commit que introduce este cambio. Registrar aquí los resultados medidos después de CI.
 
 ## Pendientes sin evidencia suficiente
 
