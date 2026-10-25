@@ -11,6 +11,7 @@ local.properties
 
 .idea/
 *.iml
+.vscode/
 
 /Caso_DSY1105_SEGUROS_BPO/
 
@@ -27,5 +28,8 @@ google-services.json
 *.aab
 *.ap_
 *.dex
+*.log
+*.hprof
+*.bak
 .DS_Store
 Thumbs.db
