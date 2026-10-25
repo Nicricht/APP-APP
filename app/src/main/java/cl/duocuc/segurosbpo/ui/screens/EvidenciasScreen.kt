@@ -7,6 +7,7 @@ import android.net.Uri
 import android.content.Context
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,8 @@ import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.ValidadorBorradorEvidencia
+import cl.duocuc.segurosbpo.viewmodel.BorradorEvidenciaViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 private fun nombreArchivoSeleccionado(context: Context, uri: Uri): String = runCatching {
@@ -77,31 +80,34 @@ fun EvidenciasScreen(
     var mostrarError by rememberSaveable(siniestro?.id) { mutableStateOf(false) }
     var imagenVista by remember(siniestro?.id) { mutableStateOf<Bitmap?>(null) }
     var identificadorImagen by remember(siniestro?.id) { mutableStateOf<Long?>(null) }
-    var fotoPendiente by remember(siniestro?.id) { mutableStateOf<Bitmap?>(null) }
-    var archivoPendiente by remember(siniestro?.id) { mutableStateOf<Uri?>(null) }
-    var origenPendiente by remember(siniestro?.id) { mutableStateOf("") }
-    var guardando by remember(siniestro?.id) { mutableStateOf(false) }
+    val borrador: BorradorEvidenciaViewModel = viewModel(key = "borrador-evidencia-" + siniestro?.id)
+    val fotoPendiente = borrador.fotoPendiente
+    val archivoPendiente = borrador.archivoPendiente
+    val origenPendiente = borrador.origenPendiente
+    val guardando = borrador.guardando
 
     LaunchedEffect(siniestro?.id, asegurado) { onCargar() }
+    LaunchedEffect(borrador.resultado) {
+        val resultado = borrador.resultado ?: return@LaunchedEffect
+        onCargar()
+        if (borrador.guardadoCorrecto) tipoDocumento = ""
+        aviso.showSnackbar(resultado)
+        borrador.consumirResultado()
+    }
+    BackHandler(enabled = guardando) {
+        scope.launch { aviso.showSnackbar("Espera a que termine de guardarse el documento") }
+    }
 
     fun validarTipo(accion: () -> Unit) {
         mostrarError = tipoDocumento.isBlank()
         if (!mostrarError) accion()
     }
 
-    fun avisarResultado(error: String?) {
-        scope.launch {
-            aviso.showSnackbar(error ?: "Documento guardado en el expediente local")
-        }
-    }
-
     val camara = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
     ) { foto ->
-        if (foto != null) {
-            fotoPendiente = foto
-            archivoPendiente = null
-            origenPendiente = "Fotografía tomada"
+        if (foto != null && !borrador.guardando) {
+            borrador.prepararFoto(foto)
         } else {
             scope.launch { aviso.showSnackbar("Captura cancelada") }
         }
@@ -115,19 +121,15 @@ fun EvidenciasScreen(
     val galeria = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri != null) {
-            archivoPendiente = uri
-            fotoPendiente = null
-            origenPendiente = nombreArchivoSeleccionado(context, uri)
+        if (uri != null && !borrador.guardando) {
+            borrador.prepararArchivo(uri, nombreArchivoSeleccionado(context, uri))
         }
     }
     val documentos = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri != null) {
-            archivoPendiente = uri
-            fotoPendiente = null
-            origenPendiente = nombreArchivoSeleccionado(context, uri)
+        if (uri != null && !borrador.guardando) {
+            borrador.prepararArchivo(uri, nombreArchivoSeleccionado(context, uri))
         }
     }
 
@@ -140,7 +142,7 @@ fun EvidenciasScreen(
                 .verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextButton(onClick = onVolver) { Text("Volver al siniestro") }
+            TextButton(enabled = !guardando, onClick = onVolver) { Text("Volver al siniestro") }
             if (siniestro == null) {
                 Text("Este siniestro no pertenece al asegurado seleccionado")
             } else {
@@ -159,7 +161,8 @@ fun EvidenciasScreen(
                             Text("Solicitado: " + solicitud.fechaSolicitud, style = MaterialTheme.typography.bodySmall)
                             if (solicitud.comentario.isNotBlank()) Text(solicitud.comentario)
                             if (solicitud.pendiente && siniestro.etapa != EtapaSiniestro.CERRADO) {
-                                TextButton(onClick = { tipoDocumento = solicitud.tipo }) {
+                                TextButton(enabled = !guardando,
+                                    onClick = { tipoDocumento = solicitud.tipo }) {
                                     Text("Preparar entrega de este documento")
                                 }
                             }
@@ -174,6 +177,7 @@ fun EvidenciasScreen(
                     OutlinedTextField(
                         value = tipoDocumento,
                         onValueChange = { tipoDocumento = it; mostrarError = false },
+                        enabled = !guardando,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Tipo de documento *") },
                         placeholder = { Text("Ej.: fotografía del daño") },
@@ -184,7 +188,7 @@ fun EvidenciasScreen(
                         singleLine = true
                     )
                     Button(
-                        enabled = evidencias.size < 15,
+                        enabled = !guardando && evidencias.size < 15,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             validarTipo {
@@ -197,12 +201,12 @@ fun EvidenciasScreen(
                         }
                     ) { Text("Tomar fotografía") }
                     OutlinedButton(
-                        enabled = evidencias.size < 15,
+                        enabled = !guardando && evidencias.size < 15,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { validarTipo { galeria.launch("image/*") } }
                     ) { Text("Elegir de la galería") }
                     OutlinedButton(
-                        enabled = evidencias.size < 15,
+                        enabled = !guardando && evidencias.size < 15,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { validarTipo { documentos.launch("application/pdf") } }
                     ) { Text("Adjuntar PDF") }
@@ -232,38 +236,11 @@ fun EvidenciasScreen(
                                     ),
                                     modifier = Modifier.fillMaxWidth(),
                                     onClick = {
-                                        guardando = true
-                                        scope.launch {
-                                            val error = try {
-                                                val tipo = tipoDocumento.trim()
-                                                val foto = fotoPendiente
-                                                val archivo = archivoPendiente
-                                                when {
-                                                    foto != null -> onGuardarFoto(tipo, foto)
-                                                    archivo != null -> onGuardarArchivo(tipo, archivo)
-                                                    else -> "Selecciona un documento"
-                                                }
-                                            } catch (e: Exception) {
-                                                e.message ?: "No se pudo guardar el documento"
-                                            } finally {
-                                                guardando = false
-                                            }
-                                            if (error == null) {
-                                                fotoPendiente = null
-                                                archivoPendiente = null
-                                                origenPendiente = ""
-                                                tipoDocumento = ""
-                                                onCargar()
-                                            }
-                                            avisarResultado(error)
-                                        }
+                                        borrador.guardar(tipoDocumento, onGuardarFoto, onGuardarArchivo)
                                     }
                                 ) { Text(if (guardando) "Guardando…" else "Guardar documento") }
-                                TextButton(onClick = {
-                                    fotoPendiente = null
-                                    archivoPendiente = null
-                                    origenPendiente = ""
-                                }) { Text("Cancelar selección") }
+                                TextButton(enabled = !guardando,
+                                    onClick = borrador::limpiar) { Text("Cancelar selección") }
                             }
                         }
                     }

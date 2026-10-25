@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -80,6 +81,7 @@ fun CasosLiquidadorScreen(
     val scope = rememberCoroutineScope()
     var casoId by rememberSaveable(liquidador) { mutableStateOf<Long?>(null) }
     var pestaña by rememberSaveable(liquidador) { mutableStateOf(PestanaLiquidador.RESUMEN.name) }
+    val estadosFormularios = rememberSaveableStateHolder()
     val actual = PestanaLiquidador.valueOf(pestaña)
     val caso = casos.firstOrNull { it.id == casoId }
 
@@ -220,22 +222,26 @@ fun CasosLiquidadorScreen(
                                     color = MaterialTheme.colorScheme.error)
                             }
                             if (actual == PestanaLiquidador.GESTIONES) {
-                                GestionesDelCaso(
-                                    caso = caso,
-                                    gestiones = gestiones,
-                                    solicitudes = solicitudes,
-                                    onRegistrarGestion = onRegistrarGestion,
-                                    onAvanzar = onAvanzar,
-                                    onCerrarAnticipado = onCerrarAnticipado,
-                                    mostrar = ::mostrar
-                                )
+                                estadosFormularios.SaveableStateProvider("gestiones-" + caso.id) {
+                                    GestionesDelCaso(
+                                        caso = caso,
+                                        gestiones = gestiones,
+                                        solicitudes = solicitudes,
+                                        onRegistrarGestion = onRegistrarGestion,
+                                        onAvanzar = onAvanzar,
+                                        onCerrarAnticipado = onCerrarAnticipado,
+                                        mostrar = ::mostrar
+                                    )
+                                }
                             } else {
-                                DocumentosDelCaso(
-                                    caso = caso,
-                                    solicitudes = solicitudes,
-                                    onSolicitarDocumento = onSolicitarDocumento,
-                                    mostrar = ::mostrar
-                                )
+                                estadosFormularios.SaveableStateProvider("documentos-" + caso.id) {
+                                    DocumentosDelCaso(
+                                        caso = caso,
+                                        solicitudes = solicitudes,
+                                        onSolicitarDocumento = onSolicitarDocumento,
+                                        mostrar = ::mostrar
+                                    )
+                                }
                             }
                         }
                     }

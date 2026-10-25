@@ -21,12 +21,15 @@ entrega-final-android-seguros-bpo (a42452a).
   confirmación «Guardar documento» → persistencia SQLite local. Se puede
   cancelar o corregir el tipo antes de guardar. Permanecen los límites
   de 15 archivos y 5 MB, restricciones por rol y por caso cerrado.
+  El borrador permanece al girar el dispositivo y el guardado continúa
+  a través del ViewModel aunque se recree la pantalla.
 - **Reporte:** selector de fecha del dispositivo restringido a días no
   futuros y buscador de comunas chilenas, con escritura libre para comunas
   no listadas. La fecha se sigue guardando como dd-MM-yyyy.
 - **Liquidador:** cuatro pestañas: Resumen, Mis casos, Gestiones y Documentos.
   Las acciones anteriores y sus validaciones permanecen, pero los formularios
   se muestran únicamente al seleccionar el caso correspondiente.
+  Los borradores de gestión y solicitud se conservan entre pestañas.
 - **Mensajes:** textos profesionales. Los avisos y expedientes son
   **locales**; no se atribuyen entregas ni autenticación remota a una
   aseguradora. La migración SQLite 5→6 corrige textos heredados de los casos

@@ -29,10 +29,10 @@ class ValidadorCuentaLimitesTest {
         ) = ValidadorCuenta.errorRegistro(nombre, rut, correo, telefono, clave, confirma)
 
         assertEquals("Ingresa tu nombre completo", validar(nombre = "A"))
-        assertEquals("Ingresa un RUT ficticio válido", validar(rut = "123"))
+        assertEquals("Ingresa un RUT válido", validar(rut = "123"))
         assertEquals("Ingresa un correo válido", validar(correo = "incorrecto"))
         assertEquals("Ingresa un teléfono válido", validar(telefono = "12"))
-        assertEquals("Usa una clave de demostración de al menos 8 caracteres", validar(clave = "123"))
+        assertEquals("La contraseña debe tener al menos 8 caracteres", validar(clave = "123"))
         assertEquals("Las claves no coinciden", validar(confirma = "Distinta2026"))
         assertNull(validar())
     }

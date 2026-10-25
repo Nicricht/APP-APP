@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
@@ -136,6 +138,7 @@ fun AppNavegacion() {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
+              Column(Modifier.verticalScroll(rememberScrollState())) {
                 Row(
                     modifier = Modifier.padding(20.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -199,6 +202,7 @@ fun AppNavegacion() {
                     selected = false,
                     onClick = cuentaVm::cerrarSesion
                 )
+              }
             }
         }
     ) {
