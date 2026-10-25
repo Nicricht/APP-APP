@@ -6,10 +6,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -44,6 +45,7 @@ import cl.duocuc.segurosbpo.model.DocumentosLiquidador
 import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.permisos.Permisos
+import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
@@ -56,6 +58,8 @@ fun DocumentosLiquidadorScreen(
     onVolver: () -> Unit,
     onCargar: () -> Unit,
     onCargarImagen: suspend (Long) -> Bitmap?,
+    onCargarMiniatura: suspend (Long) -> Bitmap?,
+    onDescargar: suspend (Long, Uri) -> String?,
     onGuardarFoto: suspend (String, Bitmap) -> String?,
     onGuardarArchivo: suspend (String, Uri) -> String?,
     onEliminar: (Long) -> String?
@@ -66,6 +70,7 @@ fun DocumentosLiquidadorScreen(
     var tipoElegido by rememberSaveable(siniestro?.id) { mutableStateOf(DocumentosLiquidador.tipos.first()) }
     var imagenVista by remember(siniestro?.id) { mutableStateOf<Bitmap?>(null) }
     var porEliminar by remember(siniestro?.id) { mutableStateOf<Evidencia?>(null) }
+    var porDescargar by remember(siniestro?.id) { mutableStateOf<Evidencia?>(null) }
     val cerrado = siniestro?.etapa == EtapaSiniestro.CERRADO
 
     LaunchedEffect(siniestro?.id) { onCargar() }
@@ -93,6 +98,16 @@ fun DocumentosLiquidadorScreen(
                 duration = SnackbarDuration.Long
             )
             if (accion == SnackbarResult.ActionPerformed) Permisos.abrirAjustes(contexto)
+        }
+    }
+    val guardarComo = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("*/*")
+    ) { destino ->
+        val elegida = porDescargar
+        porDescargar = null
+        if (destino == null) avisar("Descarga cancelada")
+        else if (elegida != null) scope.launch {
+            avisar(onDescargar(elegida.id, destino) ?: "Documento guardado en el teléfono")
         }
     }
     val galeria = rememberLauncherForActivityResult(
@@ -143,11 +158,11 @@ fun DocumentosLiquidadorScreen(
     }
 
     Scaffold(
-        topBar = { BarraSuperior("Documentos del caso", onVolver = onVolver) },
-        snackbarHost = { SnackbarHost(aviso) }
+        topBar = { BarraSuperior("Documentos del caso", onVolver = onVolver) }
     ) { margen ->
+        Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -199,35 +214,33 @@ fun DocumentosLiquidadorScreen(
             if (evidencias.isEmpty()) Text("Todavía no hay documentos en este caso.")
             evidencias.forEach { evidencia ->
                 Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(evidencia.tipoDocumento, style = MaterialTheme.typography.titleMedium)
-                        Text(evidencia.nombreArchivo, style = MaterialTheme.typography.bodySmall)
-                        Text(
-                            evidencia.fechaRegistro + " · " +
+                    Column(Modifier.padding(14.dp)) {
+                        FilaDocumento(
+                            tipo = evidencia.tipoDocumento,
+                            nombre = evidencia.nombreArchivo,
+                            detalle = evidencia.fechaRegistro + " · " +
                                 (evidencia.tamanoBytes / 1024) + " KB",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            if (evidencia.tipoMime.startsWith("image/")) {
-                                TextButton(onClick = {
-                                    scope.launch {
-                                        imagenVista = onCargarImagen(evidencia.id)
-                                        if (imagenVista == null) avisar("No se pudo abrir la imagen")
-                                    }
-                                }) { Text("Ver imagen") }
-                            }
-                            if (!cerrado && evidencia.tipoDocumento in DocumentosLiquidador.tipos) {
-                                TextButton(onClick = { porEliminar = evidencia }) {
-                                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                            esImagen = evidencia.tipoMime.startsWith("image/"),
+                            cargarMiniatura = { onCargarMiniatura(evidencia.id) },
+                            onAbrir = {
+                                scope.launch {
+                                    imagenVista = onCargarImagen(evidencia.id)
+                                    if (imagenVista == null) avisar("No se pudo abrir la imagen")
                                 }
-                            }
-                        }
+                            },
+                            onDescargar = {
+                                porDescargar = evidencia
+                                guardarComo.launch(evidencia.nombreArchivo)
+                            },
+                            onEliminar = if (cerrado ||
+                                evidencia.tipoDocumento !in DocumentosLiquidador.tipos
+                            ) null else { { porEliminar = evidencia } }
+                        )
                     }
                 }
             }
+        }
+        AvisoSuperior(aviso)
         }
     }
 }

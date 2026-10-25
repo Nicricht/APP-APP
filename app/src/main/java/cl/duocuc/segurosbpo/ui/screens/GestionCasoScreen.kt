@@ -1,10 +1,12 @@
 package cl.duocuc.segurosbpo.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,7 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,6 +41,7 @@ import cl.duocuc.segurosbpo.model.ReglasEtapa
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.ValidadorConsulta
+import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
@@ -81,11 +83,11 @@ fun GestionCasoScreen(
     Scaffold(
         topBar = {
             BarraSuperior(caso?.numero ?: "Gestión del caso", onVolver = onVolver)
-        },
-        snackbarHost = { SnackbarHost(aviso) }
+        }
     ) { margen ->
+        Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -164,7 +166,7 @@ fun GestionCasoScreen(
 
                 val siguiente = ReglasEtapa.siguiente(caso.etapa)
                 if (siguiente != null) {
-                    Seccion("Avanzar a " + siguiente.etiqueta) {
+                    Seccion("Avanzar a " + siguiente.paso) {
                         if (siguiente == EtapaSiniestro.CERRADO) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 listOf("Aprobado", "Rechazado").forEach { opcion ->
@@ -377,6 +379,8 @@ fun GestionCasoScreen(
                     }
                 }
             }
+        }
+        AvisoSuperior(aviso)
         }
     }
 }

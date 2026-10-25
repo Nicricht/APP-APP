@@ -1,9 +1,11 @@
 package cl.duocuc.segurosbpo.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,7 +14,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
@@ -37,11 +39,11 @@ fun DisponiblesLiquidadorScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        topBar = { BarraSuperior("Casos disponibles") },
-        snackbarHost = { SnackbarHost(aviso) }
+        topBar = { BarraSuperior("Casos disponibles") }
     ) { margen ->
+        Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -72,6 +74,8 @@ fun DisponiblesLiquidadorScreen(
                     }
                 }
             }
+        }
+        AvisoSuperior(aviso)
         }
     }
 }
