@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -56,11 +57,20 @@ fun actualizarDescripcionYRegresar(
     if (actualizar(id, descripcion)) regresar()
 }
 
+/** Regresa al origen normal o lleva al listado si un detalle llegó sin historial. */
+fun volverDelDetalle(navController: NavController) {
+    if (!navController.popBackStack()) {
+        navController.navigate(Ruta.MisSiniestros.ruta) {
+            launchSingleTop = true
+        }
+    }
+}
+
 @Composable
 fun AppNavegacion() {
     val cuentaVm: CuentaSesionViewModel = viewModel()
-    val cuenta by cuentaVm.cuenta.collectAsStateWithLifecycle()
-    if (cuenta == null) {
+    val sesion = cuentaVm.cuenta.collectAsStateWithLifecycle().value
+    if (sesion == null) {
         AccesoScreen(
             onIniciar = cuentaVm::iniciar,
             onRegistrar = cuentaVm::registrar,
@@ -69,7 +79,6 @@ fun AppNavegacion() {
         )
         return
     }
-    val sesion = cuenta ?: return
     val navController = rememberNavController()
     val siniestrosVm: SiniestrosViewModel = viewModel()
     val asegurado by siniestrosVm.asegurado.collectAsStateWithLifecycle()
@@ -269,13 +278,7 @@ fun AppNavegacion() {
                 siniestro = siniestrosVm.obtener(id),
                 solicitudes = solicitudes,
                 onCargarSolicitudes = { siniestrosVm.refrescarEvidencias(id) },
-                onVolver = {
-                    if (!navController.popBackStack()) {
-                        navController.navigate(Ruta.MisSiniestros.ruta) {
-                            launchSingleTop = true
-                        }
-                    }
-                },
+                onVolver = { volverDelDetalle(navController) },
                 onEditar = { navController.navigate(Ruta.Editar.crear(id)) },
                 onEvidencias = { navController.navigate(Ruta.Evidencias.crear(id)) },
                 onHistorial = { navController.navigate(Ruta.Historial.crear(id)) }

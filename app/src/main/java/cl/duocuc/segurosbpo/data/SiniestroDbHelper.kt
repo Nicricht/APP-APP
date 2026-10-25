@@ -256,7 +256,7 @@ class SiniestroDbHelper(
             ValidadorSiniestro.errorCompania(formulario.compania),
             if (!formulario.datosCorrectos) "Debes confirmar que los datos son correctos" else null
         ).firstOrNull()
-        require(error == null) { error ?: "Datos del siniestro inválidos" }
+        error?.let { throw IllegalArgumentException(it) }
         val db = writableDatabase
         db.beginTransaction()
         try {

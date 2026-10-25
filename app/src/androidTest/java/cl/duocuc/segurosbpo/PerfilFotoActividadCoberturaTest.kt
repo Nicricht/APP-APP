@@ -315,6 +315,31 @@ class PerfilFotoActividadCoberturaTest {
         assertTrue(tamano.second in 1..600)
     }
 
+    @Test fun fotoVerticalAltaSeReduceAunqueSuAnchoNoSupereElLimite() {
+        val original = Bitmap.createBitmap(400, 1600, Bitmap.Config.ARGB_8888)
+        val salida = ByteArrayOutputStream()
+        try {
+            original.eraseColor(android.graphics.Color.BLUE)
+            original.compress(Bitmap.CompressFormat.JPEG, 85, salida)
+        } finally {
+            original.recycle()
+        }
+        val dimensiones = AtomicReference<Pair<Int, Int>?>()
+        val guardadas = AtomicInteger()
+        montar(
+            seleccion = archivo("image/jpeg", salida.toByteArray()),
+            guardadas = guardadas,
+            validarImagen = { imagen -> dimensiones.set(imagen.width to imagen.height) }
+        )
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("Foto actualizada").assertExists()
+        assertEquals(1, guardadas.get())
+        val tamano = dimensiones.get() ?: throw AssertionError("No se guardó la fotografía vertical")
+        assertTrue("Ancho excesivo: ${tamano.first}", tamano.first in 1..600)
+        assertTrue("Alto excesivo: ${tamano.second}", tamano.second in 1..600)
+        assertTrue("La foto debe conservar orientación vertical", tamano.second > tamano.first)
+    }
+
     @Test fun excepcionDeGuardadoEnCamaraMuestraErrorSinCerrarPerfil() {
         val imagen = Bitmap.createBitmap(18, 18, Bitmap.Config.ARGB_8888)
         try {
@@ -387,5 +412,23 @@ class PerfilFotoActividadCoberturaTest {
         rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
         rule.onNodeWithText("Error de almacenamiento").assertExists()
         rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+    }
+
+    @Test fun proveedorDeGaleriaSinMensajeDeErrorMuestraRespuestaComprensible() {
+        val guardadas = AtomicInteger()
+        montar(
+            seleccion = Uri.Builder().scheme("content")
+                .authority("cl.duocuc.segurosbpo.qa.archivos")
+                .appendPath("foto")
+                .appendQueryParameter("mime", "image/jpeg")
+                .appendQueryParameter("nombre", "foto.jpg")
+                .appendQueryParameter("error_sin_mensaje", "1")
+                .build(),
+            guardadas = guardadas
+        )
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("No se pudo abrir la imagen").assertExists()
+        rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+        assertEquals(0, guardadas.get())
     }
 }

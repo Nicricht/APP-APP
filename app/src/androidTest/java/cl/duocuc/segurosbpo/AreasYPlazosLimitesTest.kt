@@ -65,4 +65,12 @@ class AreasYPlazosLimitesTest {
         assertEquals(0L, ControlPlazos.diasCorridos("01-01-2099"))
         assertEquals(0L, ControlPlazos.diasCorridos("fecha incompleta"))
     }
+
+    @Test fun unRelojQueFallaNoMuestraPlazosFicticiosNiDerribaLaPantalla() {
+        val relojInaccesible = object : Date(0L) {
+            override fun getTime(): Long = throw IllegalStateException("Reloj no disponible")
+        }
+
+        assertEquals(0L, ControlPlazos.diasCorridos("01-09-2026", relojInaccesible))
+    }
 }

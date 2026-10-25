@@ -72,11 +72,10 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         val resultado = runCatching {
             db.registrarAsegurado(nombre, rut, correo, telefono, clave, confirmacion)
         }
-        resultado.getOrNull()?.let {
-            guardar(it)
-            return null
-        }
-        return resultado.exceptionOrNull()?.message ?: "No se pudo registrar la cuenta"
+        return resultado.fold(
+            onSuccess = { guardar(it); null },
+            onFailure = { mensajeError(it, "No se pudo registrar la cuenta") }
+        )
     }
 
     private fun crearAseguradoDemo(): CuentaLocal = CuentaLocal(
@@ -112,11 +111,10 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         val actual = _cuenta.value ?: return "Inicia sesión"
         if (actual.correo.isBlank()) return "El perfil de demostración no es editable"
         val resultado = runCatching { db.actualizarTelefono(actual.id, telefono) }
-        resultado.getOrNull()?.let {
-            _cuenta.value = it
-            return null
-        }
-        return resultado.exceptionOrNull()?.message ?: "No se pudo guardar"
+        return resultado.fold(
+            onSuccess = { _cuenta.value = it; null },
+            onFailure = { mensajeError(it, "No se pudo guardar") }
+        )
     }
 
     fun actualizarFoto(bitmap: Bitmap): String? {
@@ -128,11 +126,10 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             return "No se pudo procesar la fotografía"
         }
         val resultado = runCatching { db.actualizarFoto(actual.id, salida.toByteArray()) }
-        resultado.getOrNull()?.let {
-            _cuenta.value = it
-            return null
-        }
-        return resultado.exceptionOrNull()?.message ?: "No se pudo guardar la foto"
+        return resultado.fold(
+            onSuccess = { _cuenta.value = it; null },
+            onFailure = { mensajeError(it, "No se pudo guardar la foto") }
+        )
     }
 
     fun cerrarSesion() {

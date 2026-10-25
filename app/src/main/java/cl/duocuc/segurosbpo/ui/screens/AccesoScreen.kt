@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import cl.duocuc.segurosbpo.model.ErroresRegistro
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ValidadorCuenta
 
@@ -46,7 +47,13 @@ fun AccesoScreen(
     var mostrarErroresRegistro by rememberSaveable { mutableStateOf(false) }
     val erroresRegistro = if (registro && mostrarErroresRegistro) {
         ValidadorCuenta.erroresRegistro(nombre, rut, correo, telefono, clave, confirmacion)
-    } else null
+    } else ErroresRegistro()
+    val errorNombre = erroresRegistro.nombre
+    val errorRut = erroresRegistro.rut
+    val errorCorreo = erroresRegistro.correo
+    val errorTelefono = erroresRegistro.telefono
+    val errorClave = erroresRegistro.clave
+    val errorConfirmacion = erroresRegistro.confirmacion
 
     Scaffold(topBar = { TopAppBar(title = { Text("Seguros BPO") }) }) { margen ->
         Column(
@@ -66,17 +73,17 @@ fun AccesoScreen(
                 OutlinedTextField(
                     value = nombre, onValueChange = { nombre = it; mensaje = null },
                     label = { Text("Nombre completo") }, modifier = Modifier.fillMaxWidth(),
-                    isError = erroresRegistro?.nombre != null,
-                    supportingText = if (erroresRegistro?.nombre != null) {
-                        { Text(erroresRegistro?.nombre.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    isError = errorNombre != null,
+                    supportingText = if (errorNombre != null) {
+                        { Text(errorNombre, color = MaterialTheme.colorScheme.error) }
                     } else null
                 )
                 OutlinedTextField(
                     value = rut, onValueChange = { rut = it; mensaje = null },
                     label = { Text("RUT ficticio") }, modifier = Modifier.fillMaxWidth(),
-                    isError = erroresRegistro?.rut != null,
-                    supportingText = if (erroresRegistro?.rut != null) {
-                        { Text(erroresRegistro?.rut.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    isError = errorRut != null,
+                    supportingText = if (errorRut != null) {
+                        { Text(errorRut, color = MaterialTheme.colorScheme.error) }
                     } else null
                 )
             }
@@ -84,9 +91,9 @@ fun AccesoScreen(
                 value = correo, onValueChange = { correo = it; mensaje = null },
                 label = { Text("Correo electrónico") },
                 singleLine = true, modifier = Modifier.fillMaxWidth(),
-                isError = erroresRegistro?.correo != null,
-                supportingText = if (erroresRegistro?.correo != null) {
-                    { Text(erroresRegistro?.correo.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                isError = errorCorreo != null,
+                supportingText = if (errorCorreo != null) {
+                    { Text(errorCorreo, color = MaterialTheme.colorScheme.error) }
                 } else null
             )
             if (registro) {
@@ -94,9 +101,9 @@ fun AccesoScreen(
                     value = telefono, onValueChange = { telefono = it; mensaje = null },
                     label = { Text("Teléfono") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    isError = erroresRegistro?.telefono != null,
-                    supportingText = if (erroresRegistro?.telefono != null) {
-                        { Text(erroresRegistro?.telefono.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    isError = errorTelefono != null,
+                    supportingText = if (errorTelefono != null) {
+                        { Text(errorTelefono, color = MaterialTheme.colorScheme.error) }
                     } else null
                 )
             }
@@ -105,9 +112,9 @@ fun AccesoScreen(
                 label = { Text("Contraseña de demostración") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
-                isError = erroresRegistro?.clave != null,
-                supportingText = if (erroresRegistro?.clave != null) {
-                    { Text(erroresRegistro?.clave.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                isError = errorClave != null,
+                supportingText = if (errorClave != null) {
+                    { Text(errorClave, color = MaterialTheme.colorScheme.error) }
                 } else null
             )
             if (registro) {
@@ -116,9 +123,9 @@ fun AccesoScreen(
                     label = { Text("Confirmar contraseña") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
-                    isError = erroresRegistro?.confirmacion != null,
-                    supportingText = if (erroresRegistro?.confirmacion != null) {
-                        { Text(erroresRegistro?.confirmacion.orEmpty(), color = MaterialTheme.colorScheme.error) }
+                    isError = errorConfirmacion != null,
+                    supportingText = if (errorConfirmacion != null) {
+                        { Text(errorConfirmacion, color = MaterialTheme.colorScheme.error) }
                     } else null
                 )
             }

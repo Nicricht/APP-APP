@@ -14,6 +14,10 @@ import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
 import kotlinx.coroutines.runBlocking
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -209,9 +213,14 @@ class FlujoViewModelCoberturaTest {
     }
 
     @Test fun busquedaDeDuplicadoSoloConsultaAlPropietarioActivo() {
+        // Los casos ficticios se generan a cinco días de hoy. Una fecha fija
+        // termina coincidiendo con ellos cuando el calendario avanza.
+        val fechaAislada = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).format(
+            Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(60))
+        )
         val formulario = FormularioUiState(
             asegurado = Asegurado.CAMILA,
-            fechaOcurrencia = "20-10-2026",
+            fechaOcurrencia = fechaAislada,
             comuna = "La Florida",
             descripcion = "Reporte de prueba",
             datosCorrectos = true

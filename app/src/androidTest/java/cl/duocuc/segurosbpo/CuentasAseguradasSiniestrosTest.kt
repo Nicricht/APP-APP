@@ -12,6 +12,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class CuentasAseguradasSiniestrosTest {
@@ -46,5 +50,35 @@ class CuentasAseguradasSiniestrosTest {
         db.close()
         db = SiniestroDbHelper(contexto, archivo)
         assertEquals(propio.name, db.listar(propio).first { it.id == creado.id }.asegurado.name)
+    }
+
+    @Test fun tresAseguradosDeDemostracionNoVenLosSiniestrosDeLosOtros() {
+        val perfiles = listOf(Asegurado.RICARDO, Asegurado.FRANCISCA, Asegurado.LUIS)
+        val fechaAislada = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).format(
+            Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(60))
+        )
+        val reportes = perfiles.mapIndexed { indice, asegurado ->
+            db.registrar(FormularioUiState(
+                asegurado = asegurado,
+                fechaOcurrencia = fechaAislada,
+                comuna = "Santiago",
+                descripcion = "Incidente ficticio aislado $indice",
+                datosCorrectos = true
+            ))
+        }
+
+        perfiles.forEachIndexed { indice, asegurado ->
+            val propio = reportes[indice]
+            assertEquals(asegurado.name, db.obtener(propio.id, asegurado)?.asegurado?.name)
+            assertTrue(db.listar(asegurado).any { it.id == propio.id })
+            assertTrue(db.listarGestiones(propio.id, asegurado).any {
+                it.descripcion.contains(propio.numero)
+            })
+            reportes.filterNot { it.id == propio.id }.forEach { ajeno ->
+                assertNull(db.obtener(ajeno.id, asegurado))
+                assertTrue(db.listar(asegurado).none { it.id == ajeno.id })
+                assertTrue(db.listarGestiones(ajeno.id, asegurado).isEmpty())
+            }
+        }
     }
 }
