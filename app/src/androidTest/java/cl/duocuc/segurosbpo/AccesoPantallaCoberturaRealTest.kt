@@ -46,6 +46,28 @@ class AccesoPantallaCoberturaRealTest {
         rule.onNodeWithText("Correo o contraseña incorrectos").assertExists()
     }
 
+    @Test fun loginAceptadoNoMuestraUnErrorDeRegistroNiUnMensajeDeRechazo() {
+        val recibidas = AtomicReference<Pair<String, String>>()
+        rule.setContent {
+            AccesoScreen(
+                onIniciar = { correo, clave ->
+                    recibidas.set(correo to clave)
+                    null
+                },
+                onRegistrar = { _, _, _, _, _, _ ->
+                    throw AssertionError("No debe registrar una cuenta")
+                },
+                onDemoLiquidador = {}, onDemoAsegurado = {}
+            )
+        }
+        rule.onNodeWithText("Correo electrónico").performTextInput("ana@ejemplo.cl")
+        rule.onNodeWithText("Contraseña de demostración").performTextInput("Clave2026")
+        rule.onAllNodesWithText("Iniciar sesión").onLast().performClick()
+        assertEquals("ana@ejemplo.cl" to "Clave2026", recibidas.get())
+        rule.onNodeWithText("Correo o contraseña incorrectos").assertDoesNotExist()
+        rule.onNodeWithText("Ingresa un correo válido").assertDoesNotExist()
+    }
+
     @Test fun registroCompletoEnviaCamposYPermiteRegresarAlLogin() {
         val datos = AtomicReference<List<String>>()
         rule.setContent {
@@ -173,6 +195,27 @@ class AccesoPantallaCoberturaRealTest {
             enviados.get()
         )
         errores.forEach { rule.onNodeWithText(it).assertDoesNotExist() }
+    }
+
+    @Test fun noAdvierteErroresAntesDeEnviarNiLosArrastraAlRegresarAlLogin() {
+        rule.setContent {
+            AccesoScreen(
+                onIniciar = { _, _ -> null },
+                onRegistrar = { _, _, _, _, _, _ -> "Datos inválidos" },
+                onDemoLiquidador = {}, onDemoAsegurado = {}
+            )
+        }
+        rule.onNodeWithText("Crear cuenta de asegurado").performScrollTo().performClick()
+        rule.onNodeWithText("Ingresa tu nombre completo").assertDoesNotExist()
+        rule.onNodeWithText("Ingresa un correo válido").assertDoesNotExist()
+        rule.onNodeWithText("Crear cuenta").performScrollTo().performClick()
+        rule.onNodeWithText("Ingresa tu nombre completo").assertExists()
+        rule.onNodeWithText("Datos inválidos").assertExists()
+        rule.onNodeWithText("Ya tengo cuenta").performScrollTo().performClick()
+        rule.onNodeWithText("Ingresa tu nombre completo").assertDoesNotExist()
+        rule.onNodeWithText("Datos inválidos").assertDoesNotExist()
+        rule.onNodeWithText("Crear cuenta de asegurado").performScrollTo().performClick()
+        rule.onNodeWithText("Ingresa un correo válido").assertDoesNotExist()
     }
 
     @Test fun accesosDemoDistinguenVehiculosYHogar() {
