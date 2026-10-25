@@ -220,7 +220,7 @@ fun DocumentosLiquidadorScreen(
                             nombre = evidencia.nombreArchivo,
                             detalle = evidencia.fechaRegistro + " · " +
                                 (evidencia.tamanoBytes / 1024) + " KB",
-                            esImagen = evidencia.tipoMime.startsWith("image/"),
+                            esImagen = previsualizable(evidencia.tipoMime),
                             cargarMiniatura = { onCargarMiniatura(evidencia.id) },
                             onAbrir = {
                                 scope.launch {

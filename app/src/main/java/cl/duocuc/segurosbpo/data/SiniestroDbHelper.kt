@@ -40,6 +40,7 @@ class SiniestroDbHelper(
 ) : SQLiteOpenHelper(context, databaseName, null, 9) {
 
     private val TROZO = 512 * 1024
+    private val cacheDir = context.cacheDir
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -638,15 +639,18 @@ class SiniestroDbHelper(
     fun obtenerImagen(
         evidenciaId: Long, siniestroId: Long, asegurado: Asegurado, maxLado: Int = 900
     ): Bitmap? {
-        val autorizado = readableDatabase.rawQuery("""
-            SELECT 1 FROM evidencias e
+        val mime = readableDatabase.rawQuery("""
+            SELECT e.mime FROM evidencias e
             JOIN siniestros s ON s.id = e.siniestro_id
-            WHERE e.id = ? AND s.id = ? AND s.asegurado = ? AND e.mime LIKE 'image/%'
+            WHERE e.id = ? AND s.id = ? AND s.asegurado = ?
         """.trimIndent(), arrayOf(evidenciaId.toString(), siniestroId.toString(), asegurado.name))
-            .use { it.moveToFirst() }
-        if (!autorizado) return null
+            .use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: return null
         val contenido = leerContenido(evidenciaId) ?: return null
-        return decodificarImagen(contenido, maxLado)
+        return when {
+            mime.startsWith("image/") -> decodificarImagen(contenido, maxLado)
+            mime == "application/pdf" -> decodificarPdf(contenido, maxLado)
+            else -> null
+        }
     }
 
     
@@ -1265,9 +1269,12 @@ class SiniestroDbHelper(
         """.trimIndent(),
             arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
         ).use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: return null
-        if (!mime.startsWith("image/")) return null
         val contenido = leerContenido(evidenciaId) ?: return null
-        return decodificarImagen(contenido, maxLado)
+        return when {
+            mime.startsWith("image/") -> decodificarImagen(contenido, maxLado)
+            mime == "application/pdf" -> decodificarPdf(contenido, maxLado)
+            else -> null
+        }
     }
 
     fun obtenerArchivoAsignado(
@@ -1305,6 +1312,34 @@ class SiniestroDbHelper(
         }
         return salida.toByteArray().takeIf { it.isNotEmpty() }
     }
+
+    private fun decodificarPdf(contenido: ByteArray, maxLado: Int): Bitmap? = runCatching {
+        val temporal = java.io.File.createTempFile("vista", ".pdf", cacheDir)
+        try {
+            temporal.writeBytes(contenido)
+            android.os.ParcelFileDescriptor.open(
+                temporal, android.os.ParcelFileDescriptor.MODE_READ_ONLY
+            ).use { descriptor ->
+                android.graphics.pdf.PdfRenderer(descriptor).use { lector ->
+                    if (lector.pageCount == 0) return@use null
+                    lector.openPage(0).use { pagina ->
+                        val factor = maxLado.toFloat() / maxOf(pagina.width, pagina.height)
+                        val ancho = (pagina.width * factor).toInt().coerceAtLeast(1)
+                        val alto = (pagina.height * factor).toInt().coerceAtLeast(1)
+                        val lienzo = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
+                        lienzo.eraseColor(android.graphics.Color.WHITE)
+                        pagina.render(
+                            lienzo, null, null,
+                            android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
+                        )
+                        lienzo
+                    }
+                }
+            }
+        } finally {
+            temporal.delete()
+        }
+    }.getOrNull()
 
     private fun decodificarImagen(contenido: ByteArray, maxLado: Int): Bitmap? {
         val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }

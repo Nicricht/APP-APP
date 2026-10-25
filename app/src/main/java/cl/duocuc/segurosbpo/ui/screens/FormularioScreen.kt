@@ -18,6 +18,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.AlertDialog
 import android.app.DatePickerDialog
 import androidx.compose.material3.TextButton
@@ -84,7 +93,7 @@ fun FormularioScreen(
     aseguradoActual: Asegurado,
     onRegistroExitoso: (FormularioUiState) -> String,
     onVolver: () -> Unit,
-    onVerMisSiniestros: () -> Unit,
+    onVerMisSiniestros: (Boolean) -> Unit,
     onGuardarFoto: suspend (String, Bitmap) -> String?,
     onGuardarArchivo: suspend (String, Uri) -> String?,
     onPosibleDuplicado: (FormularioUiState) -> String? = { null }
@@ -106,7 +115,7 @@ fun FormularioScreen(
     aseguradoActual: Asegurado,
     onRegistroExitoso: (FormularioUiState) -> String,
     onVolver: () -> Unit,
-    onVerMisSiniestros: () -> Unit,
+    onVerMisSiniestros: (Boolean) -> Unit,
     onGuardarFoto: suspend (String, Bitmap) -> String?,
     onGuardarArchivo: suspend (String, Uri) -> String?,
     viewModel: FormularioViewModel,
@@ -114,12 +123,14 @@ fun FormularioScreen(
 ){
     var duplicado by remember { mutableStateOf<String?>(null) }
     var adjuntos by remember { mutableStateOf<List<AdjuntoReporte>>(emptyList()) }
+    var yaAdjuntados by remember { mutableStateOf(false) }
     val alcance = rememberCoroutineScope()
 
     fun enviarAdjuntos() {
         val pendientes = adjuntos
         if (pendientes.isEmpty()) return
         adjuntos = emptyList()
+        yaAdjuntados = true
         alcance.launch {
             pendientes.forEach { adjunto ->
                 when {
@@ -177,12 +188,14 @@ fun FormularioScreen(
         },
         onLimpiar = {
             adjuntos = emptyList()
+            yaAdjuntados = false
             viewModel.onLimpiar()
         },
         onVolver = onVolver,
         onVerMisSiniestros = onVerMisSiniestros,
         adjuntos = adjuntos,
-        onAdjuntos = { adjuntos = it }
+        onAdjuntos = { adjuntos = it },
+        yaAdjuntados = yaAdjuntados
     )
 }
 
@@ -201,9 +214,10 @@ fun FormularioContent(
     onRegistrar: () -> Unit,
     onLimpiar: () -> Unit,
     onVolver: () -> Unit,
-    onVerMisSiniestros: () -> Unit,
+    onVerMisSiniestros: (Boolean) -> Unit,
     adjuntos: List<AdjuntoReporte> = emptyList(),
-    onAdjuntos: (List<AdjuntoReporte>) -> Unit = {}
+    onAdjuntos: (List<AdjuntoReporte>) -> Unit = {},
+    yaAdjuntados: Boolean = false
 ){
     val contexto = LocalContext.current
     val temaOscuro = LocalAccionesBarra.current.temaOscuro
@@ -402,8 +416,9 @@ fun FormularioContent(
                     Column {
                         MensajeExito(numero = uiState.numeroSiniestro)
                         BotonPrincipal(
-                            texto = "Adjuntar los documentos",
-                            onClick = onVerMisSiniestros,
+                            texto = if (yaAdjuntados) "Ver mis siniestros"
+                                else "Adjuntar los documentos",
+                            onClick = { onVerMisSiniestros(yaAdjuntados) },
                             icono = R.drawable.ic_check,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -453,7 +468,8 @@ data class AdjuntoReporte(
     val tipo: String,
     val nombre: String,
     val foto: Bitmap? = null,
-    val archivo: Uri? = null
+    val archivo: Uri? = null,
+    val esImagen: Boolean = false
 )
 
 @Composable
@@ -466,6 +482,24 @@ private fun AdjuntosDelReporte(
     val contexto = LocalContext.current
     var tipo by rememberSaveable { mutableStateOf("") }
     var mensaje by remember { mutableStateOf<String?>(null) }
+    var ampliada by remember { mutableStateOf<Bitmap?>(null) }
+
+    ampliada?.let { imagen ->
+        AlertDialog(
+            onDismissRequest = { ampliada = null },
+            confirmButton = {
+                TextButton(onClick = { ampliada = null }) { Text("Cerrar") }
+            },
+            text = {
+                Image(
+                    bitmap = imagen.asImageBitmap(),
+                    contentDescription = "Documento por enviar",
+                    modifier = Modifier.fillMaxWidth(),
+                    contentScale = ContentScale.Fit
+                )
+            }
+        )
+    }
 
     fun agregar(nuevos: List<AdjuntoReporte>) {
         if (nuevos.isEmpty()) return
@@ -475,6 +509,7 @@ private fun AdjuntosDelReporte(
         }
         mensaje = null
         onAdjuntos(adjuntos + nuevos)
+        tipo = ""
     }
 
     val camara = rememberLauncherForActivityResult(
@@ -482,7 +517,8 @@ private fun AdjuntosDelReporte(
     ) { foto ->
         if (foto != null) {
             agregar(listOf(AdjuntoReporte(
-                System.nanoTime(), tipo.trim(), "Fotografía tomada ahora", foto = foto
+                System.nanoTime(), tipo.trim(), "Fotografía tomada ahora",
+                foto = foto, esImagen = true
             )))
         }
     }
@@ -498,7 +534,8 @@ private fun AdjuntosDelReporte(
         agregar(uris.map { uri ->
             AdjuntoReporte(
                 System.nanoTime() + uri.hashCode(), tipo.trim(),
-                uri.lastPathSegment ?: "documento", archivo = uri
+                uri.lastPathSegment ?: "documento", archivo = uri,
+                esImagen = esImagen(contexto, uri)
             )
         })
     }
@@ -508,7 +545,7 @@ private fun AdjuntosDelReporte(
         if (uri != null) {
             agregar(listOf(AdjuntoReporte(
                 System.nanoTime(), tipo.trim(), uri.lastPathSegment ?: "documento",
-                archivo = uri
+                archivo = uri, esImagen = true
             )))
         }
     }
@@ -572,8 +609,32 @@ private fun AdjuntosDelReporte(
         adjuntos.forEach { adjunto ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                var vista by remember(adjunto.clave) { mutableStateOf(adjunto.foto) }
+                if (adjunto.foto == null && adjunto.esImagen) {
+                    LaunchedEffect(adjunto.clave) {
+                        vista = adjunto.archivo?.let { miniaturaDeAdjunto(contexto, it) }
+                    }
+                }
+                val imagen = vista
+                if (imagen != null) {
+                    Image(
+                        bitmap = imagen.asImageBitmap(),
+                        contentDescription = adjunto.nombre,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(56.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { ampliada = imagen }
+                    )
+                } else if (adjunto.esImagen) {
+                    Box(
+                        Modifier.size(56.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    )
+                }
                 Column(Modifier.weight(1f)) {
                     Text(adjunto.tipo, style = MaterialTheme.typography.titleSmall)
                     Text(adjunto.nombre, style = MaterialTheme.typography.bodySmall)

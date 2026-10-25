@@ -439,9 +439,9 @@ fun AppNavegacion(
                                 } ?: "No se pudo identificar el siniestro"
                             },
                             onVolver = { navController.navigateUp() },
-                            onVerMisSiniestros = {
+                            onVerMisSiniestros = { yaAdjuntados ->
                                 val nuevo = siniestrosVm.ultimoRegistrado
-                                if (nuevo == null) {
+                                if (yaAdjuntados || nuevo == null) {
                                     navController.popBackStack(Ruta.MisSiniestros.ruta, false)
                                 } else {
                                     navController.navigate(Ruta.Evidencias.crear(nuevo))

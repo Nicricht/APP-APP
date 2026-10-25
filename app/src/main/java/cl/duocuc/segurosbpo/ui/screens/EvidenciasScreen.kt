@@ -72,10 +72,42 @@ private data class AdjuntoPendiente(
     val esImagen: Boolean = false
 )
 
-private fun esImagen(contexto: Context, uri: Uri): Boolean =
-    contexto.contentResolver.getType(uri).orEmpty().startsWith("image/")
+internal fun previsualizable(mime: String): Boolean =
+    mime.startsWith("image/") || mime == "application/pdf"
 
-private fun miniaturaDeUri(contexto: Context, uri: Uri): Bitmap? = runCatching {
+internal fun miniaturaDeAdjunto(contexto: Context, uri: Uri): Bitmap? {
+    val mime = contexto.contentResolver.getType(uri).orEmpty()
+    return when {
+        mime.startsWith("image/") -> miniaturaDeUri(contexto, uri)
+        mime == "application/pdf" -> miniaturaDePdfUri(contexto, uri)
+        else -> null
+    }
+}
+
+internal fun miniaturaDePdfUri(contexto: Context, uri: Uri): Bitmap? = runCatching {
+    contexto.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+        android.graphics.pdf.PdfRenderer(descriptor).use { lector ->
+            if (lector.pageCount == 0) return@use null
+            lector.openPage(0).use { pagina ->
+                val factor = 240f / maxOf(pagina.width, pagina.height)
+                val ancho = (pagina.width * factor).toInt().coerceAtLeast(1)
+                val alto = (pagina.height * factor).toInt().coerceAtLeast(1)
+                val lienzo = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
+                lienzo.eraseColor(android.graphics.Color.WHITE)
+                pagina.render(
+                    lienzo, null, null,
+                    android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
+                )
+                lienzo
+            }
+        }
+    }
+}.getOrNull()
+
+internal fun esImagen(contexto: Context, uri: Uri): Boolean =
+    previsualizable(contexto.contentResolver.getType(uri).orEmpty())
+
+internal fun miniaturaDeUri(contexto: Context, uri: Uri): Bitmap? = runCatching {
     val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     contexto.contentResolver.openInputStream(uri)?.use {
         BitmapFactory.decodeStream(it, null, medidas)
@@ -422,7 +454,7 @@ fun EvidenciasScreen(
                                 if (adjunto.foto == null && adjunto.esImagen) {
                                     LaunchedEffect(adjunto.clave) {
                                         vista = adjunto.archivo?.let {
-                                            miniaturaDeUri(context, it)
+                                            miniaturaDeAdjunto(context, it)
                                         }
                                     }
                                 }
@@ -496,7 +528,7 @@ fun EvidenciasScreen(
                             nombre = evidencia.nombreArchivo,
                             detalle = evidencia.fechaRegistro + " · " +
                                 (evidencia.tamanoBytes / 1024) + " KB",
-                            esImagen = evidencia.tipoMime.startsWith("image/"),
+                            esImagen = previsualizable(evidencia.tipoMime),
                             cargarMiniatura = { onCargarMiniatura(evidencia.id) },
                             onAbrir = {
                                 scope.launch {
