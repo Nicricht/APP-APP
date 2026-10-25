@@ -17,6 +17,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class RegistroPantallaCompletoTest {
@@ -76,6 +80,9 @@ class RegistroPantallaCompletoTest {
     @Test fun reporteSinDetectorDeDuplicadosConfiguradoConfirmaYPermiteRegresar() {
         val llamadas = AtomicInteger(0)
         val regreso = AtomicBoolean(false)
+        val fechaAislada = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).format(
+            Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(60))
+        )
         rule.setContent {
             FormularioScreen(
                 aseguradoActual = Asegurado.CAMILA,
@@ -83,14 +90,12 @@ class RegistroPantallaCompletoTest {
                     llamadas.incrementAndGet()
                     "SIN-26-090003"
                 },
-                onVolver = { regreso.set(true) },
+                onVolver = {},
                 onVerMisSiniestros = { regreso.set(true) }
             )
         }
-        rule.onNodeWithText("Volver a mis siniestros").performScrollTo().performClick()
-        assertTrue(regreso.get())
         rule.onNodeWithText("Fecha en que ocurrió (día-mes-año)").performScrollTo()
-            .performTextInput("20-10-2026")
+            .performTextInput(fechaAislada)
         rule.onNodeWithText("Comuna donde ocurrió").performScrollTo()
             .performTextInput("Santiago")
         rule.onNodeWithText("Cuéntanos brevemente qué pasó").performScrollTo()
@@ -100,5 +105,7 @@ class RegistroPantallaCompletoTest {
         rule.onNodeWithText("Reportar").performScrollTo().performClick()
         rule.onNodeWithText("Ver mis siniestros").performScrollTo().assertExists()
         assertEquals(1, llamadas.get())
+        rule.onNodeWithText("Ver mis siniestros").performScrollTo().performClick()
+        assertTrue(regreso.get())
     }
 }
