@@ -95,6 +95,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     private fun responsable(): String =
         nombreLiquidador.ifBlank { _liquidador.value.equipo }
 
+    private val _novedades = MutableStateFlow<Map<Long, Int>>(emptyMap())
+    val novedades = _novedades.asStateFlow()
     private val _archivados = MutableStateFlow<List<Siniestro>>(emptyList())
     val archivados = _archivados.asStateFlow()
 
@@ -112,6 +114,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
         _casosLiquidador.value = db.listarAsignados(_liquidador.value, identidadLiquidador)
         _disponiblesLiquidador.value = db.listarDisponibles(_liquidador.value)
         _seguimientosVencidos.value = db.listarSeguimientosVencidos(_liquidador.value)
+        _novedades.value = db.novedadesPorCaso(_liquidador.value, identidadLiquidador)
         _actualizadoEn.value = marcaDeTiempo()
     }
 

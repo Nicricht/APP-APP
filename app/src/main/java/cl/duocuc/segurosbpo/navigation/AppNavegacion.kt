@@ -286,6 +286,7 @@ fun AppNavegacion(
     val cargaEquipos by siniestrosVm.cargaEquipos.collectAsStateWithLifecycle()
     val actualizadoEn by siniestrosVm.actualizadoEn.collectAsStateWithLifecycle()
     val archivados by siniestrosVm.archivados.collectAsStateWithLifecycle()
+    val novedades by siniestrosVm.novedades.collectAsStateWithLifecycle()
     val companias by siniestrosVm.companias.collectAsStateWithLifecycle()
     val tipos by siniestrosVm.tipos.collectAsStateWithLifecycle()
     val cargaPersonas by siniestrosVm.cargaPersonas.collectAsStateWithLifecycle()
@@ -558,6 +559,7 @@ fun AppNavegacion(
                             casos = casosLiquidador,
                             archivados = archivados,
                             seguimientosVencidos = seguimientosVencidos,
+                            novedades = novedades,
                             onCargarArchivados = siniestrosVm::refrescarArchivados,
                             onArchivar = siniestrosVm::archivarCaso,
                             onRestaurar = siniestrosVm::restaurarCaso,

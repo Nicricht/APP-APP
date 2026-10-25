@@ -3,13 +3,17 @@ package cl.duocuc.segurosbpo.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -25,8 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
@@ -46,6 +53,7 @@ fun CasosLiquidadorScreen(
     casos: List<Siniestro>,
     archivados: List<Siniestro>,
     seguimientosVencidos: Set<Long>,
+    novedades: Map<Long, Int>,
     onCargarArchivados: () -> Unit,
     onArchivar: (Long) -> String?,
     onRestaurar: (Long) -> String?,
@@ -127,7 +135,24 @@ fun CasosLiquidadorScreen(
                         Modifier.padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        CodigoSiniestro(siniestro.numero)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CodigoSiniestro(siniestro.numero)
+                            val nuevas = novedades[siniestro.id] ?: 0
+                            if (nuevas > 0) {
+                                BadgedBox(badge = { Badge { Text(nuevas.toString()) } }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_avisos),
+                                        contentDescription = nuevas.toString() +
+                                            " novedad(es) del asegurado",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
                         Text(siniestro.tipo.etiqueta)
                         Text(
                             "Etapa: " + siniestro.etapa.etiqueta,

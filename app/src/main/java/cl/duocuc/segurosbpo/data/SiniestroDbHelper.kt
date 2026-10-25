@@ -37,7 +37,11 @@ import java.util.Locale
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
-) : SQLiteOpenHelper(context, databaseName, null, 9) {
+) : SQLiteOpenHelper(context, databaseName, null, 10) {
+
+    private val AUTOR_SISTEMA = "SISTEMA"
+    private val AUTOR_ASEGURADO = "ASEGURADO"
+    private val AUTOR_LIQUIDADOR = "LIQUIDADOR"
 
     private val TROZO = 512 * 1024
     private val cacheDir = context.cacheDir
@@ -262,6 +266,7 @@ class SiniestroDbHelper(
                 responsable TEXT NOT NULL,
                 descripcion TEXT NOT NULL,
                 visible_asegurado INTEGER NOT NULL DEFAULT 1,
+                autor TEXT NOT NULL DEFAULT 'SISTEMA',
                 FOREIGN KEY(siniestro_id) REFERENCES siniestros(id) ON DELETE CASCADE
             )
         """.trimIndent())
@@ -313,7 +318,8 @@ class SiniestroDbHelper(
     }
 
     private fun insertarGestion(db: SQLiteDatabase, siniestroId: Long,
-        responsable: String, descripcion: String, visible: Boolean
+        responsable: String, descripcion: String, visible: Boolean,
+        autor: String = AUTOR_SISTEMA
     ) {
         val valores = ContentValues().apply {
             put("siniestro_id", siniestroId)
@@ -321,6 +327,7 @@ class SiniestroDbHelper(
             put("responsable", responsable)
             put("descripcion", descripcion)
             put("visible_asegurado", if (visible) 1 else 0)
+            put("autor", autor)
         }
         db.insertOrThrow("gestiones", null, valores)
     }
@@ -377,6 +384,11 @@ class SiniestroDbHelper(
             db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador_id TEXT")
             db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador_nombre TEXT")
         }
+        if (oldVersion < 10) {
+            db.execSQL(
+                "ALTER TABLE gestiones ADD COLUMN autor TEXT NOT NULL DEFAULT 'SISTEMA'"
+            )
+        }
     }
 
     private fun fechaActual(): String =
@@ -425,7 +437,10 @@ class SiniestroDbHelper(
             val anio = SimpleDateFormat("yy", Locale.ROOT).format(Date())
             val numero = "SIN-$anio-${(id + 4860).toString().padStart(6, '0')}"
             db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf(numero, id))
-            insertarGestion(db, id, "Asegurado", "Reporte registrado con número " + numero, true)
+            insertarGestion(
+                db, id, "Asegurado", "Reporte registrado con número " + numero, true,
+                AUTOR_ASEGURADO
+            )
             db.setTransactionSuccessful()
             return Siniestro(
                 id, numero, formulario.asegurado, formulario.compania,
@@ -566,7 +581,7 @@ class SiniestroDbHelper(
                 "id = ?", arrayOf(siniestroId.toString()))
             insertarGestion(
                 db, siniestroId, responsable,
-                "El caso se archivó en la bandeja del equipo.", false
+                "El caso se archivó en la bandeja del equipo.", false, AUTOR_LIQUIDADOR
             )
             db.setTransactionSuccessful()
         } finally {
@@ -627,7 +642,9 @@ class SiniestroDbHelper(
             val ok = db.update("siniestros", valores,
                 "id = ? AND asegurado = ? AND etapa = ?",
                 arrayOf(id.toString(), asegurado.name, EtapaSiniestro.RECIBIDO.name)) > 0
-            if (ok) insertarGestion(db, id, "Asegurado", "Descripción corregida", true)
+            if (ok) insertarGestion(
+                db, id, "Asegurado", "Descripción corregida", true, AUTOR_ASEGURADO
+            )
             db.setTransactionSuccessful()
             return ok
         } finally {
@@ -705,7 +722,9 @@ class SiniestroDbHelper(
             ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
             require(caso != null) { "El caso no está asignado a este liquidador" }
             require(caso != EtapaSiniestro.CERRADO.name) { "No se modifica un caso cerrado" }
-            insertarGestion(db, siniestroId, responsable, descripcion.trim(), visible)
+            insertarGestion(
+                db, siniestroId, responsable, descripcion.trim(), visible, AUTOR_LIQUIDADOR
+            )
             val valores = ContentValues().apply { put("ultima_actualizacion", fechaActual()) }
             db.update("siniestros", valores, "id = ? AND liquidador = ?",
                 arrayOf(siniestroId.toString(), liquidador.name))
@@ -750,7 +769,7 @@ class SiniestroDbHelper(
             val nota = if (siguiente == EtapaSiniestro.CERRADO)
                 "Caso cerrado: " + resultado + ". " + mensajeCierre.trim()
                 else "Etapa actualizada a " + siguiente.paso
-            insertarGestion(db, siniestroId, responsable, nota, true)
+            insertarGestion(db, siniestroId, responsable, nota, true, AUTOR_LIQUIDADOR)
             insertarAviso(db, siniestroId, nota)
             db.setTransactionSuccessful()
         } finally {
@@ -827,7 +846,7 @@ class SiniestroDbHelper(
                 put("fecha_solicitud", fechaActual())
             })
             val nota = "Documento solicitado: " + nombre
-            insertarGestion(db, siniestroId, responsable, nota, true)
+            insertarGestion(db, siniestroId, responsable, nota, true, AUTOR_LIQUIDADOR)
             insertarAviso(db, siniestroId, "Necesitamos el documento: " + nombre, solicitudId)
             db.update("siniestros", ContentValues().apply {
                 put("ultima_actualizacion", fechaActual())
@@ -858,7 +877,7 @@ class SiniestroDbHelper(
             }, "id = ?", arrayOf(solicitudId.toString()))
             insertarGestion(
                 db, datos.first, responsable,
-                "Se dio por recibido el documento: " + datos.second, true
+                "Se dio por recibido el documento: " + datos.second, true, AUTOR_LIQUIDADOR
             )
             insertarAviso(
                 db, datos.first,
@@ -890,7 +909,7 @@ class SiniestroDbHelper(
             db.delete("solicitudes_documentos", "id = ?", arrayOf(solicitudId.toString()))
             insertarGestion(
                 db, datos.first, responsable,
-                "Ya no se requiere el documento: " + datos.second, true
+                "Ya no se requiere el documento: " + datos.second, true, AUTOR_LIQUIDADOR
             )
             insertarAviso(
                 db, datos.first,
@@ -1013,7 +1032,8 @@ class SiniestroDbHelper(
             }, "id = ?", arrayOf(siniestroId.toString()))
             insertarGestion(
                 db, siniestroId, asegurado.etiqueta,
-                "La persona asegurada desistió del siniestro. Motivo: " + motivo.trim(), true
+                "La persona asegurada desistió del siniestro. Motivo: " + motivo.trim(), true,
+                AUTOR_ASEGURADO
             )
             insertarAviso(db, siniestroId, "Tu siniestro quedó cerrado por desistimiento.")
             db.setTransactionSuccessful()
@@ -1072,7 +1092,7 @@ class SiniestroDbHelper(
             })
             insertarGestion(
                 db, siniestroId, asegurado.etiqueta,
-                "La persona asegurada envió una consulta sobre su caso.", true
+                "La persona asegurada envió una consulta sobre su caso.", true, AUTOR_ASEGURADO
             )
             db.setTransactionSuccessful()
         } finally {
@@ -1102,7 +1122,7 @@ class SiniestroDbHelper(
             }, "id = ?", arrayOf(consultaId.toString()))
             insertarGestion(
                 db, siniestroId, responsable,
-                "Se respondió la consulta de la persona asegurada.", true
+                "Se respondió la consulta de la persona asegurada.", true, AUTOR_LIQUIDADOR
             )
             insertarAviso(db, siniestroId, "Respondimos tu consulta. Revisa el detalle del caso.")
             db.setTransactionSuccessful()
@@ -1162,6 +1182,31 @@ class SiniestroDbHelper(
             while (cursor.moveToNext()) resultado.add(convertir(cursor))
         }
         return resultado
+    }
+
+    fun novedadesPorCaso(liquidador: Liquidador, personaId: String? = null): Map<Long, Int> {
+        val novedades = mutableMapOf<Long, Int>()
+        val filtro = StringBuilder("s.liquidador = ? AND s.archivado = 0")
+        val argumentos = mutableListOf(liquidador.name)
+        if (personaId != null) {
+            filtro.append(" AND s.liquidador_id = ?")
+            argumentos.add(personaId)
+        }
+        readableDatabase.rawQuery("""
+            SELECT g.siniestro_id, COUNT(*)
+            FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
+            WHERE $filtro AND g.autor = ?
+              AND g.id > COALESCE((
+                SELECT MAX(r.id) FROM gestiones r
+                WHERE r.siniestro_id = g.siniestro_id AND r.autor = ?
+              ), 0)
+            GROUP BY g.siniestro_id
+        """.trimIndent(),
+            (argumentos + listOf(AUTOR_ASEGURADO, AUTOR_LIQUIDADOR)).toTypedArray()
+        ).use { c ->
+            while (c.moveToNext()) novedades[c.getLong(0)] = c.getInt(1)
+        }
+        return novedades
     }
 
     fun cargaPorPersona(): Map<String, Int> {
@@ -1387,7 +1432,7 @@ class SiniestroDbHelper(
             })
             insertarGestion(
                 db, siniestroId, "Documento del liquidador",
-                "Se adjuntó " + tipoDocumento.trim(), true
+                "Se adjuntó " + tipoDocumento.trim(), true, AUTOR_LIQUIDADOR
             )
             db.setTransactionSuccessful()
         } finally {
@@ -1437,10 +1482,11 @@ class SiniestroDbHelper(
                     put("evidencia_id", evidenciaId)
                 }, "id = ?", arrayOf(solicitudId.toString()))
                 insertarGestion(db, siniestroId, "Asegurado",
-                    "Documento solicitado entregado: " + tipoDocumento.trim(), true)
+                    "Documento solicitado entregado: " + tipoDocumento.trim(), true,
+                    AUTOR_ASEGURADO)
             } else {
                 insertarGestion(db, siniestroId, "Asegurado",
-                    "Documento adjuntado: " + tipoDocumento.trim(), true)
+                    "Documento adjuntado: " + tipoDocumento.trim(), true, AUTOR_ASEGURADO)
             }
             db.update("siniestros", ContentValues().apply {
                 put("ultima_actualizacion", fechaActual())
@@ -1477,7 +1523,7 @@ class SiniestroDbHelper(
             db.delete("evidencias", "id = ?", arrayOf(evidenciaId.toString()))
             insertarGestion(
                 db, siniestroId, asegurado.etiqueta,
-                "Se eliminó el documento adjuntado: " + datos.first, true
+                "Se eliminó el documento adjuntado: " + datos.first, true, AUTOR_ASEGURADO
             )
             db.update("siniestros", ContentValues().apply {
                 put("ultima_actualizacion", ahora)
@@ -1512,7 +1558,7 @@ class SiniestroDbHelper(
             db.delete("evidencias", "id = ?", arrayOf(evidenciaId.toString()))
             insertarGestion(
                 db, siniestroId, responsable,
-                "Se eliminó el documento del caso: " + datos.first, false
+                "Se eliminó el documento del caso: " + datos.first, false, AUTOR_LIQUIDADOR
             )
             db.setTransactionSuccessful()
         } finally {
