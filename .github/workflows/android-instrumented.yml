@@ -103,7 +103,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p app/build/qa-bytecode
-          for nombre in ThemeKt FormularioScreenKt; do
+          for nombre in ThemeKt FormularioScreenKt ResumenGraficosCasosKt PerfilCuentaScreenKt ControlPlazos; do
             ruta=$(find app/build -path app/build/qa-bytecode -prune -o -type f -name "$nombre.class" -print -quit)
             if [ -n "$ruta" ]; then
               cp "$ruta" "app/build/qa-bytecode/$nombre.class"
