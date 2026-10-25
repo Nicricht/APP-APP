@@ -10,6 +10,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import cl.duocuc.segurosbpo.data.SiniestroDbHelper
 import cl.duocuc.segurosbpo.model.Asegurado
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
@@ -60,8 +64,13 @@ class RegistroNavegacionRealTest {
         rule.onNodeWithText("Seguimiento de seguros").assertExists()
         rule.onNodeWithText("Reportar").performClick()
         rule.onNodeWithText("Reportar un siniestro").assertExists()
+        // El demo crea incidentes cinco días atrás; usar esa misma fecha fija
+        // haría saltar el aviso de posible duplicado al cambiar de día.
+        val fechaAislada = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).format(
+            Date(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(60))
+        )
         rule.onNodeWithText("Fecha en que ocurrió (día-mes-año)")
-            .performScrollTo().performTextInput("20-10-2026")
+            .performScrollTo().performTextInput(fechaAislada)
         rule.onNodeWithText("Comuna donde ocurrió")
             .performScrollTo().performTextInput("Santiago")
         rule.onNodeWithText("Cuéntanos brevemente qué pasó")
