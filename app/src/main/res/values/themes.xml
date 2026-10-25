@@ -2,4 +2,20 @@
 <resources>
 
     <style name="Theme.SegurosBpo" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="RuedaDatePicker" parent="android:Widget.Material.Light.DatePicker">
+        <item name="android:datePickerMode">spinner</item>
+    </style>
+
+    <style name="RuedaDatePickerOscuro" parent="android:Widget.Material.DatePicker">
+        <item name="android:datePickerMode">spinner</item>
+    </style>
+
+    <style name="SelectorFechaRueda" parent="android:Theme.Material.Light.Dialog.Alert">
+        <item name="android:datePickerStyle">@style/RuedaDatePicker</item>
+    </style>
+
+    <style name="SelectorFechaRuedaOscuro" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:datePickerStyle">@style/RuedaDatePickerOscuro</item>
+    </style>
 </resources>

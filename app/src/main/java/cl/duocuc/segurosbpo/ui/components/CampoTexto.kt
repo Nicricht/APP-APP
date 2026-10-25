@@ -1,6 +1,8 @@
 package cl.duocuc.segurosbpo.ui.components
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,12 +36,15 @@ fun CampoTexto(
     modifier: Modifier = Modifier,
     error: String? = null,
     tipoTeclado: KeyboardType = KeyboardType.Text,
-    multilinea: Boolean = false
+    multilinea: Boolean = false,
+    onPulsar: (() -> Unit)? = null
 ) {
+    Box(modifier = modifier.fillMaxWidth()) {
     OutlinedTextField(
         value = valor,
         onValueChange = onValorCambia,
-        modifier = modifier.fillMaxWidth(),
+        readOnly = onPulsar != null,
+        modifier = Modifier.fillMaxWidth(),
         label = { Text(etiqueta) },
         leadingIcon = {
             Icon(
@@ -60,6 +65,14 @@ fun CampoTexto(
         shape = EstiloCampo.forma,
         colors = EstiloCampo.colores()
     )
+    if (onPulsar != null) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable(onClick = onPulsar)
+        )
+    }
+    }
 }
 
 @Preview(showBackground = true)
