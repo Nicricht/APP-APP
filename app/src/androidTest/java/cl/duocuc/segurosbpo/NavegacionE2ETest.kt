@@ -53,6 +53,7 @@ class NavegacionE2ETest {
             .assertExists()
         composeRule.onNodeWithText("Volver").performScrollTo().performClick()
         composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        composeRule.onNodeWithText("Asegurado: Camila Rojas Fuentes").assertExists()
     }
 
     @Test
@@ -65,6 +66,7 @@ class NavegacionE2ETest {
         composeRule.onNodeWithText("Estadísticas de mis siniestros").assertExists()
         composeRule.onNodeWithText("Volver a mis siniestros").performScrollTo().performClick()
         composeRule.onNodeWithText("Seguimiento de seguros").assertIsDisplayed()
+        composeRule.onNodeWithText("Asegurado: Camila Rojas Fuentes").assertExists()
     }
 
     @Test
@@ -77,6 +79,6 @@ class NavegacionE2ETest {
         composeRule.onNodeWithText("Equipo: HOGAR").assertExists()
         composeRule.onNodeWithText("Volver").performScrollTo().performClick()
         composeRule.onNodeWithText("Gestión de siniestros").assertIsDisplayed()
-        composeRule.onNodeWithText("Responsable: ", substring = true).assertExists()
+        composeRule.onNodeWithText("Responsable: Pedro C.").assertExists()
     }
 }
