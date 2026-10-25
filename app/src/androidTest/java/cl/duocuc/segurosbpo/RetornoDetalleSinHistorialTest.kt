@@ -9,6 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import cl.duocuc.segurosbpo.navigation.Ruta
 import cl.duocuc.segurosbpo.navigation.volverDelDetalle
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -43,6 +44,6 @@ class RetornoDetalleSinHistorialTest {
         volverDelDetalle(controlador)
 
         assertEquals(Ruta.MisSiniestros.ruta, controlador.currentDestination?.route)
-        assertEquals(2, controlador.currentBackStack.value.size)
+        assertNull(controlador.previousBackStackEntry)
     }
 }
