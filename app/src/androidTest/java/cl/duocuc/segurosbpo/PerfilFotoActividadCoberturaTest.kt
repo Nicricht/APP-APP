@@ -418,10 +418,11 @@ class PerfilFotoActividadCoberturaTest {
         val guardadas = AtomicInteger()
         montar(
             seleccion = Uri.Builder().scheme("content")
-                .authority("cl.duocuc.segurosbpo.qa.error_sin_mensaje")
+                .authority("cl.duocuc.segurosbpo.qa.archivos")
                 .appendPath("foto")
                 .appendQueryParameter("mime", "image/jpeg")
                 .appendQueryParameter("nombre", "foto.jpg")
+                .appendQueryParameter("error_sin_mensaje", "1")
                 .build(),
             guardadas = guardadas
         )
