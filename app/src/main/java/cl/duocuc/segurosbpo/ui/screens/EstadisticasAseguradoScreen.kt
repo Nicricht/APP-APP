@@ -3,6 +3,7 @@ package cl.duocuc.segurosbpo.ui.screens
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,7 +27,7 @@ fun EstadisticasAseguradoScreen(
         topBar = { BarraSuperior("Mis estadísticas", onVolver = onVolver) }
     ) { margen ->
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState()).padding(16.dp)
+            Modifier.fillMaxSize().padding(margen).imePadding().verticalScroll(rememberScrollState()).padding(16.dp)
         ) {
             ResumenGraficosCasos(
                 casos = siniestros,

@@ -1,10 +1,12 @@
 package cl.duocuc.segurosbpo.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,7 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +42,7 @@ import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.ValidadorDesistimiento
 import cl.duocuc.segurosbpo.model.ValidadorEvaluacion
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
+import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
@@ -111,11 +113,11 @@ fun DetalleSiniestroScreen(
     }
 
     Scaffold(
-        topBar = { BarraSuperior("Detalle del siniestro", onVolver = onVolver) },
-        snackbarHost = { SnackbarHost(aviso) }
+        topBar = { BarraSuperior("Detalle del siniestro", onVolver = onVolver) }
     ) { margen ->
+        Box(Modifier.fillMaxSize().padding(margen).imePadding()) {
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -320,6 +322,8 @@ fun DetalleSiniestroScreen(
                     }
                 }
             }
+        }
+        AvisoSuperior(aviso)
         }
     }
 }

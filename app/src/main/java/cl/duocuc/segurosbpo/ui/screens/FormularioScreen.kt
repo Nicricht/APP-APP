@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -195,6 +196,7 @@ fun FormularioContent(
         Column(
             modifier = Modifier.fillMaxSize().
             padding(innerPadding).
+            imePadding().
             verticalScroll(rememberScrollState())
         ) {
             Column(
@@ -347,7 +349,7 @@ fun FormularioContent(
                     Column {
                         MensajeExito(numero = uiState.numeroSiniestro)
                         BotonPrincipal(
-                            texto = "Ver mis siniestros",
+                            texto = "Adjuntar los documentos",
                             onClick = onVerMisSiniestros,
                             icono = R.drawable.ic_check,
                             modifier = Modifier.fillMaxWidth()

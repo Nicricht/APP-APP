@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +28,6 @@ import cl.duocuc.segurosbpo.model.AvisoSiniestro
 @Composable
 fun AvisosScreen(
     avisos: List<AvisoSiniestro>,
-    pendientesPorCaso: Map<Long, List<String>>,
     onCargar: () -> Unit,
     onMarcarLeido: (Long) -> Unit,
     onAbrirCaso: (Long) -> Unit,
@@ -37,13 +37,12 @@ fun AvisosScreen(
     LaunchedEffect(Unit) { onCargar() }
     Scaffold(topBar = { BarraSuperior("Avisos de mis siniestros") }) { margen ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(margen).padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(margen).imePadding().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (avisos.isEmpty()) Text("No tienes avisos nuevos ni anteriores.")
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(avisos, key = { it.id }) { aviso ->
-                    val pendientes = pendientesPorCaso[aviso.siniestroId].orEmpty()
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -56,22 +55,14 @@ fun AvisosScreen(
                                 style = MaterialTheme.typography.bodySmall
                             )
 
-                            if (pendientes.isNotEmpty()) {
-                                Text(
-                                    "Documentos que te pidió el liquidador:",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                                pendientes.forEach { tipo ->
-                                    Text("· " + tipo, style = MaterialTheme.typography.bodySmall)
-                                }
+                            if (aviso.documentoPedido != null) {
                                 Button(
                                     modifier = Modifier.fillMaxWidth(),
                                     onClick = {
                                         onMarcarLeido(aviso.id)
                                         onAdjuntar(aviso.siniestroId)
                                     }
-                                ) { Text("Enviar documentos") }
+                                ) { Text("Enviar " + aviso.documentoPedido) }
                             }
 
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
