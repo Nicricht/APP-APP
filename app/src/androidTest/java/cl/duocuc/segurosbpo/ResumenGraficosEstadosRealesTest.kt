@@ -184,6 +184,33 @@ class ResumenGraficosEstadosRealesTest {
         rule.onNodeWithText("Cerrados: 0").assertExists()
     }
 
+    @Test fun tituloYDescripcionDelPanelCambianSinAlterarLosCasos() {
+        val titulo = mutableStateOf("Panel del primer turno")
+        val descripcion = mutableStateOf("Casos del primer turno")
+        rule.setContent {
+            ResumenGraficosCasos(
+                casos = emptyList(),
+                equipo = "Hogar",
+                titulo = titulo.value,
+                descripcion = descripcion.value
+            )
+        }
+        rule.onNodeWithText("Panel del primer turno").assertExists()
+        rule.onNodeWithText("Casos del primer turno: 0").assertExists()
+
+        rule.runOnIdle { titulo.value = "Panel del segundo turno" }
+        rule.onNodeWithText("Panel del segundo turno").assertExists()
+        rule.onNodeWithText("Panel del primer turno").assertDoesNotExist()
+        rule.onNodeWithText("Casos del primer turno: 0").assertExists()
+
+        rule.runOnIdle { descripcion.value = "Casos del segundo turno" }
+        rule.onNodeWithText("Panel del segundo turno").assertExists()
+        rule.onNodeWithText("Casos del segundo turno: 0").assertExists()
+        rule.onNodeWithText("Casos del primer turno: 0").assertDoesNotExist()
+        rule.onNodeWithText("No hay siniestros para mostrar en los gráficos.").assertExists()
+        rule.onNodeWithText("Casos por etapa").assertDoesNotExist()
+    }
+
     @Test fun descripcionPersonalizadaSinTituloNoCambiaLaCabeceraDelEquipo() {
         rule.setContent {
             ResumenGraficosCasos(
