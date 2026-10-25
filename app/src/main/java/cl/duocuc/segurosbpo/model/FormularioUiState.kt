@@ -27,22 +27,53 @@ data class Asegurado(
     }
 }
 
-enum class Compania(val etiqueta: String, val activa: Boolean){
-    CORDILLERA("Seguros Cordillera", true),
-    LITORAL("Seguros Litoral", true),
-    PATAGONIA("Aseguradora Patagonia Sur", true),
-    VALLE_CENTRAL("Seguros Valle Central", true),
+enum class Compania(
+    val etiqueta: String,
+    val activa: Boolean,
+    val plazoDiasHabiles: Int
+){
+    CORDILLERA("Seguros Cordillera", true, 10),
+    LITORAL("Seguros Litoral", true, 12),
+    PATAGONIA("Aseguradora Patagonia Sur", true, 10),
+    VALLE_CENTRAL("Seguros Valle Central", true, 8),
 
-    PROTEGE("Protege Seguros (no disponible)", false)
+    PROTEGE("Protege Seguros (no disponible)", false, 12)
 }
 
-enum class TipoSiniestro(val etiqueta: String, val esVehiculo: Boolean){
-    CHOQUE("Vehículo · choque o colisión", true),
-    ROBO_VEHICULO("Vehículo · robo", true),
-    CRISTALES("Vehículo · rotura de cristales", true),
-    DANO_AGUA("Hogar · daño por agua", false),
-    ROBO_HOGAR("Hogar · robo", false),
-    INCENDIO("Hogar · incendio", false)
+enum class TipoSiniestro(
+    val etiqueta: String,
+    val esVehiculo: Boolean,
+    val documentosHabituales: List<String>
+){
+    CHOQUE("Vehículo · choque o colisión", true, listOf(
+        "Fotografías de los daños",
+        "Constancia policial (si hubo terceros)",
+        "Presupuesto de reparación"
+    )),
+    ROBO_VEHICULO("Vehículo · robo", true, listOf(
+        "Constancia de denuncia policial",
+        "Copia de llaves (declaración)",
+        "Padrón del vehículo"
+    )),
+    CRISTALES("Vehículo · rotura de cristales", true, listOf(
+        "Fotografías del cristal",
+        "Presupuesto o boleta de reposición"
+    )),
+    DANO_AGUA("Hogar · daño por agua", false, listOf(
+        "Fotografías de los daños",
+        "Informe o boleta del gasfíter",
+        "Presupuesto de reparación"
+    )),
+    ROBO_HOGAR("Hogar · robo", false, listOf(
+        "Constancia de denuncia policial",
+        "Listado de especies",
+        "Boletas o facturas de lo robado"
+    )),
+    INCENDIO("Hogar · incendio", false, listOf(
+        "Fotografías de los daños",
+        "Certificado de Bomberos",
+        "Presupuesto de reparación"
+    ))
 }
 
 data class FormularioUiState(

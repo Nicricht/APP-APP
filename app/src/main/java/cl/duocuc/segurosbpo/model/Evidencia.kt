@@ -10,3 +10,12 @@ data class Evidencia(
     val tamanoBytes: Int,
     val fechaRegistro: String
 )
+
+object DocumentosLiquidador {
+    val tipos = listOf(
+        "Informe de liquidación",
+        "Acta de inspección",
+        "Presupuesto de reparación",
+        "Registro fotográfico del perito"
+    )
+}
