@@ -29,21 +29,25 @@ class RetornoDetalleSinHistorialTest {
     }
 
     @Test fun detalleAbiertoSinPantallaAnteriorRegresaAlListadoSeguro() {
-        val controlador = controlador(rutaDetalle)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val controlador = controlador(rutaDetalle)
 
-        volverDelDetalle(controlador)
+            volverDelDetalle(controlador)
 
-        assertEquals(Ruta.MisSiniestros.ruta, controlador.currentDestination?.route)
+            assertEquals(Ruta.MisSiniestros.ruta, controlador.currentDestination?.route)
+        }
     }
 
     @Test fun detalleConHistorialRetrocedeSinDuplicarElListado() {
-        val controlador = controlador(Ruta.MisSiniestros.ruta)
-        controlador.navigate(rutaDetalle)
-        assertEquals(rutaDetalle, controlador.currentDestination?.route)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val controlador = controlador(Ruta.MisSiniestros.ruta)
+            controlador.navigate(rutaDetalle)
+            assertEquals(rutaDetalle, controlador.currentDestination?.route)
 
-        volverDelDetalle(controlador)
+            volverDelDetalle(controlador)
 
-        assertEquals(Ruta.MisSiniestros.ruta, controlador.currentDestination?.route)
-        assertNull(controlador.previousBackStackEntry)
+            assertEquals(Ruta.MisSiniestros.ruta, controlador.currentDestination?.route)
+            assertNull(controlador.previousBackStackEntry)
+        }
     }
 }
