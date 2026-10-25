@@ -79,9 +79,12 @@ class SiniestrosViewModel @JvmOverloads constructor(
         val resultado = runCatching {
             db.tomarCaso(id, _liquidador.value)
         }
-        val mensaje = resultado.exceptionOrNull()?.let {
-            mensajeError(it, "No se pudo tomar el caso")
-        } ?: if (resultado.getOrNull() != true) "El caso ya fue tomado o no corresponde a tu área" else null
+        val mensaje = resultado.fold(
+            onSuccess = { asignado ->
+                if (asignado) null else "El caso ya fue tomado o no corresponde a tu área"
+            },
+            onFailure = { mensajeError(it, "No se pudo tomar el caso") }
+        )
         refrescarAsignados()
         if (mensaje == null) {
             refrescar()
