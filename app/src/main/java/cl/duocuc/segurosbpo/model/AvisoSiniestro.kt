@@ -6,5 +6,7 @@ data class AvisoSiniestro(
     val numeroSiniestro: String,
     val mensaje: String,
     val fecha: String,
-    val leido: Boolean
+    val leido: Boolean,
+    val solicitudId: Long? = null,
+    val documentoPedido: String? = null
 )

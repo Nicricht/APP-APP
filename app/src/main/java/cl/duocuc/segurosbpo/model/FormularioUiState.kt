@@ -27,53 +27,90 @@ data class Asegurado(
     }
 }
 
-enum class Compania(
+data class Compania(
+    val name: String,
     val etiqueta: String,
     val activa: Boolean,
     val plazoDiasHabiles: Int
-){
-    CORDILLERA("Seguros Cordillera", true, 10),
-    LITORAL("Seguros Litoral", true, 12),
-    PATAGONIA("Aseguradora Patagonia Sur", true, 10),
-    VALLE_CENTRAL("Seguros Valle Central", true, 8),
+) {
+    companion object {
+        val CORDILLERA = Compania("CORDILLERA", "Seguros Cordillera", true, 10)
+        val LITORAL = Compania("LITORAL", "Seguros Litoral", true, 12)
+        val PATAGONIA = Compania("PATAGONIA", "Aseguradora Patagonia Sur", true, 10)
+        val VALLE_CENTRAL = Compania("VALLE_CENTRAL", "Seguros Valle Central", true, 8)
+        val PROTEGE = Compania("PROTEGE", "Protege Seguros (no disponible)", false, 12)
 
-    PROTEGE("Protege Seguros (no disponible)", false, 12)
+        val semilla: List<Compania> = listOf(
+            CORDILLERA, LITORAL, PATAGONIA, VALLE_CENTRAL, PROTEGE
+        )
+
+        var entries: List<Compania> = semilla
+            private set
+
+        fun reemplazar(catalogo: List<Compania>) {
+            entries = catalogo.ifEmpty { semilla }
+        }
+
+        fun valueOf(codigo: String): Compania =
+            entries.firstOrNull { it.name == codigo }
+                ?: semilla.firstOrNull { it.name == codigo }
+                ?: Compania(codigo, codigo, true, 10)
+    }
 }
 
-enum class TipoSiniestro(
+data class TipoSiniestro(
+    val name: String,
     val etiqueta: String,
     val esVehiculo: Boolean,
     val documentosHabituales: List<String>
-){
-    CHOQUE("Vehículo · choque o colisión", true, listOf(
-        "Fotografías de los daños",
-        "Constancia policial (si hubo terceros)",
-        "Presupuesto de reparación"
-    )),
-    ROBO_VEHICULO("Vehículo · robo", true, listOf(
-        "Constancia de denuncia policial",
-        "Copia de llaves (declaración)",
-        "Padrón del vehículo"
-    )),
-    CRISTALES("Vehículo · rotura de cristales", true, listOf(
-        "Fotografías del cristal",
-        "Presupuesto o boleta de reposición"
-    )),
-    DANO_AGUA("Hogar · daño por agua", false, listOf(
-        "Fotografías de los daños",
-        "Informe o boleta del gasfíter",
-        "Presupuesto de reparación"
-    )),
-    ROBO_HOGAR("Hogar · robo", false, listOf(
-        "Constancia de denuncia policial",
-        "Listado de especies",
-        "Boletas o facturas de lo robado"
-    )),
-    INCENDIO("Hogar · incendio", false, listOf(
-        "Fotografías de los daños",
-        "Certificado de Bomberos",
-        "Presupuesto de reparación"
-    ))
+) {
+    companion object {
+        val CHOQUE = TipoSiniestro("CHOQUE", "Vehículo · choque o colisión", true, listOf(
+            "Fotografías de los daños",
+            "Constancia policial (si hubo terceros)",
+            "Presupuesto de reparación"
+        ))
+        val ROBO_VEHICULO = TipoSiniestro("ROBO_VEHICULO", "Vehículo · robo", true, listOf(
+            "Constancia de denuncia policial",
+            "Copia de llaves (declaración)",
+            "Padrón del vehículo"
+        ))
+        val CRISTALES = TipoSiniestro("CRISTALES", "Vehículo · rotura de cristales", true, listOf(
+            "Fotografías del cristal",
+            "Presupuesto o boleta de reposición"
+        ))
+        val DANO_AGUA = TipoSiniestro("DANO_AGUA", "Hogar · daño por agua", false, listOf(
+            "Fotografías de los daños",
+            "Informe o boleta del gasfíter",
+            "Presupuesto de reparación"
+        ))
+        val ROBO_HOGAR = TipoSiniestro("ROBO_HOGAR", "Hogar · robo", false, listOf(
+            "Constancia de denuncia policial",
+            "Listado de especies",
+            "Boletas o facturas de lo robado"
+        ))
+        val INCENDIO = TipoSiniestro("INCENDIO", "Hogar · incendio", false, listOf(
+            "Fotografías de los daños",
+            "Certificado de Bomberos",
+            "Presupuesto de reparación"
+        ))
+
+        val semilla: List<TipoSiniestro> = listOf(
+            CHOQUE, ROBO_VEHICULO, CRISTALES, DANO_AGUA, ROBO_HOGAR, INCENDIO
+        )
+
+        var entries: List<TipoSiniestro> = semilla
+            private set
+
+        fun reemplazar(catalogo: List<TipoSiniestro>) {
+            entries = catalogo.ifEmpty { semilla }
+        }
+
+        fun valueOf(codigo: String): TipoSiniestro =
+            entries.firstOrNull { it.name == codigo }
+                ?: semilla.firstOrNull { it.name == codigo }
+                ?: TipoSiniestro(codigo, codigo, true, emptyList())
+    }
 }
 
 data class FormularioUiState(
@@ -98,6 +135,4 @@ data class FormularioUiState(
     val reporteExitoso: Boolean = false,
     val numeroSiniestro: String = ""
 
-){
-
-}
+)

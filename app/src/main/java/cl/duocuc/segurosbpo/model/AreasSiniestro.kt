@@ -8,22 +8,18 @@ sealed interface ClasificadorArea {
 
 data object AreaVehiculos : ClasificadorArea {
     override val nombre = "Vehículos"
-    override val tipos = setOf(
-        TipoSiniestro.CHOQUE,
-        TipoSiniestro.ROBO_VEHICULO,
-        TipoSiniestro.CRISTALES
-    )
-    override fun admite(tipo: TipoSiniestro): Boolean = tipo in tipos
+    override val tipos: Set<TipoSiniestro>
+        get() = TipoSiniestro.entries.filter { it.esVehiculo }.toSet()
+
+    override fun admite(tipo: TipoSiniestro): Boolean = tipo.esVehiculo
 }
 
 data object AreaHogar : ClasificadorArea {
     override val nombre = "Hogar"
-    override val tipos = setOf(
-        TipoSiniestro.DANO_AGUA,
-        TipoSiniestro.ROBO_HOGAR,
-        TipoSiniestro.INCENDIO
-    )
-    override fun admite(tipo: TipoSiniestro): Boolean = tipo in tipos
+    override val tipos: Set<TipoSiniestro>
+        get() = TipoSiniestro.entries.filter { !it.esVehiculo }.toSet()
+
+    override fun admite(tipo: TipoSiniestro): Boolean = !tipo.esVehiculo
 }
 
 object AreasSiniestro {
@@ -31,5 +27,5 @@ object AreasSiniestro {
         if (liquidador.esVehiculo) AreaVehiculos else AreaHogar
 
     fun paraTipo(tipo: TipoSiniestro): ClasificadorArea =
-        if (AreaVehiculos.admite(tipo)) AreaVehiculos else AreaHogar
+        if (tipo.esVehiculo) AreaVehiculos else AreaHogar
 }
