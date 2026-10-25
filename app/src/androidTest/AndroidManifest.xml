@@ -5,5 +5,9 @@
             android:name="cl.duocuc.segurosbpo.DocumentoProveedorCobertura"
             android:authorities="cl.duocuc.segurosbpo.qa.archivos"
             android:exported="true" />
+        <provider
+            android:name="cl.duocuc.segurosbpo.ProveedorErrorFotoSinMensaje"
+            android:authorities="cl.duocuc.segurosbpo.qa.error_sin_mensaje"
+            android:exported="true" />
     </application>
 </manifest>
