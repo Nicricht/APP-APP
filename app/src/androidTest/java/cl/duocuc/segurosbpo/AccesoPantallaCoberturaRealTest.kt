@@ -1,5 +1,6 @@
 package cl.duocuc.segurosbpo
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
@@ -152,7 +153,9 @@ class AccesoPantallaCoberturaRealTest {
             "Usa una clave de demostración de al menos 8 caracteres",
             "Las claves no coinciden"
         )
-        errores.forEach { rule.onNodeWithText(it).assertExists() }
+        errores.forEach { error ->
+            rule.onNodeWithText(error).performScrollTo().assertIsDisplayed()
+        }
         rule.onNodeWithText("Corrige los datos del formulario").assertExists()
         assertEquals(1, intentos.get())
 
