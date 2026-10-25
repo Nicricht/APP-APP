@@ -66,6 +66,17 @@ import cl.duocuc.segurosbpo.ui.theme.Exito
 import cl.duocuc.segurosbpo.ui.theme.ExitoFondo
 import cl.duocuc.segurosbpo.viewmodel.FormularioViewModel
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import cl.duocuc.segurosbpo.permisos.Permisos
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -74,6 +85,8 @@ fun FormularioScreen(
     onRegistroExitoso: (FormularioUiState) -> String,
     onVolver: () -> Unit,
     onVerMisSiniestros: () -> Unit,
+    onGuardarFoto: suspend (String, Bitmap) -> String?,
+    onGuardarArchivo: suspend (String, Uri) -> String?,
     onPosibleDuplicado: (FormularioUiState) -> String? = { null }
 ) {
     FormularioScreen(
@@ -81,6 +94,8 @@ fun FormularioScreen(
         onRegistroExitoso,
         onVolver,
         onVerMisSiniestros,
+        onGuardarFoto,
+        onGuardarArchivo,
         viewModel(),
         onPosibleDuplicado
     )
@@ -92,10 +107,29 @@ fun FormularioScreen(
     onRegistroExitoso: (FormularioUiState) -> String,
     onVolver: () -> Unit,
     onVerMisSiniestros: () -> Unit,
+    onGuardarFoto: suspend (String, Bitmap) -> String?,
+    onGuardarArchivo: suspend (String, Uri) -> String?,
     viewModel: FormularioViewModel,
     onPosibleDuplicado: (FormularioUiState) -> String? = { null }
 ){
     var duplicado by remember { mutableStateOf<String?>(null) }
+    var adjuntos by remember { mutableStateOf<List<AdjuntoReporte>>(emptyList()) }
+    val alcance = rememberCoroutineScope()
+
+    fun enviarAdjuntos() {
+        val pendientes = adjuntos
+        if (pendientes.isEmpty()) return
+        adjuntos = emptyList()
+        alcance.launch {
+            pendientes.forEach { adjunto ->
+                when {
+                    adjunto.foto != null -> onGuardarFoto(adjunto.tipo, adjunto.foto)
+                    adjunto.archivo != null -> onGuardarArchivo(adjunto.tipo, adjunto.archivo)
+                    else -> null
+                }
+            }
+        }
+    }
     if (duplicado != null) {
         AlertDialog(
             onDismissRequest = { duplicado = null },
@@ -106,6 +140,7 @@ fun FormularioScreen(
                 TextButton(onClick = {
                     val numero = onRegistroExitoso(viewModel.uiState.value)
                     viewModel.confirmarRegistro(numero)
+                    enviarAdjuntos()
                     duplicado = null
                 }) { Text("Continuar de todos modos") }
             },
@@ -136,12 +171,18 @@ fun FormularioScreen(
                 } else {
                     val numero = onRegistroExitoso(viewModel.uiState.value)
                     viewModel.confirmarRegistro(numero)
+                    enviarAdjuntos()
                 }
             }
         },
-        onLimpiar = viewModel::onLimpiar,
+        onLimpiar = {
+            adjuntos = emptyList()
+            viewModel.onLimpiar()
+        },
         onVolver = onVolver,
-        onVerMisSiniestros = onVerMisSiniestros
+        onVerMisSiniestros = onVerMisSiniestros,
+        adjuntos = adjuntos,
+        onAdjuntos = { adjuntos = it }
     )
 }
 
@@ -160,7 +201,9 @@ fun FormularioContent(
     onRegistrar: () -> Unit,
     onLimpiar: () -> Unit,
     onVolver: () -> Unit,
-    onVerMisSiniestros: () -> Unit
+    onVerMisSiniestros: () -> Unit,
+    adjuntos: List<AdjuntoReporte> = emptyList(),
+    onAdjuntos: (List<AdjuntoReporte>) -> Unit = {}
 ){
     val contexto = LocalContext.current
     val temaOscuro = LocalAccionesBarra.current.temaOscuro
@@ -306,6 +349,16 @@ fun FormularioContent(
                 }
 
 
+                TarjetaSeccion(titulo = "Documentos del siniestro") {
+                    AdjuntosDelReporte(
+                        sugerencias = uiState.tipoSiniestro.documentosHabituales,
+                        adjuntos = adjuntos,
+                        onAdjuntos = onAdjuntos,
+                        habilitado = !uiState.reporteExitoso
+                    )
+                }
+
+
                 Column {
                     CasillaConTexto(
                         texto = stringResource(R.string.opcion_datos_correctos),
@@ -390,6 +443,152 @@ private fun  MensajeExito(numero: String){
                 text = stringResource(R.string.proximo_paso_recibido),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = Dimens.espacioChico)
+            )
+        }
+    }
+}
+
+data class AdjuntoReporte(
+    val clave: Long,
+    val tipo: String,
+    val nombre: String,
+    val foto: Bitmap? = null,
+    val archivo: Uri? = null
+)
+
+@Composable
+private fun AdjuntosDelReporte(
+    sugerencias: List<String>,
+    adjuntos: List<AdjuntoReporte>,
+    onAdjuntos: (List<AdjuntoReporte>) -> Unit,
+    habilitado: Boolean
+) {
+    val contexto = LocalContext.current
+    var tipo by rememberSaveable { mutableStateOf("") }
+    var mensaje by remember { mutableStateOf<String?>(null) }
+
+    fun agregar(nuevos: List<AdjuntoReporte>) {
+        if (nuevos.isEmpty()) return
+        if (adjuntos.size + nuevos.size > 15) {
+            mensaje = "Puedes adjuntar hasta 15 documentos"
+            return
+        }
+        mensaje = null
+        onAdjuntos(adjuntos + nuevos)
+    }
+
+    val camara = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { foto ->
+        if (foto != null) {
+            agregar(listOf(AdjuntoReporte(
+                System.nanoTime(), tipo.trim(), "Fotografía tomada ahora", foto = foto
+            )))
+        }
+    }
+    val permisoCamara = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        if (concedido) camara.launch(null)
+        else mensaje = "Sin permiso de cámara no se puede tomar la fotografía"
+    }
+    val galeria = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        agregar(uris.map { uri ->
+            AdjuntoReporte(
+                System.nanoTime() + uri.hashCode(), tipo.trim(),
+                uri.lastPathSegment ?: "documento", archivo = uri
+            )
+        })
+    }
+    val pdf = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            agregar(listOf(AdjuntoReporte(
+                System.nanoTime(), tipo.trim(), uri.lastPathSegment ?: "documento",
+                archivo = uri
+            )))
+        }
+    }
+
+    fun conTipo(accion: () -> Unit) {
+        if (tipo.isBlank()) mensaje = "Indica qué documento estás adjuntando" else accion()
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
+        Text(
+            "Adjunta ahora lo que tengas. Si te falta algo, puedes enviarlo después.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        sugerencias.forEach { sugerencia ->
+            FilterChip(
+                selected = tipo == sugerencia,
+                onClick = { tipo = sugerencia; mensaje = null },
+                label = { Text(sugerencia) },
+                enabled = habilitado,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        OutlinedTextField(
+            value = tipo,
+            onValueChange = { tipo = it; mensaje = null },
+            label = { Text("Tipo de documento") },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = habilitado,
+            singleLine = true
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)) {
+            BotonSecundario(
+                texto = "Cámara",
+                onClick = {
+                    conTipo {
+                        if (Permisos.tiene(contexto, Permisos.CAMARA)) camara.launch(null)
+                        else permisoCamara.launch(Permisos.CAMARA)
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+            BotonSecundario(
+                texto = "Galería",
+                onClick = { conTipo { galeria.launch("image/*") } },
+                modifier = Modifier.weight(1f)
+            )
+            BotonSecundario(
+                texto = "PDF",
+                onClick = { conTipo { pdf.launch("application/pdf") } },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        mensaje?.let {
+            Text(
+                it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        adjuntos.forEach { adjunto ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.espacioChico)
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(adjunto.tipo, style = MaterialTheme.typography.titleSmall)
+                    Text(adjunto.nombre, style = MaterialTheme.typography.bodySmall)
+                }
+                TextButton(
+                    enabled = habilitado,
+                    onClick = { onAdjuntos(adjuntos.filter { it.clave != adjunto.clave }) }
+                ) { Text("Quitar") }
+            }
+        }
+        if (adjuntos.isNotEmpty()) {
+            Text(
+                "Se enviarán " + adjuntos.size + " documento(s) al registrar el reporte.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }

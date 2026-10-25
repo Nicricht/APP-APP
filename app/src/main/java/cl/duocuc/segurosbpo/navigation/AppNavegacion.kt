@@ -428,6 +428,16 @@ fun AppNavegacion(
                             aseguradoActual = asegurado,
                             onRegistroExitoso = siniestrosVm::registrar,
                             onPosibleDuplicado = siniestrosVm::buscarPosibleDuplicado,
+                            onGuardarFoto = { tipo, bitmap ->
+                                siniestrosVm.ultimoRegistrado?.let {
+                                    siniestrosVm.guardarFoto(it, tipo, bitmap)
+                                } ?: "No se pudo identificar el siniestro"
+                            },
+                            onGuardarArchivo = { tipo, uri ->
+                                siniestrosVm.ultimoRegistrado?.let {
+                                    siniestrosVm.guardarArchivo(it, tipo, uri)
+                                } ?: "No se pudo identificar el siniestro"
+                            },
                             onVolver = { navController.navigateUp() },
                             onVerMisSiniestros = {
                                 val nuevo = siniestrosVm.ultimoRegistrado

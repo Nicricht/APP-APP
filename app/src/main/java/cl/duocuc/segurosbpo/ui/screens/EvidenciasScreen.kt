@@ -5,6 +5,7 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -67,8 +68,30 @@ private data class AdjuntoPendiente(
     val tipo: String,
     val nombre: String,
     val foto: Bitmap? = null,
-    val archivo: Uri? = null
+    val archivo: Uri? = null,
+    val esImagen: Boolean = false
 )
+
+private fun esImagen(contexto: Context, uri: Uri): Boolean =
+    contexto.contentResolver.getType(uri).orEmpty().startsWith("image/")
+
+private fun miniaturaDeUri(contexto: Context, uri: Uri): Bitmap? = runCatching {
+    val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    contexto.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, medidas)
+    }
+    var escala = 1
+    while (medidas.outWidth / escala > 240 || medidas.outHeight / escala > 240) {
+        escala *= 2
+    }
+    val opciones = BitmapFactory.Options().apply {
+        inSampleSize = escala
+        inPreferredConfig = Bitmap.Config.RGB_565
+    }
+    contexto.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it, null, opciones)
+    }
+}.getOrNull()
 
 private fun nombreDeArchivo(contexto: Context, uri: Uri): String {
     var nombre = "documento"
@@ -104,6 +127,7 @@ fun EvidenciasScreen(
     var porEliminar by remember(siniestro?.id) { mutableStateOf<Evidencia?>(null) }
     var porEnviar by remember(siniestro?.id) { mutableStateOf<List<AdjuntoPendiente>>(emptyList()) }
     var enviando by remember(siniestro?.id) { mutableStateOf(false) }
+    var enviados by remember(siniestro?.id) { mutableStateOf(0) }
 
     LaunchedEffect(siniestro?.id, asegurado) { onCargar() }
 
@@ -162,7 +186,8 @@ fun EvidenciasScreen(
                 clave = System.nanoTime() + uri.hashCode(),
                 tipo = tipoDocumento.trim(),
                 nombre = nombreDeArchivo(context, uri),
-                archivo = uri
+                archivo = uri,
+                esImagen = esImagen(context, uri)
             )
         })
     }
@@ -175,7 +200,8 @@ fun EvidenciasScreen(
                 clave = System.nanoTime(),
                 tipo = tipoDocumento.trim(),
                 nombre = nombreDeArchivo(context, uri),
-                archivo = uri
+                archivo = uri,
+                esImagen = esImagen(context, uri)
             )
         ))
     }
@@ -201,15 +227,11 @@ fun EvidenciasScreen(
                     ultimoError = error
                 }
             }
-            val enviados = porEnviar.size - fallidos.size
+            val logrados = porEnviar.size - fallidos.size
             porEnviar = fallidos
             enviando = false
-            aviso.showSnackbar(
-                ultimoError ?: (
-                    if (enviados == 1) "Documento enviado"
-                    else enviados.toString() + " documentos enviados"
-                )
-            )
+            if (logrados > 0) enviados = logrados
+            if (ultimoError != null) aviso.showSnackbar(ultimoError)
         }
     }
 
@@ -269,6 +291,38 @@ fun EvidenciasScreen(
                 val pendientes = solicitudes.filter { it.pendiente }
 
                 CodigoSiniestro(siniestro.numero, estilo = MaterialTheme.typography.titleLarge)
+
+                if (enviados > 0) {
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(
+                            Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "Envío exitoso",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                if (enviados == 1) "Se envió 1 documento al liquidador."
+                                else "Se enviaron " + enviados + " documentos al liquidador."
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Button(
+                                    modifier = Modifier.weight(1f),
+                                    onClick = onVolver
+                                ) { Text("Volver al siniestro") }
+                                OutlinedButton(
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { enviados = 0 }
+                                ) { Text("Enviar otro") }
+                            }
+                        }
+                    }
+                }
 
                 if (!cerrado) {
                     BloqueEvidencias("Adjuntar documentos") {
@@ -362,13 +416,31 @@ fun EvidenciasScreen(
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (adjunto.foto != null) {
+                                var vista by remember(adjunto.clave) {
+                                    mutableStateOf(adjunto.foto)
+                                }
+                                if (adjunto.foto == null && adjunto.esImagen) {
+                                    LaunchedEffect(adjunto.clave) {
+                                        vista = adjunto.archivo?.let {
+                                            miniaturaDeUri(context, it)
+                                        }
+                                    }
+                                }
+                                val imagen = vista
+                                if (imagen != null) {
                                     Image(
-                                        bitmap = adjunto.foto.asImageBitmap(),
+                                        bitmap = imagen.asImageBitmap(),
                                         contentDescription = adjunto.nombre,
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.size(56.dp)
                                             .clip(RoundedCornerShape(8.dp))
+                                            .clickable { imagenVista = imagen }
+                                    )
+                                } else if (adjunto.esImagen) {
+                                    Box(
+                                        Modifier.size(56.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(MaterialTheme.colorScheme.surfaceVariant)
                                     )
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
@@ -390,7 +462,7 @@ fun EvidenciasScreen(
                             }
                         }
                         Text(
-                            "Revisa los archivos antes de enviarlos al liquidador.",
+                            "Toca una imagen para verla en grande antes de enviarla.",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Row(
