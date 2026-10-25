@@ -37,7 +37,7 @@ import java.util.Locale
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
-) : SQLiteOpenHelper(context, databaseName, null, 7) {
+) : SQLiteOpenHelper(context, databaseName, null, 9) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -57,7 +57,9 @@ class SiniestroDbHelper(
                 resultado_cierre TEXT,
                 mensaje_cierre TEXT,
                 ultima_actualizacion TEXT NOT NULL,
-                archivado INTEGER NOT NULL DEFAULT 0
+                archivado INTEGER NOT NULL DEFAULT 0,
+                liquidador_id TEXT,
+                liquidador_nombre TEXT
             )
         """.trimIndent())
         db.execSQL("CREATE INDEX idx_siniestros_asegurado ON siniestros(asegurado)")
@@ -67,7 +69,124 @@ class SiniestroDbHelper(
         crearTablaAvisos(db)
         crearTablaConsultas(db)
         crearTablaEvaluaciones(db)
+        crearTablaCatalogos(db)
+        sembrarCatalogos(db)
     }
+
+    private fun crearTablaCatalogos(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS companias (
+                codigo TEXT PRIMARY KEY NOT NULL,
+                etiqueta TEXT NOT NULL,
+                activa INTEGER NOT NULL DEFAULT 1,
+                plazo_dias_habiles INTEGER NOT NULL
+            )
+        """.trimIndent())
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS tipos_siniestro (
+                codigo TEXT PRIMARY KEY NOT NULL,
+                etiqueta TEXT NOT NULL,
+                es_vehiculo INTEGER NOT NULL,
+                documentos TEXT NOT NULL
+            )
+        """.trimIndent())
+    }
+
+    private fun sembrarCatalogos(db: SQLiteDatabase) {
+        Compania.semilla.forEach { compania ->
+            db.insertWithOnConflict("companias", null, ContentValues().apply {
+                put("codigo", compania.name)
+                put("etiqueta", compania.etiqueta)
+                put("activa", if (compania.activa) 1 else 0)
+                put("plazo_dias_habiles", compania.plazoDiasHabiles)
+            }, SQLiteDatabase.CONFLICT_IGNORE)
+        }
+        TipoSiniestro.semilla.forEach { tipo ->
+            db.insertWithOnConflict("tipos_siniestro", null, ContentValues().apply {
+                put("codigo", tipo.name)
+                put("etiqueta", tipo.etiqueta)
+                put("es_vehiculo", if (tipo.esVehiculo) 1 else 0)
+                put("documentos", tipo.documentosHabituales.joinToString("|"))
+            }, SQLiteDatabase.CONFLICT_IGNORE)
+        }
+    }
+
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        if (!db.isReadOnly) cargarCatalogos(db)
+    }
+
+    private fun cargarCatalogos(db: SQLiteDatabase) {
+        runCatching {
+            val companias = mutableListOf<Compania>()
+            db.query("companias", null, null, null, null, null, "etiqueta ASC").use { c ->
+                while (c.moveToNext()) {
+                    companias.add(Compania(
+                        c.getString(0), c.getString(1), c.getInt(2) == 1, c.getInt(3)
+                    ))
+                }
+            }
+            Compania.reemplazar(companias)
+            val tipos = mutableListOf<TipoSiniestro>()
+            db.query("tipos_siniestro", null, null, null, null, null, "etiqueta ASC").use { c ->
+                while (c.moveToNext()) {
+                    tipos.add(TipoSiniestro(
+                        c.getString(0), c.getString(1), c.getInt(2) == 1,
+                        c.getString(3).split("|").filter { it.isNotBlank() }
+                    ))
+                }
+            }
+            TipoSiniestro.reemplazar(tipos)
+        }
+    }
+
+    fun listarCompanias(): List<Compania> = Compania.entries
+
+    fun listarTipos(): List<TipoSiniestro> = TipoSiniestro.entries
+
+    fun crearCompania(etiqueta: String, plazoDiasHabiles: Int) {
+        val nombre = etiqueta.trim()
+        require(nombre.length in 3..60) { "El nombre debe tener entre 3 y 60 caracteres" }
+        require(plazoDiasHabiles in 1..60) { "El plazo debe estar entre 1 y 60 días hábiles" }
+        val codigo = codigoDesde(nombre)
+        val db = writableDatabase
+        require(Compania.entries.none { it.name == codigo || it.etiqueta.equals(nombre, true) }) {
+            "Ya existe una compañía con ese nombre"
+        }
+        db.insertOrThrow("companias", null, ContentValues().apply {
+            put("codigo", codigo)
+            put("etiqueta", nombre)
+            put("activa", 1)
+            put("plazo_dias_habiles", plazoDiasHabiles)
+        })
+        cargarCatalogos(db)
+    }
+
+    fun crearTipoSiniestro(etiqueta: String, esVehiculo: Boolean, documentos: List<String>) {
+        val nombre = etiqueta.trim()
+        require(nombre.length in 3..60) { "El nombre debe tener entre 3 y 60 caracteres" }
+        val limpios = documentos.map { it.trim() }.filter { it.isNotBlank() }
+        require(limpios.none { it.contains("|") }) { "Los documentos no pueden incluir el signo |" }
+        val codigo = codigoDesde(nombre)
+        val db = writableDatabase
+        require(
+            TipoSiniestro.entries.none { it.name == codigo || it.etiqueta.equals(nombre, true) }
+        ) { "Ya existe un tipo de siniestro con ese nombre" }
+        db.insertOrThrow("tipos_siniestro", null, ContentValues().apply {
+            put("codigo", codigo)
+            put("etiqueta", nombre)
+            put("es_vehiculo", if (esVehiculo) 1 else 0)
+            put("documentos", limpios.joinToString("|"))
+        })
+        cargarCatalogos(db)
+    }
+
+    private fun codigoDesde(nombre: String): String = nombre.uppercase()
+        .replace("Á", "A").replace("É", "E").replace("Í", "I")
+        .replace("Ó", "O").replace("Ú", "U").replace("Ñ", "N")
+        .replace(Regex("[^A-Z0-9]+"), "_")
+        .trim('_')
+        .take(40)
 
     private fun crearTablaConsultas(db: SQLiteDatabase) {
         db.execSQL("""
@@ -171,18 +290,22 @@ class SiniestroDbHelper(
                 mensaje TEXT NOT NULL,
                 fecha TEXT NOT NULL,
                 leido INTEGER NOT NULL DEFAULT 0,
+                solicitud_id INTEGER,
                 FOREIGN KEY(siniestro_id) REFERENCES siniestros(id) ON DELETE CASCADE
             )
         """.trimIndent())
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_avisos_caso ON avisos(siniestro_id, id)")
     }
 
-    private fun insertarAviso(db: SQLiteDatabase, siniestroId: Long, mensaje: String) {
+    private fun insertarAviso(
+        db: SQLiteDatabase, siniestroId: Long, mensaje: String, solicitudId: Long? = null
+    ) {
         db.insertOrThrow("avisos", null, ContentValues().apply {
             put("siniestro_id", siniestroId)
             put("mensaje", mensaje)
             put("fecha", fechaActual())
             put("leido", 0)
+            if (solicitudId == null) putNull("solicitud_id") else put("solicitud_id", solicitudId)
         })
     }
 
@@ -241,6 +364,15 @@ class SiniestroDbHelper(
                 "ALTER TABLE siniestros ADD COLUMN archivado INTEGER NOT NULL DEFAULT 0"
             )
             borrarCasosDeEjemplo(db)
+        }
+        if (oldVersion < 8) {
+            db.execSQL("ALTER TABLE avisos ADD COLUMN solicitud_id INTEGER")
+        }
+        if (oldVersion < 9) {
+            crearTablaCatalogos(db)
+            sembrarCatalogos(db)
+            db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador_id TEXT")
+            db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador_nombre TEXT")
         }
     }
 
@@ -317,7 +449,8 @@ class SiniestroDbHelper(
             texto("descripcion"), cursor.getInt(cursor.getColumnIndexOrThrow("hubo_terceros")) == 1,
             EtapaSiniestro.valueOf(texto("etapa")), texto("ultima_actualizacion"),
             opcional("liquidador")?.let { Liquidador.valueOf(it) },
-            opcional("resultado_cierre"), opcional("mensaje_cierre")
+            opcional("resultado_cierre"), opcional("mensaje_cierre"),
+            opcional("liquidador_id"), opcional("liquidador_nombre")
         )
     }
 
@@ -336,7 +469,12 @@ class SiniestroDbHelper(
         return resultado
     }
 
-    fun tomarCaso(siniestroId: Long, liquidador: Liquidador): Boolean {
+    fun tomarCaso(
+        siniestroId: Long,
+        liquidador: Liquidador,
+        personaId: String,
+        personaNombre: String
+    ): Boolean {
         val tipos = AreasSiniestro.paraLiquidador(liquidador).tipos
         val db = writableDatabase
         db.beginTransaction()
@@ -346,6 +484,8 @@ class SiniestroDbHelper(
                 "siniestros",
                 ContentValues().apply {
                     put("liquidador", liquidador.name)
+                    put("liquidador_id", personaId)
+                    put("liquidador_nombre", personaNombre)
                     put("etapa", EtapaSiniestro.EVALUACION.name)
                     put("ultima_actualizacion", fechaActual())
                 },
@@ -358,8 +498,8 @@ class SiniestroDbHelper(
             )
             if (filas == 1) {
                 insertarGestion(
-                    db, siniestroId, liquidador.nombre,
-                    "Caso asignado a ${liquidador.nombre} del equipo ${liquidador.equipo}", true
+                    db, siniestroId, personaNombre,
+                    "Caso tomado por " + personaNombre + ", del equipo " + liquidador.equipo, true
                 )
                 insertarAviso(db, siniestroId, "Tu caso está en evaluación")
             }
@@ -378,24 +518,31 @@ class SiniestroDbHelper(
         .filter { it.etapa != EtapaSiniestro.CERRADO }
         .filter { caso ->
             val ultimaVisible = listarGestionesAsignadas(caso.id, liquidador)
-                .firstOrNull { it.visibleAsegurado }?.fecha
+                .lastOrNull { it.visibleAsegurado }?.fecha
                 ?: caso.fechaReporte
             ControlPlazos.diasCorridos(ultimaVisible, fechaConsulta) >= 7
         }
         .map { it.id }
         .toSet()
 
-    fun listarAsignados(liquidador: Liquidador): List<Siniestro> =
-        asignadosPor(liquidador, archivado = 0)
+    fun listarAsignados(liquidador: Liquidador, personaId: String? = null): List<Siniestro> =
+        asignadosPor(liquidador, archivado = 0, personaId = personaId)
 
-    fun listarArchivados(liquidador: Liquidador): List<Siniestro> =
-        asignadosPor(liquidador, archivado = 1)
+    fun listarArchivados(liquidador: Liquidador, personaId: String? = null): List<Siniestro> =
+        asignadosPor(liquidador, archivado = 1, personaId = personaId)
 
-    private fun asignadosPor(liquidador: Liquidador, archivado: Int): List<Siniestro> {
+    private fun asignadosPor(
+        liquidador: Liquidador, archivado: Int, personaId: String?
+    ): List<Siniestro> {
         val casos = mutableListOf<Siniestro>()
+        val filtro = StringBuilder("liquidador = ? AND archivado = ?")
+        val argumentos = mutableListOf(liquidador.name, archivado.toString())
+        if (personaId != null) {
+            filtro.append(" AND liquidador_id = ?")
+            argumentos.add(personaId)
+        }
         readableDatabase.query(
-            "siniestros", null, "liquidador = ? AND archivado = ?",
-            arrayOf(liquidador.name, archivado.toString()),
+            "siniestros", null, filtro.toString(), argumentos.toTypedArray(),
             null, null, "id DESC"
         ).use { c -> while (c.moveToNext()) casos.add(convertir(c)) }
         return casos
@@ -429,23 +576,6 @@ class SiniestroDbHelper(
             "id = ? AND liquidador = ?", arrayOf(siniestroId.toString(), liquidador.name)
         )
         require(filas == 1) { "El caso no está asignado a tu equipo" }
-    }
-
-    fun pendientesPorCaso(asegurado: Asegurado): Map<Long, List<String>> {
-        val pendientes = mutableMapOf<Long, MutableList<String>>()
-        readableDatabase.rawQuery("""
-            SELECT d.siniestro_id, d.tipo FROM solicitudes_documentos d
-            JOIN siniestros s ON s.id = d.siniestro_id
-            WHERE s.asegurado = ? AND d.fecha_entrega IS NULL AND s.etapa <> ?
-            ORDER BY d.id
-        """.trimIndent(),
-            arrayOf(asegurado.name, EtapaSiniestro.CERRADO.name)
-        ).use { c ->
-            while (c.moveToNext()) {
-                pendientes.getOrPut(c.getLong(0)) { mutableListOf() }.add(c.getString(1))
-            }
-        }
-        return pendientes
     }
 
     fun obtenerAsignado(id: Long, liquidador: Liquidador): Siniestro? =
@@ -501,22 +631,16 @@ class SiniestroDbHelper(
     }
 
     
-    fun obtenerImagen(evidenciaId: Long, siniestroId: Long, asegurado: Asegurado): Bitmap? {
+    fun obtenerImagen(
+        evidenciaId: Long, siniestroId: Long, asegurado: Asegurado, maxLado: Int = 900
+    ): Bitmap? {
         val contenido = readableDatabase.rawQuery("""
             SELECT e.contenido FROM evidencias e
             JOIN siniestros s ON s.id = e.siniestro_id
             WHERE e.id = ? AND s.id = ? AND s.asegurado = ? AND e.mime LIKE 'image/%'
         """.trimIndent(), arrayOf(evidenciaId.toString(), siniestroId.toString(), asegurado.name))
             .use { c -> if (c.moveToFirst()) c.getBlob(0) else null } ?: return null
-        val opciones = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeByteArray(contenido, 0, contenido.size, opciones)
-        val reducir = BitmapFactory.Options()
-        var escala = 1
-        while (opciones.outWidth / escala > 900 || opciones.outHeight / escala > 900) {
-            escala *= 2
-        }
-        reducir.inSampleSize = escala
-        return BitmapFactory.decodeByteArray(contenido, 0, contenido.size, reducir)
+        return decodificarImagen(contenido, maxLado)
     }
 
     
@@ -527,7 +651,7 @@ class SiniestroDbHelper(
                    g.descripcion
             FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
             WHERE s.id = ? AND s.asegurado = ? AND g.visible_asegurado = 1
-            ORDER BY g.id DESC
+            ORDER BY g.id ASC
         """.trimIndent(), arrayOf(siniestroId.toString(), asegurado.name)).use { c ->
             while (c.moveToNext()) {
                 resultado.add(Gestion(c.getLong(0), c.getLong(1),
@@ -546,7 +670,7 @@ class SiniestroDbHelper(
                    g.descripcion, g.visible_asegurado
             FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
             WHERE s.id = ? AND s.liquidador = ?
-            ORDER BY g.id DESC
+            ORDER BY g.id ASC
         """.trimIndent(), arrayOf(siniestroId.toString(), liquidador.name)).use { c ->
             while (c.moveToNext()) {
                 resultado.add(Gestion(c.getLong(0), c.getLong(1),
@@ -613,7 +737,7 @@ class SiniestroDbHelper(
             require(filas == 1) { "El estado del siniestro cambió. Actualiza la pantalla" }
             val nota = if (siguiente == EtapaSiniestro.CERRADO)
                 "Caso cerrado: " + resultado + ". " + mensajeCierre.trim()
-                else "Etapa actualizada a " + siguiente.etiqueta
+                else "Etapa actualizada a " + siguiente.paso
             insertarGestion(db, siniestroId, liquidador.nombre, nota, true)
             insertarAviso(db, siniestroId, nota)
             db.setTransactionSuccessful()
@@ -681,7 +805,7 @@ class SiniestroDbHelper(
                 c.getInt(0)
             }
             require(duplicados == 0) { "Ese documento ya está pendiente" }
-            db.insertOrThrow("solicitudes_documentos", null, ContentValues().apply {
+            val solicitudId = db.insertOrThrow("solicitudes_documentos", null, ContentValues().apply {
                 put("siniestro_id", siniestroId)
                 put("tipo", nombre)
                 put("comentario", comentario.trim())
@@ -689,7 +813,7 @@ class SiniestroDbHelper(
             })
             val nota = "Documento solicitado: " + nombre
             insertarGestion(db, siniestroId, liquidador.nombre, nota, true)
-            insertarAviso(db, siniestroId, "Necesitamos el documento: " + nombre)
+            insertarAviso(db, siniestroId, "Necesitamos el documento: " + nombre, solicitudId)
             db.update("siniestros", ContentValues().apply {
                 put("ultima_actualizacion", fechaActual())
             }, "id = ?", arrayOf(siniestroId.toString()))
@@ -784,7 +908,7 @@ class SiniestroDbHelper(
                         arrayOf(pendiente.siniestroId.toString(), aviso)
                     ).use { c -> c.moveToFirst(); c.getInt(0) > 0 }
                     if (!existe) {
-                        insertarAviso(db, pendiente.siniestroId, aviso)
+                        insertarAviso(db, pendiente.siniestroId, aviso, pendiente.id)
                         insertarGestion(db, pendiente.siniestroId, "Sistema", aviso, true)
                         generados++
                     }
@@ -800,15 +924,20 @@ class SiniestroDbHelper(
     fun listarAvisos(asegurado: Asegurado): List<AvisoSiniestro> {
         val resultado = mutableListOf<AvisoSiniestro>()
         readableDatabase.rawQuery("""
-            SELECT a.id, a.siniestro_id, s.numero, a.mensaje, a.fecha, a.leido
+            SELECT a.id, a.siniestro_id, s.numero, a.mensaje, a.fecha, a.leido,
+                   a.solicitud_id, d.tipo, d.fecha_entrega
             FROM avisos a JOIN siniestros s ON s.id = a.siniestro_id
+            LEFT JOIN solicitudes_documentos d ON d.id = a.solicitud_id
             WHERE s.asegurado = ?
             ORDER BY a.id DESC
         """.trimIndent(), arrayOf(asegurado.name)).use { c ->
             while (c.moveToNext()) {
+                val pendiente = !c.isNull(6) && !c.isNull(7) && c.isNull(8)
                 resultado.add(AvisoSiniestro(
                     c.getLong(0), c.getLong(1), c.getString(2),
-                    c.getString(3), c.getString(4), c.getInt(5) == 1
+                    c.getString(3), c.getString(4), c.getInt(5) == 1,
+                    if (pendiente) c.getLong(6) else null,
+                    if (pendiente) c.getString(7) else null
                 ))
             }
         }
@@ -1013,6 +1142,18 @@ class SiniestroDbHelper(
         return resultado
     }
 
+    fun cargaPorPersona(): Map<String, Int> {
+        val carga = mutableMapOf<String, Int>()
+        readableDatabase.rawQuery("""
+            SELECT liquidador_id, COUNT(*) FROM siniestros
+            WHERE liquidador_id IS NOT NULL AND etapa <> ? AND archivado = 0
+            GROUP BY liquidador_id
+        """.trimIndent(), arrayOf(EtapaSiniestro.CERRADO.name)).use { c ->
+            while (c.moveToNext()) carga[c.getString(0)] = c.getInt(1)
+        }
+        return carga
+    }
+
     fun cargaPorLiquidador(): Map<Liquidador, Int> {
         val carga = Liquidador.entries.associateWith { 0 }.toMutableMap()
         readableDatabase.rawQuery("""
@@ -1029,7 +1170,12 @@ class SiniestroDbHelper(
         return carga
     }
 
-    fun asignarLiquidador(siniestroId: Long, liquidador: Liquidador) {
+    fun asignarLiquidador(
+        siniestroId: Long,
+        liquidador: Liquidador,
+        personaId: String,
+        personaNombre: String
+    ) {
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -1053,16 +1199,18 @@ class SiniestroDbHelper(
                 EtapaSiniestro.EVALUACION.name else caso.second
             db.update("siniestros", ContentValues().apply {
                 put("liquidador", liquidador.name)
+                put("liquidador_id", personaId)
+                put("liquidador_nombre", personaNombre)
                 put("etapa", nuevaEtapa)
                 put("ultima_actualizacion", ahora)
             }, "id = ?", arrayOf(siniestroId.toString()))
             insertarGestion(
                 db, siniestroId, "Analista de administración",
-                "Caso asignado al equipo " + liquidador.equipo, true
+                "Caso asignado a " + personaNombre + ", del equipo " + liquidador.equipo, true
             )
             insertarAviso(
                 db, siniestroId,
-                "Tu caso fue asignado al equipo " + liquidador.equipo + "."
+                "Tu caso quedó a cargo de " + personaNombre + "."
             )
             db.setTransactionSuccessful()
         } finally {
@@ -1090,7 +1238,7 @@ class SiniestroDbHelper(
     }
 
     fun obtenerImagenAsignada(
-        evidenciaId: Long, siniestroId: Long, liquidador: Liquidador
+        evidenciaId: Long, siniestroId: Long, liquidador: Liquidador, maxLado: Int = 900
     ): Bitmap? = readableDatabase.rawQuery("""
         SELECT e.contenido, e.mime
         FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
@@ -1100,8 +1248,34 @@ class SiniestroDbHelper(
     ).use { cursor ->
         if (!cursor.moveToFirst()) return@use null
         if (!cursor.getString(1).startsWith("image/")) return@use null
-        val bytes = cursor.getBlob(0)
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        decodificarImagen(cursor.getBlob(0), maxLado)
+    }
+
+    fun obtenerArchivoAsignado(
+        evidenciaId: Long, siniestroId: Long, liquidador: Liquidador
+    ): ArchivoEvidencia? = readableDatabase.rawQuery("""
+        SELECT e.nombre_archivo, e.mime, e.contenido
+        FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
+        WHERE e.id = ? AND s.id = ? AND s.liquidador = ?
+    """.trimIndent(),
+        arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
+    ).use { cursor ->
+        if (!cursor.moveToFirst()) return@use null
+        ArchivoEvidencia(cursor.getString(0), cursor.getString(1), cursor.getBlob(2))
+    }
+
+    private fun decodificarImagen(contenido: ByteArray, maxLado: Int): Bitmap? {
+        val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(contenido, 0, contenido.size, medidas)
+        var escala = 1
+        while (medidas.outWidth / escala > maxLado || medidas.outHeight / escala > maxLado) {
+            escala *= 2
+        }
+        val reducir = BitmapFactory.Options().apply {
+            inSampleSize = escala
+            inPreferredConfig = Bitmap.Config.RGB_565
+        }
+        return BitmapFactory.decodeByteArray(contenido, 0, contenido.size, reducir)
     }
 
     fun guardarEvidenciaLiquidador(

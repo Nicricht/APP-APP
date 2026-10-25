@@ -2,6 +2,7 @@ package cl.duocuc.segurosbpo.data
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import cl.duocuc.segurosbpo.model.ValidadorEvidencia
@@ -11,6 +12,8 @@ data class ArchivoEvidencia(val nombre: String, val mime: String, val bytes: Byt
 
 
 object ProcesadorEvidencia {
+    private const val MAX_LADO = 1600
+
     private val validadoresFirma: Map<String, (ByteArray) -> Boolean> = mapOf(
         "application/pdf" to { bytes ->
             bytes.size >= 5 && bytes.copyOfRange(0, 5).contentEquals("%PDF-".toByteArray())
@@ -75,6 +78,27 @@ object ProcesadorEvidencia {
 
         val valido = verificarFirma(bytes)
         require(valido) { "El contenido del archivo no coincide con su formato" }
-        return ArchivoEvidencia(nombre, mime, bytes)
+        if (!mime.startsWith("image/")) return ArchivoEvidencia(nombre, mime, bytes)
+        return comprimirImagen(nombre, bytes)
+    }
+
+    private fun comprimirImagen(nombre: String, original: ByteArray): ArchivoEvidencia {
+        val medidas = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(original, 0, original.size, medidas)
+        var escala = 1
+        while (medidas.outWidth / escala > MAX_LADO || medidas.outHeight / escala > MAX_LADO) {
+            escala *= 2
+        }
+        val reducida = runCatching {
+            BitmapFactory.decodeByteArray(
+                original, 0, original.size,
+                BitmapFactory.Options().apply { inSampleSize = escala }
+            )
+        }.getOrNull() ?: return ArchivoEvidencia(nombre, "image/jpeg", original)
+        val salida = ByteArrayOutputStream()
+        val comprimida = reducida.compress(Bitmap.CompressFormat.JPEG, 80, salida)
+        reducida.recycle()
+        if (!comprimida) return ArchivoEvidencia(nombre, "image/jpeg", original)
+        return ArchivoEvidencia(nombre, "image/jpeg", salida.toByteArray())
     }
 }

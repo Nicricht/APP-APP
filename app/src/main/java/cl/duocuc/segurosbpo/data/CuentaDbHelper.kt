@@ -14,7 +14,12 @@ import cl.duocuc.segurosbpo.model.ValidadorContacto
 class CuentaDbHelper(
     context: Context,
     nombreBase: String = "cuentas_demo.db"
-) : SQLiteOpenHelper(context, nombreBase, null, 6) {
+) : SQLiteOpenHelper(context, nombreBase, null, 7) {
+
+    private val PERSONAL_LIQUIDADOR = mapOf(
+        Liquidador.VEHICULOS to listOf("María P. Lagos", "Esteban R. Fuentes"),
+        Liquidador.HOGAR to listOf("Pedro C. Rivas", "Carolina M. Soto")
+    )
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -49,16 +54,18 @@ class CuentaDbHelper(
                 putNull("equipo")
             })
         }
-        Liquidador.entries.forEach { equipo ->
-            insertar(db, ContentValues().apply {
-                put("id", "LIQ_" + equipo.name)
-                put("nombre", equipo.nombre)
-                put("rut", "")
-                put("correo", equipo.name.lowercase() + "@segurosbpo.cl")
-                put("telefono", "900000000")
-                put("rol", RolCuenta.LIQUIDADOR.name)
-                put("equipo", equipo.name)
-            })
+        PERSONAL_LIQUIDADOR.forEach { (equipo, nombres) ->
+            nombres.forEachIndexed { indice, nombre ->
+                insertar(db, ContentValues().apply {
+                    put("id", "LIQ_" + equipo.name + "_" + (indice + 1))
+                    put("nombre", nombre)
+                    put("rut", "")
+                    put("correo", correoCorporativo(nombre))
+                    put("telefono", "900000000")
+                    put("rol", RolCuenta.LIQUIDADOR.name)
+                    put("equipo", equipo.name)
+                })
+            }
         }
         insertar(db, ContentValues().apply {
             put("id", "ANALISTA_01")
@@ -69,6 +76,45 @@ class CuentaDbHelper(
             put("rol", RolCuenta.ANALISTA.name)
             putNull("equipo")
         })
+    }
+
+    private fun correoCorporativo(nombre: String): String {
+        val partes = nombre.lowercase().replace(".", "").split(' ').filter { it.isNotBlank() }
+        val inicial = partes.firstOrNull()?.take(1) ?: "l"
+        val apellido = partes.getOrNull(1) ?: "liquidador"
+        return inicial + apellido + "@segurosbpo.cl"
+    }
+
+    fun listarLiquidadores(equipo: Liquidador? = null): List<CuentaLocal> =
+        listar().filter { cuenta ->
+            cuenta.rol == RolCuenta.LIQUIDADOR &&
+                (equipo == null || cuenta.equipo == equipo.name)
+        }
+
+    fun crearLiquidador(nombre: String, equipo: Liquidador, telefono: String): CuentaLocal {
+        val limpio = nombre.trim()
+        require(limpio.length in 3..60) { "El nombre debe tener entre 3 y 60 caracteres" }
+        require(limpio.contains(' ')) { "Escribe nombre y apellido" }
+        ValidadorContacto.errorTelefono(telefono)?.let { throw IllegalArgumentException(it) }
+        val existentes = listarLiquidadores(equipo)
+        require(existentes.none { it.nombre.equals(limpio, ignoreCase = true) }) {
+            "Ya hay un liquidador con ese nombre en el equipo"
+        }
+        val id = "LIQ_" + equipo.name + "_" + (listarLiquidadores().size + 1)
+        val valores = ContentValues().apply {
+            put("id", id)
+            put("nombre", limpio)
+            put("rut", "")
+            put("correo", correoCorporativo(limpio))
+            put("telefono", ValidadorContacto.normalizarTelefono(telefono))
+            put("rol", RolCuenta.LIQUIDADOR.name)
+            put("equipo", equipo.name)
+        }
+        val fila = writableDatabase.insertWithOnConflict(
+            "cuentas", null, valores, SQLiteDatabase.CONFLICT_ABORT
+        )
+        require(fila != -1L) { "No se pudo crear el liquidador" }
+        return requireNotNull(obtener(id)) { "No se pudo crear el liquidador" }
     }
 
     private fun correoPersonal(nombre: String): String {
