@@ -2,7 +2,8 @@ package cl.duocuc.segurosbpo.model
 
 enum class RolCuenta {
     ASEGURADO,
-    LIQUIDADOR
+    LIQUIDADOR,
+    ANALISTA
 }
 
 data class CuentaLocal(
