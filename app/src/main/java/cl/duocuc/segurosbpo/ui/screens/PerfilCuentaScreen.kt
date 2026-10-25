@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
+import cl.duocuc.segurosbpo.model.etiquetaEquipo
 import cl.duocuc.segurosbpo.permisos.Permisos
 import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
 import cl.duocuc.segurosbpo.ui.components.AvatarImagen
@@ -107,7 +109,7 @@ fun PerfilCuentaScreen(
         }
     ) { margen ->
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().padding(margen).imePadding().verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -133,7 +135,7 @@ fun PerfilCuentaScreen(
                     RolCuenta.ASEGURADO -> "Persona asegurada"
                     RolCuenta.ANALISTA -> "Analista de administración"
                     RolCuenta.LIQUIDADOR ->
-                        "Liquidador · equipo " + (cuenta.equipo ?: "").lowercase()
+                        "Liquidador · equipo " + etiquetaEquipo(cuenta.equipo)
                 },
                 style = MaterialTheme.typography.bodyMedium
             )

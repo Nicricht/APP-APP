@@ -39,6 +39,8 @@ import cl.duocuc.segurosbpo.ui.screens.SeleccionUsuarioScreen
 import cl.duocuc.segurosbpo.ui.screens.AsignacionCasosScreen
 import cl.duocuc.segurosbpo.ui.screens.AvisosScreen
 import cl.duocuc.segurosbpo.ui.screens.CargaEquiposScreen
+import cl.duocuc.segurosbpo.ui.screens.CatalogoScreen
+import cl.duocuc.segurosbpo.ui.screens.LiquidadoresScreen
 import cl.duocuc.segurosbpo.ui.screens.ConsultasScreen
 import cl.duocuc.segurosbpo.ui.screens.EstadisticasAseguradoScreen
 import cl.duocuc.segurosbpo.ui.screens.CasosLiquidadorScreen
@@ -143,6 +145,18 @@ private fun BarraInferior(
                     seleccionada = rutaActual == Ruta.Analista.ruta,
                     cantidad = cantidadPorAsignar,
                     onClick = { onNavegar(Ruta.Analista.ruta) }
+                )
+                OpcionInferior(
+                    texto = "Equipo",
+                    icono = R.drawable.ic_persona,
+                    seleccionada = rutaActual == Ruta.Liquidadores.ruta,
+                    onClick = { onNavegar(Ruta.Liquidadores.ruta) }
+                )
+                OpcionInferior(
+                    texto = "Catálogos",
+                    icono = R.drawable.ic_reportar,
+                    seleccionada = rutaActual == Ruta.Catalogo.ruta,
+                    onClick = { onNavegar(Ruta.Catalogo.ruta) }
                 )
                 OpcionInferior(
                     texto = "Carga",
@@ -272,7 +286,9 @@ fun AppNavegacion(
     val cargaEquipos by siniestrosVm.cargaEquipos.collectAsStateWithLifecycle()
     val actualizadoEn by siniestrosVm.actualizadoEn.collectAsStateWithLifecycle()
     val archivados by siniestrosVm.archivados.collectAsStateWithLifecycle()
-    val pendientesPorCaso by siniestrosVm.pendientesPorCaso.collectAsStateWithLifecycle()
+    val companias by siniestrosVm.companias.collectAsStateWithLifecycle()
+    val tipos by siniestrosVm.tipos.collectAsStateWithLifecycle()
+    val cargaPersonas by siniestrosVm.cargaPersonas.collectAsStateWithLifecycle()
 
     val equipoSesion = remember(sesion.id, sesion.equipo) {
         sesion.equipo?.let { runCatching { Liquidador.valueOf(it) }.getOrNull() }
@@ -281,7 +297,10 @@ fun AppNavegacion(
     LaunchedEffect(sesion.id) {
         when (sesion.rol) {
             RolCuenta.ASEGURADO -> siniestrosVm.seleccionarAsegurado(sesion.comoAsegurado())
-            RolCuenta.LIQUIDADOR -> equipoSesion?.let { siniestrosVm.seleccionarLiquidador(it) }
+            RolCuenta.LIQUIDADOR -> equipoSesion?.let {
+                siniestrosVm.seleccionarLiquidador(it)
+                siniestrosVm.identificarLiquidador(sesion.id, sesion.nombre)
+            }
             RolCuenta.ANALISTA -> siniestrosVm.refrescarAnalista()
         }
     }
@@ -337,6 +356,12 @@ fun AppNavegacion(
                         AsignacionCasosScreen(
                             pendientes = sinAsignar,
                             carga = cargaEquipos,
+                            equipos = Liquidador.entries.associateWith { equipo ->
+                                usuarios.filter {
+                                    it.rol == RolCuenta.LIQUIDADOR && it.equipo == equipo.name
+                                }
+                            },
+                            cargaPersonas = cargaPersonas,
                             actualizadoEn = actualizadoEn,
                             onCargar = siniestrosVm::refrescarAnalista,
                             onAsignar = siniestrosVm::asignarCaso
@@ -348,6 +373,23 @@ fun AppNavegacion(
                             pendientes = sinAsignar,
                             actualizadoEn = actualizadoEn,
                             onCargar = siniestrosVm::refrescarAnalista
+                        )
+                    }
+                    composable(Ruta.Liquidadores.ruta) {
+                        LiquidadoresScreen(
+                            liquidadores = usuarios.filter {
+                                it.rol == RolCuenta.LIQUIDADOR
+                            },
+                            carga = cargaPersonas,
+                            onCrear = cuentaVm::crearLiquidador
+                        )
+                    }
+                    composable(Ruta.Catalogo.ruta) {
+                        CatalogoScreen(
+                            companias = companias,
+                            tipos = tipos,
+                            onCrearCompania = siniestrosVm::crearCompania,
+                            onCrearTipo = siniestrosVm::crearTipoSiniestro
                         )
                     }
                 }
@@ -374,7 +416,6 @@ fun AppNavegacion(
                     composable(Ruta.Avisos.ruta) {
                         AvisosScreen(
                             avisos = avisos,
-                            pendientesPorCaso = pendientesPorCaso,
                             onCargar = siniestrosVm::refrescarAvisos,
                             onMarcarLeido = siniestrosVm::marcarAvisoLeido,
                             onAbrirCaso = { navController.navigate(Ruta.Detalle.crear(it)) },
@@ -389,7 +430,12 @@ fun AppNavegacion(
                             onPosibleDuplicado = siniestrosVm::buscarPosibleDuplicado,
                             onVolver = { navController.navigateUp() },
                             onVerMisSiniestros = {
-                                navController.popBackStack(Ruta.MisSiniestros.ruta, false)
+                                val nuevo = siniestrosVm.ultimoRegistrado
+                                if (nuevo == null) {
+                                    navController.popBackStack(Ruta.MisSiniestros.ruta, false)
+                                } else {
+                                    navController.navigate(Ruta.Evidencias.crear(nuevo))
+                                }
                             }
                         )
                     }
@@ -458,6 +504,9 @@ fun AppNavegacion(
                             onCargar = { siniestrosVm.refrescarEvidencias(id) },
                             onCargarImagen = { evidenciaId ->
                                 siniestrosVm.cargarImagen(id, evidenciaId)
+                            },
+                            onCargarMiniatura = { evidenciaId ->
+                                siniestrosVm.cargarMiniatura(id, evidenciaId)
                             },
                             onGuardarFoto = { tipo, bitmap ->
                                 siniestrosVm.guardarFoto(id, tipo, bitmap)
@@ -554,6 +603,12 @@ fun AppNavegacion(
                             onCargar = { siniestrosVm.cargarEvidenciasLiquidador(id) },
                             onCargarImagen = { evidenciaId ->
                                 siniestrosVm.cargarImagenLiquidador(id, evidenciaId)
+                            },
+                            onCargarMiniatura = { evidenciaId ->
+                                siniestrosVm.cargarMiniaturaLiquidador(id, evidenciaId)
+                            },
+                            onDescargar = { evidenciaId, destino ->
+                                siniestrosVm.descargarDocumentoLiquidador(id, evidenciaId, destino)
                             },
                             onGuardarFoto = { tipo, bitmap ->
                                 siniestrosVm.guardarFotoLiquidador(id, tipo, bitmap)

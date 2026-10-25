@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -52,7 +53,7 @@ fun EditarPerfilScreen(
 
     Scaffold(topBar = { BarraSuperior("Editar perfil", onVolver = onVolver) }) { margen ->
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().padding(margen).imePadding().verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {

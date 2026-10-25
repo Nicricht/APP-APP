@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,6 +24,7 @@ import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.model.ValidadorRut
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
+import cl.duocuc.segurosbpo.model.etiquetaEquipo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +38,7 @@ fun SeleccionUsuarioScreen(
 
     Scaffold(topBar = { BarraSuperior("Seguros BPO") }) { margen ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(margen)
+            modifier = Modifier.fillMaxSize().padding(margen).imePadding()
                 .verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -63,8 +65,7 @@ fun SeleccionUsuarioScreen(
                 liquidadores.forEach { cuenta ->
                     TarjetaUsuario(
                         nombre = cuenta.nombre,
-                        detalle = "Equipo de " + (cuenta.equipo ?: "").lowercase()
-                            .replaceFirstChar { it.uppercase() },
+                        detalle = "Equipo de " + etiquetaEquipo(cuenta.equipo),
                         foto = cuenta.foto,
                         onClick = { onSeleccionar(cuenta.id) }
                     )
