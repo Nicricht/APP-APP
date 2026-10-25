@@ -1,7 +1,7 @@
 name: Android Entrega
 on:
   push:
-    branches: [entrega-final-android-seguros-bpo]
+    branches: [entrega-final-android-seguros-bpo, feature/ux-profesional-20261025]
     paths:
       - 'app/**'
       - 'gradle/**'

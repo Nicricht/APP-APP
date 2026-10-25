@@ -13,10 +13,10 @@ class ValidadorCuentaCamposTest {
         )
 
         assertEquals("Ingresa tu nombre completo", errores.nombre)
-        assertEquals("Ingresa un RUT ficticio válido", errores.rut)
+        assertEquals("Ingresa un RUT válido", errores.rut)
         assertEquals("Ingresa un correo válido", errores.correo)
         assertEquals("Ingresa un teléfono válido", errores.telefono)
-        assertEquals("Usa una clave de demostración de al menos 8 caracteres", errores.clave)
+        assertEquals("La contraseña debe tener al menos 8 caracteres", errores.clave)
         assertEquals("Las claves no coinciden", errores.confirmacion)
         assertEquals("Ingresa tu nombre completo", errores.primerError())
     }
@@ -40,6 +40,6 @@ class ValidadorCuentaCamposTest {
             nombre = "Ana Prueba", rut = "invalido", correo = "correo-invalido",
             telefono = "123", clave = "corta", confirmacion = "otra"
         )
-        assertEquals("Ingresa un RUT ficticio válido", error)
+        assertEquals("Ingresa un RUT válido", error)
     }
 }
