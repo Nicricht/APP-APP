@@ -14,11 +14,17 @@ import cl.duocuc.segurosbpo.model.AvisoSiniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
+import cl.duocuc.segurosbpo.model.DocumentosLiquidador
 import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ReglasEtapa
 import cl.duocuc.segurosbpo.model.ValidadorEvidencia
+import cl.duocuc.segurosbpo.model.Consulta
+import cl.duocuc.segurosbpo.model.EvaluacionCierre
+import cl.duocuc.segurosbpo.model.ValidadorConsulta
+import cl.duocuc.segurosbpo.model.ValidadorDesistimiento
+import cl.duocuc.segurosbpo.model.ValidadorEvaluacion
 import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
@@ -31,7 +37,7 @@ import java.util.Locale
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
-) : SQLiteOpenHelper(context, databaseName, null, 5) {
+) : SQLiteOpenHelper(context, databaseName, null, 7) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -50,7 +56,8 @@ class SiniestroDbHelper(
                 liquidador TEXT,
                 resultado_cierre TEXT,
                 mensaje_cierre TEXT,
-                ultima_actualizacion TEXT NOT NULL
+                ultima_actualizacion TEXT NOT NULL,
+                archivado INTEGER NOT NULL DEFAULT 0
             )
         """.trimIndent())
         db.execSQL("CREATE INDEX idx_siniestros_asegurado ON siniestros(asegurado)")
@@ -58,59 +65,53 @@ class SiniestroDbHelper(
         crearTablaGestiones(db)
         crearTablaSolicitudes(db)
         crearTablaAvisos(db)
-        cargarSiniestrosEjemplo(db)
+        crearTablaConsultas(db)
+        crearTablaEvaluaciones(db)
+    }
+
+    private fun crearTablaConsultas(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS consultas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                siniestro_id INTEGER NOT NULL,
+                pregunta TEXT NOT NULL,
+                respuesta TEXT,
+                fecha_pregunta TEXT NOT NULL,
+                fecha_respuesta TEXT,
+                FOREIGN KEY (siniestro_id) REFERENCES siniestros (id)
+            )
+        """.trimIndent())
+    }
+
+    private fun crearTablaEvaluaciones(db: SQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS evaluaciones (
+                siniestro_id INTEGER PRIMARY KEY NOT NULL,
+                nota INTEGER NOT NULL,
+                comentario TEXT,
+                fecha TEXT NOT NULL,
+                FOREIGN KEY (siniestro_id) REFERENCES siniestros (id)
+            )
+        """.trimIndent())
     }
 
     
-    private fun cargarSiniestrosEjemplo(db: SQLiteDatabase) {
-        data class Ejemplo(
-            val asegurado: Asegurado,
-            val compania: Compania,
-            val tipo: TipoSiniestro,
-            val comuna: String,
-            val descripcion: String,
-            val etapa: EtapaSiniestro
-        )
-
-        val ejemplos = listOf(
-            Ejemplo(Asegurado.CAMILA, Compania.CORDILLERA, TipoSiniestro.CHOQUE,
-                "Quilicura", "Colisión leve en estacionamiento.", EtapaSiniestro.RECIBIDO),
-            Ejemplo(Asegurado.JORGE, Compania.LITORAL, TipoSiniestro.DANO_AGUA,
-                "Maipú", "Filtración de agua en la cocina.", EtapaSiniestro.EVALUACION),
-            Ejemplo(Asegurado.VALENTINA, Compania.PATAGONIA, TipoSiniestro.CRISTALES,
-                "Santiago", "Rotura de cristal lateral del vehículo.", EtapaSiniestro.LIQUIDACION),
-            Ejemplo(Asegurado.HECTOR, Compania.VALLE_CENTRAL, TipoSiniestro.ROBO_HOGAR,
-                "Conchalí", "Robo de objetos del hogar.", EtapaSiniestro.CERRADO),
-            Ejemplo(Asegurado.DANIELA, Compania.PROTEGE, TipoSiniestro.INCENDIO,
-                "Independencia", "Daños por incendio en vivienda.", EtapaSiniestro.EVALUACION)
-        )
-        val fechaOcurrencia = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT)
-            .format(Date(System.currentTimeMillis() - 5L * 24 * 60 * 60 * 1000))
-        val ahora = fechaActual()
-        val anio = SimpleDateFormat("yy", Locale.ROOT).format(Date())
-        ejemplos.forEach { ejemplo ->
-            val valores = ContentValues().apply {
-                put("numero", "TEMP-EJEMPLO-${ejemplo.asegurado.name}")
-                put("asegurado", ejemplo.asegurado.name)
-                put("compania", ejemplo.compania.name)
-                put("tipo", ejemplo.tipo.name)
-                put("fecha_ocurrencia", fechaOcurrencia)
-                put("fecha_reporte", ahora.take(10))
-                put("comuna", ejemplo.comuna)
-                put("descripcion", ejemplo.descripcion)
-                put("hubo_terceros", 0)
-                put("etapa", ejemplo.etapa.name)
-                if (ejemplo.etapa != EtapaSiniestro.RECIBIDO) {
-                    put("liquidador", if (ejemplo.tipo.esVehiculo) Liquidador.VEHICULOS.name
-                        else Liquidador.HOGAR.name)
-                }
-                put("ultima_actualizacion", ahora)
-            }
-            val id = db.insertOrThrow("siniestros", null, valores)
-            val numero = "SIN-$anio-${(id + 4860).toString().padStart(6, '0')}"
-            db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf(numero, id))
-            insertarGestion(db, id, "Ejemplo académico", "Caso ficticio disponible en etapa: " + ejemplo.etapa.etiqueta, true)
-        }
+    private fun borrarCasosDeEjemplo(db: SQLiteDatabase) {
+        val filtro = """
+            siniestro_id IN (
+                SELECT siniestro_id FROM gestiones
+                WHERE responsable IN ('Registro del caso', 'Ejemplo académico')
+            )
+        """.trimIndent()
+        listOf("evidencias", "solicitudes_documentos", "avisos", "consultas", "evaluaciones")
+            .forEach { tabla -> db.delete(tabla, filtro, null) }
+        db.delete("siniestros", """
+            id IN (
+                SELECT siniestro_id FROM gestiones
+                WHERE responsable IN ('Registro del caso', 'Ejemplo académico')
+            )
+        """.trimIndent(), null)
+        db.delete("gestiones", filtro, null)
     }
 
     private fun crearTablaEvidencias(db: SQLiteDatabase) {
@@ -230,6 +231,16 @@ class SiniestroDbHelper(
         if (oldVersion < 5) {
             crearTablaSolicitudes(db)
             crearTablaAvisos(db)
+        }
+        if (oldVersion < 6) {
+            crearTablaConsultas(db)
+            crearTablaEvaluaciones(db)
+        }
+        if (oldVersion < 7) {
+            db.execSQL(
+                "ALTER TABLE siniestros ADD COLUMN archivado INTEGER NOT NULL DEFAULT 0"
+            )
+            borrarCasosDeEjemplo(db)
         }
     }
 
@@ -374,13 +385,67 @@ class SiniestroDbHelper(
         .map { it.id }
         .toSet()
 
-    fun listarAsignados(liquidador: Liquidador): List<Siniestro> {
+    fun listarAsignados(liquidador: Liquidador): List<Siniestro> =
+        asignadosPor(liquidador, archivado = 0)
+
+    fun listarArchivados(liquidador: Liquidador): List<Siniestro> =
+        asignadosPor(liquidador, archivado = 1)
+
+    private fun asignadosPor(liquidador: Liquidador, archivado: Int): List<Siniestro> {
         val casos = mutableListOf<Siniestro>()
         readableDatabase.query(
-            "siniestros", null, "liquidador = ?", arrayOf(liquidador.name),
+            "siniestros", null, "liquidador = ? AND archivado = ?",
+            arrayOf(liquidador.name, archivado.toString()),
             null, null, "id DESC"
         ).use { c -> while (c.moveToNext()) casos.add(convertir(c)) }
         return casos
+    }
+
+    fun archivarCaso(siniestroId: Long, liquidador: Liquidador) {
+        val caso = obtenerAsignado(siniestroId, liquidador)
+            ?: throw IllegalArgumentException("El caso no está asignado a tu equipo")
+        require(caso.etapa == EtapaSiniestro.CERRADO) {
+            "Solo puedes archivar casos cerrados"
+        }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            db.update("siniestros", ContentValues().apply { put("archivado", 1) },
+                "id = ?", arrayOf(siniestroId.toString()))
+            insertarGestion(
+                db, siniestroId, liquidador.nombre,
+                "El caso se archivó en la bandeja del equipo.", false
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun restaurarCaso(siniestroId: Long, liquidador: Liquidador) {
+        val db = writableDatabase
+        val filas = db.update(
+            "siniestros", ContentValues().apply { put("archivado", 0) },
+            "id = ? AND liquidador = ?", arrayOf(siniestroId.toString(), liquidador.name)
+        )
+        require(filas == 1) { "El caso no está asignado a tu equipo" }
+    }
+
+    fun pendientesPorCaso(asegurado: Asegurado): Map<Long, List<String>> {
+        val pendientes = mutableMapOf<Long, MutableList<String>>()
+        readableDatabase.rawQuery("""
+            SELECT d.siniestro_id, d.tipo FROM solicitudes_documentos d
+            JOIN siniestros s ON s.id = d.siniestro_id
+            WHERE s.asegurado = ? AND d.fecha_entrega IS NULL AND s.etapa <> ?
+            ORDER BY d.id
+        """.trimIndent(),
+            arrayOf(asegurado.name, EtapaSiniestro.CERRADO.name)
+        ).use { c ->
+            while (c.moveToNext()) {
+                pendientes.getOrPut(c.getLong(0)) { mutableListOf() }.add(c.getString(1))
+            }
+        }
+        return pendientes
     }
 
     fun obtenerAsignado(id: Long, liquidador: Liquidador): Siniestro? =
@@ -634,6 +699,66 @@ class SiniestroDbHelper(
         }
     }
 
+    fun marcarSolicitudRecibida(solicitudId: Long, liquidador: Liquidador) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val datos = db.rawQuery("""
+                SELECT d.siniestro_id, d.tipo FROM solicitudes_documentos d
+                JOIN siniestros s ON s.id = d.siniestro_id
+                WHERE d.id = ? AND s.liquidador = ? AND d.fecha_entrega IS NULL
+            """.trimIndent(),
+                arrayOf(solicitudId.toString(), liquidador.name)
+            ).use { c -> if (c.moveToFirst()) c.getLong(0) to c.getString(1) else null }
+            require(datos != null) { "La solicitud no está pendiente en un caso de tu equipo" }
+            val ahora = fechaActual()
+            db.update("solicitudes_documentos", ContentValues().apply {
+                put("fecha_entrega", ahora)
+            }, "id = ?", arrayOf(solicitudId.toString()))
+            insertarGestion(
+                db, datos.first, liquidador.nombre,
+                "Se dio por recibido el documento: " + datos.second, true
+            )
+            insertarAviso(
+                db, datos.first,
+                "El liquidador confirmó la recepción de: " + datos.second
+            )
+            db.update("siniestros", ContentValues().apply {
+                put("ultima_actualizacion", ahora)
+            }, "id = ?", arrayOf(datos.first.toString()))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun anularSolicitud(solicitudId: Long, liquidador: Liquidador) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val datos = db.rawQuery("""
+                SELECT d.siniestro_id, d.tipo FROM solicitudes_documentos d
+                JOIN siniestros s ON s.id = d.siniestro_id
+                WHERE d.id = ? AND s.liquidador = ? AND d.fecha_entrega IS NULL
+            """.trimIndent(),
+                arrayOf(solicitudId.toString(), liquidador.name)
+            ).use { c -> if (c.moveToFirst()) c.getLong(0) to c.getString(1) else null }
+            require(datos != null) { "La solicitud no está pendiente en un caso de tu equipo" }
+            db.delete("solicitudes_documentos", "id = ?", arrayOf(solicitudId.toString()))
+            insertarGestion(
+                db, datos.first, liquidador.nombre,
+                "Ya no se requiere el documento: " + datos.second, true
+            )
+            insertarAviso(
+                db, datos.first,
+                "Ya no necesitamos el documento: " + datos.second
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     fun generarRecordatorios(fechaConsulta: Date = Date()): Int {
         val db = writableDatabase
         var generados = 0
@@ -720,6 +845,305 @@ class SiniestroDbHelper(
     }
 
     
+    fun desistir(siniestroId: Long, asegurado: Asegurado, motivo: String) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val etapaActual = db.rawQuery(
+                "SELECT etapa FROM siniestros WHERE id = ? AND asegurado = ?",
+                arrayOf(siniestroId.toString(), asegurado.name)
+            ).use { c -> if (c.moveToFirst()) EtapaSiniestro.valueOf(c.getString(0)) else null }
+            require(etapaActual != null) { "No existe ese siniestro del asegurado" }
+            ValidadorDesistimiento.error(etapaActual, motivo)
+                ?.let { throw IllegalArgumentException(it) }
+            val ahora = fechaActual()
+            db.update("siniestros", ContentValues().apply {
+                put("etapa", EtapaSiniestro.CERRADO.name)
+                put("resultado_cierre", "Desistido")
+                put("mensaje_cierre", motivo.trim())
+                put("ultima_actualizacion", ahora)
+            }, "id = ?", arrayOf(siniestroId.toString()))
+            insertarGestion(
+                db, siniestroId, asegurado.etiqueta,
+                "La persona asegurada desistió del siniestro. Motivo: " + motivo.trim(), true
+            )
+            insertarAviso(db, siniestroId, "Tu siniestro quedó cerrado por desistimiento.")
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun listarConsultas(siniestroId: Long, asegurado: Asegurado): List<Consulta> =
+        consultasPor(
+            "WHERE s.id = ? AND s.asegurado = ?",
+            arrayOf(siniestroId.toString(), asegurado.name)
+        )
+
+    fun listarConsultasAsignadas(siniestroId: Long, liquidador: Liquidador): List<Consulta> =
+        consultasPor(
+            "WHERE s.id = ? AND s.liquidador = ?",
+            arrayOf(siniestroId.toString(), liquidador.name)
+        )
+
+    private fun consultasPor(filtro: String, argumentos: Array<String>): List<Consulta> {
+        val resultado = mutableListOf<Consulta>()
+        readableDatabase.rawQuery("""
+            SELECT c.id, c.siniestro_id, c.pregunta, c.respuesta,
+                   c.fecha_pregunta, c.fecha_respuesta
+            FROM consultas c JOIN siniestros s ON s.id = c.siniestro_id
+            $filtro
+            ORDER BY c.id DESC
+        """.trimIndent(), argumentos).use { c ->
+            while (c.moveToNext()) {
+                resultado.add(Consulta(
+                    c.getLong(0), c.getLong(1), c.getString(2),
+                    if (c.isNull(3)) null else c.getString(3),
+                    c.getString(4),
+                    if (c.isNull(5)) null else c.getString(5)
+                ))
+            }
+        }
+        return resultado
+    }
+
+    fun registrarConsulta(siniestroId: Long, asegurado: Asegurado, pregunta: String) {
+        ValidadorConsulta.errorPregunta(pregunta)?.let { throw IllegalArgumentException(it) }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val existe = db.rawQuery(
+                "SELECT 1 FROM siniestros WHERE id = ? AND asegurado = ?",
+                arrayOf(siniestroId.toString(), asegurado.name)
+            ).use { it.moveToFirst() }
+            require(existe) { "No existe ese siniestro del asegurado" }
+            db.insertOrThrow("consultas", null, ContentValues().apply {
+                put("siniestro_id", siniestroId)
+                put("pregunta", pregunta.trim())
+                put("fecha_pregunta", fechaActual())
+            })
+            insertarGestion(
+                db, siniestroId, asegurado.etiqueta,
+                "La persona asegurada envió una consulta sobre su caso.", true
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun responderConsulta(consultaId: Long, liquidador: Liquidador, respuesta: String) {
+        ValidadorConsulta.errorRespuesta(respuesta)?.let { throw IllegalArgumentException(it) }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val siniestroId = db.rawQuery("""
+                SELECT c.siniestro_id FROM consultas c
+                JOIN siniestros s ON s.id = c.siniestro_id
+                WHERE c.id = ? AND s.liquidador = ?
+            """.trimIndent(),
+                arrayOf(consultaId.toString(), liquidador.name)
+            ).use { c -> if (c.moveToFirst()) c.getLong(0) else null }
+            require(siniestroId != null) { "La consulta no pertenece a un caso de tu equipo" }
+            db.update("consultas", ContentValues().apply {
+                put("respuesta", respuesta.trim())
+                put("fecha_respuesta", fechaActual())
+            }, "id = ?", arrayOf(consultaId.toString()))
+            insertarGestion(
+                db, siniestroId, liquidador.nombre,
+                "Se respondió la consulta de la persona asegurada.", true
+            )
+            insertarAviso(db, siniestroId, "Respondimos tu consulta. Revisa el detalle del caso.")
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun obtenerEvaluacion(siniestroId: Long, asegurado: Asegurado): EvaluacionCierre? =
+        readableDatabase.rawQuery("""
+            SELECT e.siniestro_id, e.nota, e.comentario, e.fecha
+            FROM evaluaciones e JOIN siniestros s ON s.id = e.siniestro_id
+            WHERE s.id = ? AND s.asegurado = ?
+        """.trimIndent(), arrayOf(siniestroId.toString(), asegurado.name)).use { c ->
+            if (!c.moveToFirst()) return@use null
+            EvaluacionCierre(
+                c.getLong(0), c.getInt(1),
+                if (c.isNull(2)) null else c.getString(2), c.getString(3)
+            )
+        }
+
+    fun guardarEvaluacion(
+        siniestroId: Long, asegurado: Asegurado, nota: Int, comentario: String
+    ) {
+        ValidadorEvaluacion.error(nota, comentario)?.let { throw IllegalArgumentException(it) }
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val etapaActual = db.rawQuery(
+                "SELECT etapa FROM siniestros WHERE id = ? AND asegurado = ?",
+                arrayOf(siniestroId.toString(), asegurado.name)
+            ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
+            require(etapaActual != null) { "No existe ese siniestro del asegurado" }
+            require(etapaActual == EtapaSiniestro.CERRADO.name) {
+                "Solo puedes evaluar un caso cerrado"
+            }
+            db.insertWithOnConflict("evaluaciones", null, ContentValues().apply {
+                put("siniestro_id", siniestroId)
+                put("nota", nota)
+                put("comentario", comentario.trim())
+                put("fecha", fechaActual())
+            }, SQLiteDatabase.CONFLICT_REPLACE)
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun listarSinAsignar(): List<Siniestro> {
+        val resultado = mutableListOf<Siniestro>()
+        readableDatabase.query(
+            "siniestros", null,
+            "liquidador IS NULL AND etapa = ?",
+            arrayOf(EtapaSiniestro.RECIBIDO.name),
+            null, null, "id ASC"
+        ).use { cursor ->
+            while (cursor.moveToNext()) resultado.add(convertir(cursor))
+        }
+        return resultado
+    }
+
+    fun cargaPorLiquidador(): Map<Liquidador, Int> {
+        val carga = Liquidador.entries.associateWith { 0 }.toMutableMap()
+        readableDatabase.rawQuery("""
+            SELECT liquidador, COUNT(*) FROM siniestros
+            WHERE liquidador IS NOT NULL AND etapa <> ?
+            GROUP BY liquidador
+        """.trimIndent(), arrayOf(EtapaSiniestro.CERRADO.name)).use { c ->
+            while (c.moveToNext()) {
+                runCatching { Liquidador.valueOf(c.getString(0)) }.getOrNull()?.let { equipo ->
+                    carga[equipo] = c.getInt(1)
+                }
+            }
+        }
+        return carga
+    }
+
+    fun asignarLiquidador(siniestroId: Long, liquidador: Liquidador) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val caso = db.rawQuery(
+                "SELECT tipo, etapa FROM siniestros WHERE id = ?",
+                arrayOf(siniestroId.toString())
+            ).use { c ->
+                if (c.moveToFirst()) TipoSiniestro.valueOf(c.getString(0)) to c.getString(1)
+                else null
+            }
+            require(caso != null) { "No existe ese siniestro" }
+            require(caso.second != EtapaSiniestro.CERRADO.name) {
+                "No se puede reasignar un caso cerrado"
+            }
+            require(caso.first.esVehiculo == liquidador.esVehiculo) {
+                "Un siniestro de " + (if (caso.first.esVehiculo) "vehículo" else "hogar") +
+                    " solo puede asignarse al equipo correspondiente"
+            }
+            val ahora = fechaActual()
+            val nuevaEtapa = if (caso.second == EtapaSiniestro.RECIBIDO.name)
+                EtapaSiniestro.EVALUACION.name else caso.second
+            db.update("siniestros", ContentValues().apply {
+                put("liquidador", liquidador.name)
+                put("etapa", nuevaEtapa)
+                put("ultima_actualizacion", ahora)
+            }, "id = ?", arrayOf(siniestroId.toString()))
+            insertarGestion(
+                db, siniestroId, "Analista de administración",
+                "Caso asignado al equipo " + liquidador.equipo, true
+            )
+            insertarAviso(
+                db, siniestroId,
+                "Tu caso fue asignado al equipo " + liquidador.equipo + "."
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun listarEvidenciasAsignadas(siniestroId: Long, liquidador: Liquidador): List<Evidencia> {
+        val resultado = mutableListOf<Evidencia>()
+        readableDatabase.rawQuery("""
+            SELECT e.id, e.siniestro_id, e.tipo_documento, e.nombre_archivo,
+                   e.mime, e.tamano_bytes, e.fecha_registro
+            FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
+            WHERE s.id = ? AND s.liquidador = ?
+            ORDER BY e.id DESC
+        """.trimIndent(), arrayOf(siniestroId.toString(), liquidador.name)).use { cursor ->
+            while (cursor.moveToNext()) {
+                resultado.add(Evidencia(
+                    cursor.getLong(0), cursor.getLong(1), cursor.getString(2),
+                    cursor.getString(3), cursor.getString(4), cursor.getInt(5), cursor.getString(6)
+                ))
+            }
+        }
+        return resultado
+    }
+
+    fun obtenerImagenAsignada(
+        evidenciaId: Long, siniestroId: Long, liquidador: Liquidador
+    ): Bitmap? = readableDatabase.rawQuery("""
+        SELECT e.contenido, e.mime
+        FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
+        WHERE e.id = ? AND s.id = ? AND s.liquidador = ?
+    """.trimIndent(),
+        arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
+    ).use { cursor ->
+        if (!cursor.moveToFirst()) return@use null
+        if (!cursor.getString(1).startsWith("image/")) return@use null
+        val bytes = cursor.getBlob(0)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }
+
+    fun guardarEvidenciaLiquidador(
+        siniestroId: Long, liquidador: Liquidador, tipoDocumento: String,
+        archivo: ArchivoEvidencia
+    ) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val caso = db.rawQuery(
+                "SELECT etapa FROM siniestros WHERE id = ? AND liquidador = ?",
+                arrayOf(siniestroId.toString(), liquidador.name)
+            ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
+            require(caso != null) { "El caso no está asignado a tu equipo" }
+            require(caso != EtapaSiniestro.CERRADO.name) {
+                "No puedes adjuntar documentos a un caso cerrado"
+            }
+            val cantidad = db.rawQuery(
+                "SELECT COUNT(*) FROM evidencias WHERE siniestro_id = ?",
+                arrayOf(siniestroId.toString())
+            ).use { c -> c.moveToFirst(); c.getInt(0) }
+            ValidadorEvidencia.error(tipoDocumento, archivo.mime, archivo.bytes.size, cantidad)
+                ?.let { throw IllegalArgumentException(it) }
+            db.insertOrThrow("evidencias", null, ContentValues().apply {
+                put("siniestro_id", siniestroId)
+                put("tipo_documento", tipoDocumento.trim())
+                put("nombre_archivo", archivo.nombre)
+                put("mime", archivo.mime)
+                put("tamano_bytes", archivo.bytes.size)
+                put("contenido", archivo.bytes)
+                put("fecha_registro", fechaActual())
+            })
+            insertarGestion(
+                db, siniestroId, "Documento del liquidador",
+                "Se adjuntó " + tipoDocumento.trim(), true
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
     fun guardarEvidencia(
         siniestroId: Long, asegurado: Asegurado, tipoDocumento: String,
         archivo: ArchivoEvidencia
@@ -762,7 +1186,7 @@ class SiniestroDbHelper(
                     put("evidencia_id", evidenciaId)
                 }, "id = ?", arrayOf(solicitudId.toString()))
                 insertarGestion(db, siniestroId, "Asegurado",
-                    "Documento solicitado entregado localmente: " + tipoDocumento.trim(), true)
+                    "Documento solicitado entregado: " + tipoDocumento.trim(), true)
             } else {
                 insertarGestion(db, siniestroId, "Asegurado",
                     "Documento adjuntado: " + tipoDocumento.trim(), true)
@@ -776,4 +1200,71 @@ class SiniestroDbHelper(
         }
     }
 
+    fun eliminarEvidencia(evidenciaId: Long, siniestroId: Long, asegurado: Asegurado) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val datos = db.rawQuery("""
+                SELECT e.tipo_documento, s.etapa FROM evidencias e
+                JOIN siniestros s ON s.id = e.siniestro_id
+                WHERE e.id = ? AND s.id = ? AND s.asegurado = ?
+            """.trimIndent(),
+                arrayOf(evidenciaId.toString(), siniestroId.toString(), asegurado.name)
+            ).use { c -> if (c.moveToFirst()) c.getString(0) to c.getString(1) else null }
+            require(datos != null) { "El documento no pertenece a este siniestro" }
+            require(datos.second != EtapaSiniestro.CERRADO.name) {
+                "No puedes eliminar documentos de un caso cerrado"
+            }
+            require(datos.first !in DocumentosLiquidador.tipos) {
+                "Ese documento lo cargó el equipo liquidador y no puedes eliminarlo"
+            }
+            val ahora = fechaActual()
+            db.update("solicitudes_documentos", ContentValues().apply {
+                putNull("fecha_entrega")
+                putNull("evidencia_id")
+            }, "evidencia_id = ?", arrayOf(evidenciaId.toString()))
+            db.delete("evidencias", "id = ?", arrayOf(evidenciaId.toString()))
+            insertarGestion(
+                db, siniestroId, asegurado.etiqueta,
+                "Se eliminó el documento adjuntado: " + datos.first, true
+            )
+            db.update("siniestros", ContentValues().apply {
+                put("ultima_actualizacion", ahora)
+            }, "id = ?", arrayOf(siniestroId.toString()))
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun eliminarEvidenciaLiquidador(
+        evidenciaId: Long, siniestroId: Long, liquidador: Liquidador
+    ) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            val datos = db.rawQuery("""
+                SELECT e.tipo_documento, s.etapa FROM evidencias e
+                JOIN siniestros s ON s.id = e.siniestro_id
+                WHERE e.id = ? AND s.id = ? AND s.liquidador = ?
+            """.trimIndent(),
+                arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
+            ).use { c -> if (c.moveToFirst()) c.getString(0) to c.getString(1) else null }
+            require(datos != null) { "El documento no pertenece a un caso de tu equipo" }
+            require(datos.second != EtapaSiniestro.CERRADO.name) {
+                "No puedes eliminar documentos de un caso cerrado"
+            }
+            require(datos.first in DocumentosLiquidador.tipos) {
+                "Solo puedes eliminar los documentos cargados por el equipo liquidador"
+            }
+            db.delete("evidencias", "id = ?", arrayOf(evidenciaId.toString()))
+            insertarGestion(
+                db, siniestroId, liquidador.nombre,
+                "Se eliminó el documento del caso: " + datos.first, false
+            )
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
 }
