@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Mi Siniestro</string>
+    <string name="app_name">Seguros BPO</string>
     <string name="titulo_formulario">Reportar un siniestro</string>
     <string name="banner_titulo">Cuéntanos qué pasó</string>
     <string name="baner_subtitulo">Son 5 datos. Te entregamos tu número al terminar</string>
