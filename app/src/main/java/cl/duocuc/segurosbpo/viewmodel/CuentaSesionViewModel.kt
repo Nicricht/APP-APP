@@ -18,21 +18,22 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
     private val preferencias = application.getSharedPreferences("cuenta_sesion_local", 0)
     private fun equipoValido(cuenta: CuentaLocal): Boolean = when (cuenta.rol) {
         RolCuenta.ASEGURADO ->
-            cuenta.equipo == null && cuenta.id.startsWith("USR_")
+            cuenta.equipo == null && (Asegurado.entries.any { it.name == cuenta.id } ||
+                cuenta.id.startsWith("USR_"))
         RolCuenta.LIQUIDADOR ->
             Liquidador.entries.any { it.name == cuenta.equipo } &&
                 cuenta.id == "LIQ_" + cuenta.equipo
     }
 
+    val perfilesDisponibles: List<CuentaLocal> = db.listarPerfiles().filter(::equipoValido)
+
     private val inicial = preferencias.getString("cuenta_id", null)?.let { id ->
-        if (id == "DEMO_ASEG_CAMILA") {
-            crearAseguradoDemo()
-        } else if (id.startsWith("DEMO_LIQ_")) {
-            val equipo = runCatching {
-                Liquidador.valueOf(id.removePrefix("DEMO_LIQ_"))
-            }.getOrNull()
-            equipo?.let { crearLiquidadorDemo(it) }
-        } else runCatching { db.obtener(id) }.getOrNull()?.takeIf(::equipoValido)
+        val idActual = when {
+            id == "DEMO_ASEG_CAMILA" -> Asegurado.CAMILA.name
+            id.startsWith("DEMO_LIQ_") -> "LIQ_" + id.removePrefix("DEMO_LIQ_")
+            else -> id
+        }
+        runCatching { db.obtener(idActual) }.getOrNull()?.takeIf(::equipoValido)
     }
     private val _cuenta = MutableStateFlow(inicial)
     val cuenta = _cuenta.asStateFlow()
@@ -48,69 +49,16 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
         _cuenta.value = cuenta
     }
 
-    fun iniciar(correo: String, clave: String): String? {
-        val resultado = runCatching { db.iniciarSesion(correo, clave) }
-        val cuentaEncontrada = resultado.getOrNull()
-        if (cuentaEncontrada != null) {
-            if (!equipoValido(cuentaEncontrada)) {
-                return "La cuenta no tiene una especialidad válida"
-            }
-            guardar(cuentaEncontrada)
-            return null
-        }
-        return if (resultado.isFailure) "No se pudo verificar la cuenta"
-            else "Correo o contraseña incorrectos"
-    }
-
-    fun registrar(
-        nombre: String,
-        rut: String,
-        correo: String,
-        telefono: String,
-        clave: String,
-        confirmacion: String
-    ): String? {
-        val resultado = runCatching {
-            db.registrarAsegurado(nombre, rut, correo, telefono, clave, confirmacion)
-        }
-        return resultado.fold(
-            onSuccess = { guardar(it); null },
-            onFailure = { mensajeError(it, "No se pudo registrar la cuenta") }
-        )
-    }
-
-    private fun crearAseguradoDemo(): CuentaLocal = CuentaLocal(
-        id = Asegurado.CAMILA.name,
-        nombre = Asegurado.CAMILA.etiqueta,
-        rut = Asegurado.CAMILA.rut,
-        correo = "",
-        telefono = "",
-        rol = RolCuenta.ASEGURADO,
-        equipo = null
-    )
-
-    fun accederAseguradoDemo() {
-        preferencias.edit().putString("cuenta_id", "DEMO_ASEG_CAMILA").apply()
-        _cuenta.value = crearAseguradoDemo()
-    }
-
-    private fun crearLiquidadorDemo(equipo: Liquidador): CuentaLocal = CuentaLocal(
-        id = "DEMO_LIQ_" + equipo.name,
-        nombre = equipo.nombre,
-        rut = "",
-        correo = "",
-        telefono = "",
-        rol = RolCuenta.LIQUIDADOR,
-        equipo = equipo.name
-    )
-
-    fun accederLiquidadorDemo(equipo: Liquidador) {
-        guardar(crearLiquidadorDemo(equipo))
+    fun seleccionarPerfil(id: String): String? {
+        val perfil = runCatching { db.obtener(id) }.getOrNull()
+            ?: return "No se encontró el perfil seleccionado"
+        if (!equipoValido(perfil)) return "Este perfil de prueba no está disponible"
+        guardar(perfil)
+        return null
     }
 
     fun actualizarTelefono(telefono: String): String? {
-        val actual = _cuenta.value ?: return "Inicia sesión"
-        if (actual.correo.isBlank()) return "Este perfil no permite modificar datos personales"
+        val actual = _cuenta.value ?: return "Selecciona un perfil"
         val resultado = runCatching { db.actualizarTelefono(actual.id, telefono) }
         return resultado.fold(
             onSuccess = { _cuenta.value = it; null },
@@ -119,8 +67,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun actualizarFoto(bitmap: Bitmap): String? {
-        val actual = _cuenta.value ?: return "Inicia sesión"
-        if (actual.correo.isBlank()) return "Este perfil no permite modificar datos personales"
+        val actual = _cuenta.value ?: return "Selecciona un perfil"
         val salida = ByteArrayOutputStream()
         if (!runCatching { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida) }
                 .getOrDefault(false)) {

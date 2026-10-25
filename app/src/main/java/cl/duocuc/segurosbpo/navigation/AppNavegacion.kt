@@ -88,8 +88,8 @@ fun AppNavegacion() {
     val sesion = cuentaVm.cuenta.collectAsStateWithLifecycle().value
     if (sesion == null) {
         AccesoScreen(
-            onIniciar = cuentaVm::iniciar,
-            onRegistrar = cuentaVm::registrar
+            perfiles = cuentaVm.perfilesDisponibles,
+            onElegirPerfil = cuentaVm::seleccionarPerfil
         )
         return
     }
@@ -198,7 +198,7 @@ fun AppNavegacion() {
                     onClick = { navegarDesdeMenu(Ruta.Perfil.ruta) }
                 )
                 NavigationDrawerItem(
-                    label = { Text("Cerrar sesión") },
+                    label = { Text("Cambiar perfil") },
                     icon = { Icon(painterResource(R.drawable.ic_salir), contentDescription = null) },
                     selected = false,
                     onClick = cuentaVm::cerrarSesion

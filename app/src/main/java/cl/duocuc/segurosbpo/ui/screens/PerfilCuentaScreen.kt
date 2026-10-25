@@ -58,7 +58,6 @@ fun PerfilCuentaScreen(
     onCerrarSesion: () -> Unit
 ) {
     val contexto = LocalContext.current
-    val editable = cuenta.correo.isNotBlank()
     var telefono by rememberSaveable(cuenta.id) { mutableStateOf(cuenta.telefono) }
     var mensaje by remember { mutableStateOf<String?>(null) }
     val foto = remember(cuenta.foto) {
@@ -129,46 +128,42 @@ fun PerfilCuentaScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Datos personales", style = MaterialTheme.typography.titleMedium)
-                    DatoPerfil("RUT", cuenta.rut.ifBlank { "No registrado" })
-                    DatoPerfil("Correo", cuenta.correo.ifBlank { "Acceso de demostración" })
+                    DatoPerfil("RUT", if (cuenta.rut.isBlank()) "No disponible"
+                        else "••••${cuenta.rut.takeLast(5)}")
+                    DatoPerfil("Tipo de acceso", "Perfil simulado para pruebas")
                     DatoPerfil("Teléfono", cuenta.telefono.ifBlank { "No registrado" })
                 }
             }
-            if (editable) {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Editar información", style = MaterialTheme.typography.titleMedium)
-                        OutlinedTextField(
-                            value = telefono, onValueChange = { telefono = it },
-                            label = { Text("Teléfono de contacto") },
-                            modifier = Modifier.fillMaxWidth(), singleLine = true
-                        )
-                        Button(onClick = {
-                            mensaje = onGuardarTelefono(telefono) ?: "Datos actualizados"
-                        }, modifier = Modifier.fillMaxWidth()) { Text("Guardar teléfono") }
-                        Text("Foto de perfil", style = MaterialTheme.typography.titleSmall)
-                        OutlinedButton(onClick = {
-                            if (ContextCompat.checkSelfPermission(
-                                    contexto, Manifest.permission.CAMERA
-                                ) == PackageManager.PERMISSION_GRANTED) camara.launch(null)
-                            else permisoCamara.launch(Manifest.permission.CAMERA)
-                        }, modifier = Modifier.fillMaxWidth()) { Text("Tomar una foto") }
-                        OutlinedButton(onClick = { galeria.launch("image/*") },
-                            modifier = Modifier.fillMaxWidth()) {
-                            Text("Elegir de la galería")
-                        }
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Editar información", style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = telefono, onValueChange = { telefono = it },
+                        label = { Text("Teléfono de contacto") },
+                        modifier = Modifier.fillMaxWidth(), singleLine = true
+                    )
+                    Button(onClick = {
+                        mensaje = onGuardarTelefono(telefono) ?: "Datos actualizados"
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Guardar teléfono") }
+                    Text("Foto de perfil", style = MaterialTheme.typography.titleSmall)
+                    OutlinedButton(onClick = {
+                        if (ContextCompat.checkSelfPermission(
+                                contexto, Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED) camara.launch(null)
+                        else permisoCamara.launch(Manifest.permission.CAMERA)
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Tomar una foto") }
+                    OutlinedButton(onClick = { galeria.launch("image/*") },
+                        modifier = Modifier.fillMaxWidth()) {
+                        Text("Elegir de la galería")
                     }
                 }
-            } else {
-                Text("Este perfil de demostración es de consulta. Para editar tus datos, utiliza una cuenta registrada.",
-                    style = MaterialTheme.typography.bodyMedium)
             }
             mensaje?.let {
                 Text(it, color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyMedium)
             }
             OutlinedButton(onClick = onCerrarSesion, modifier = Modifier.fillMaxWidth()) {
-                Text("Cerrar sesión", color = MaterialTheme.colorScheme.error)
+                Text("Cambiar perfil", color = MaterialTheme.colorScheme.error)
             }
         }
     }

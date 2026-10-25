@@ -6,141 +6,118 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import cl.duocuc.segurosbpo.model.CuentaLocal
+import cl.duocuc.segurosbpo.model.PerfilesDemostracion
 import cl.duocuc.segurosbpo.model.RolCuenta
-import cl.duocuc.segurosbpo.model.ValidadorCuenta
-import java.security.MessageDigest
-import java.security.SecureRandom
-import java.util.UUID
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
 
+/** Perfiles locales para las pruebas académicas; nunca persiste claves ni hashes. */
 class CuentaDbHelper(
     context: Context,
     nombreBase: String = "cuentas_demo.db"
-) : SQLiteOpenHelper(context, nombreBase, null, 3) {
+) : SQLiteOpenHelper(context, nombreBase, null, 4) {
+    override fun onConfigure(db: SQLiteDatabase) {
+        super.onConfigure(db)
+        // Al retirar la tabla heredada, borrar también su contenido en páginas libres.
+        db.execSQL("PRAGMA secure_delete=ON")
+    }
+
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("""
-            CREATE TABLE cuentas (
-                id TEXT PRIMARY KEY NOT NULL,
-                nombre TEXT NOT NULL,
-                rut TEXT NOT NULL UNIQUE COLLATE NOCASE,
-                correo TEXT NOT NULL UNIQUE COLLATE NOCASE,
-                telefono TEXT NOT NULL,
-                rol TEXT NOT NULL,
-                equipo TEXT,
-                salt BLOB NOT NULL,
-                clave_hash BLOB NOT NULL,
-                foto BLOB
-            )
-        """.trimIndent())
-        insertarLiquidadorDemo(db, "LIQ_VEHICULOS", "María P.", "VEHICULOS",
-            "vehiculos@segurosbpo.demo", "DEMO-VEHICULOS")
-        insertarLiquidadorDemo(db, "LIQ_HOGAR", "Pedro C.", "HOGAR",
-            "hogar@segurosbpo.demo", "DEMO-HOGAR")
+        crearTabla(db, "cuentas")
+        insertarPerfilesFicticios(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 2) db.execSQL("ALTER TABLE cuentas ADD COLUMN foto BLOB")
-        if (oldVersion < 3) {
-            insertarLiquidadorDemo(db, "LIQ_VEHICULOS", "María P.", "VEHICULOS",
-                "vehiculos@segurosbpo.demo", "DEMO-VEHICULOS")
-            insertarLiquidadorDemo(db, "LIQ_HOGAR", "Pedro C.", "HOGAR",
-                "hogar@segurosbpo.demo", "DEMO-HOGAR")
+        if (oldVersion < 4) {
+            // Conserva perfiles antiguos y sus fotos, pero retira las columnas
+            // salt/clave_hash, que no están permitidas por RNF-08.
+            crearTabla(db, "cuentas_sin_claves")
+            val tieneFoto = db.rawQuery("PRAGMA table_info(cuentas)", null).use { cursor ->
+                val indiceNombre = cursor.getColumnIndexOrThrow("name")
+                var encontrada = false
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(indiceNombre) == "foto") encontrada = true
+                }
+                encontrada
+            }
+            val foto = if (tieneFoto) "foto" else "NULL"
+            db.execSQL("""
+                INSERT INTO cuentas_sin_claves
+                    (id, nombre, rut, correo, telefono, rol, equipo, foto)
+                SELECT id, nombre, rut, correo, telefono, rol, equipo, $foto FROM cuentas
+            """.trimIndent())
+            db.execSQL("DROP TABLE cuentas")
+            db.execSQL("ALTER TABLE cuentas_sin_claves RENAME TO cuentas")
+            insertarPerfilesFicticios(db)
         }
     }
 
-    private fun insertarLiquidadorDemo(
-        db: SQLiteDatabase,
-        id: String,
-        nombre: String,
-        equipo: String,
-        correo: String,
-        rut: String
-    ) {
-        val sal = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        val hash = derivar("Demo2026!", sal)
-        db.insertWithOnConflict("cuentas", null, ContentValues().apply {
-            put("id", id)
-            put("nombre", nombre)
-            put("rut", rut)
-            put("correo", correo)
-            put("telefono", "900000000")
-            put("rol", RolCuenta.LIQUIDADOR.name)
-            put("equipo", equipo)
-            put("salt", sal)
-            put("clave_hash", hash)
-        }, SQLiteDatabase.CONFLICT_IGNORE)
+    private fun crearTabla(db: SQLiteDatabase, nombre: String) {
+        db.execSQL("""
+            CREATE TABLE $nombre (
+                id TEXT PRIMARY KEY NOT NULL,
+                nombre TEXT NOT NULL,
+                rut TEXT NOT NULL,
+                correo TEXT NOT NULL,
+                telefono TEXT NOT NULL,
+                rol TEXT NOT NULL,
+                equipo TEXT,
+                foto BLOB
+            )
+        """.trimIndent())
     }
 
-    private fun derivar(clave: String, salt: ByteArray): ByteArray {
-        val parametros = PBEKeySpec(clave.toCharArray(), salt, 60000, 256)
-        return try {
-            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-                .generateSecret(parametros).encoded
-        } finally {
-            parametros.clearPassword()
+    private fun insertarPerfilesFicticios(db: SQLiteDatabase) {
+        PerfilesDemostracion.todos.forEach { perfil ->
+            db.insertWithOnConflict("cuentas", null, ContentValues().apply {
+                put("id", perfil.id)
+                put("nombre", perfil.nombre)
+                put("rut", perfil.rut)
+                put("correo", perfil.correo)
+                put("telefono", perfil.telefono)
+                put("rol", perfil.rol.name)
+                if (perfil.equipo == null) putNull("equipo")
+                else put("equipo", perfil.equipo)
+            }, SQLiteDatabase.CONFLICT_IGNORE)
         }
     }
 
     private fun convertir(cursor: Cursor): CuentaLocal {
         val equipo = cursor.getColumnIndexOrThrow("equipo")
         return CuentaLocal(
-            cursor.getString(cursor.getColumnIndexOrThrow("id")),
-            cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
-            cursor.getString(cursor.getColumnIndexOrThrow("rut")),
-            cursor.getString(cursor.getColumnIndexOrThrow("correo")),
-            cursor.getString(cursor.getColumnIndexOrThrow("telefono")),
-            RolCuenta.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("rol"))),
-            if (cursor.isNull(equipo)) null else cursor.getString(equipo),
-            cursor.getColumnIndexOrThrow("foto").let { i ->
-                if (cursor.isNull(i)) null else cursor.getBlob(i)
+            id = cursor.getString(cursor.getColumnIndexOrThrow("id")),
+            nombre = cursor.getString(cursor.getColumnIndexOrThrow("nombre")),
+            rut = cursor.getString(cursor.getColumnIndexOrThrow("rut")),
+            correo = cursor.getString(cursor.getColumnIndexOrThrow("correo")),
+            telefono = cursor.getString(cursor.getColumnIndexOrThrow("telefono")),
+            rol = RolCuenta.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("rol"))),
+            equipo = if (cursor.isNull(equipo)) null else cursor.getString(equipo),
+            foto = cursor.getColumnIndexOrThrow("foto").let { indice ->
+                if (cursor.isNull(indice)) null else cursor.getBlob(indice)
             }
         )
+    }
+
+    fun listarPerfiles(): List<CuentaLocal> = readableDatabase.query(
+        "cuentas", null, null, null, null, null,
+        "CASE WHEN id LIKE 'USR_%' THEN 1 ELSE 0 END, " +
+            "CASE WHEN rol = 'ASEGURADO' THEN 0 ELSE 1 END, nombre"
+    ).use { cursor ->
+        buildList { while (cursor.moveToNext()) add(convertir(cursor)) }
     }
 
     fun obtener(id: String): CuentaLocal? = readableDatabase.query(
         "cuentas", null, "id = ?", arrayOf(id), null, null, null
     ).use { if (it.moveToFirst()) convertir(it) else null }
 
-    fun registrarAsegurado(
-        nombre: String,
-        rut: String,
-        correo: String,
-        telefono: String,
-        clave: String,
-        confirmacion: String
-    ): CuentaLocal {
-        ValidadorCuenta.errorRegistro(nombre, rut, correo, telefono, clave, confirmacion)
-            ?.let { throw IllegalArgumentException(it) }
-        val id = "USR_" + UUID.randomUUID().toString()
-        val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        val hash = derivar(clave, salt)
-        try {
-            writableDatabase.insertOrThrow("cuentas", null, ContentValues().apply {
-                put("id", id)
-                put("nombre", nombre.trim())
-                put("rut", rut.trim().uppercase().replace(".", ""))
-                put("correo", ValidadorCuenta.normalizarCorreo(correo))
-                put("telefono", telefono.trim())
-                put("rol", RolCuenta.ASEGURADO.name)
-                putNull("equipo")
-                put("salt", salt)
-                put("clave_hash", hash)
-            })
-        } catch (e: android.database.sqlite.SQLiteConstraintException) {
-            throw IllegalArgumentException("Ya existe una cuenta con ese correo o RUT", e)
-        }
-        return requireNotNull(obtener(id)) { "No se encontró la cuenta" }
-    }
-
     fun actualizarTelefono(id: String, telefono: String): CuentaLocal {
-        require(telefono.trim().length >= 8) { "El teléfono debe tener al menos 8 caracteres" }
+        require(telefono.isBlank() || telefono.trim().length >= 8) {
+            "El teléfono debe tener al menos 8 caracteres"
+        }
         val filas = writableDatabase.update(
             "cuentas", ContentValues().apply { put("telefono", telefono.trim()) },
             "id = ?", arrayOf(id)
         )
-        require(filas == 1) { "No se encontró la cuenta" }
-        return requireNotNull(obtener(id)) { "No se encontró la cuenta" }
+        require(filas == 1) { "No se encontró el perfil" }
+        return requireNotNull(obtener(id)) { "No se encontró el perfil" }
     }
 
     fun actualizarFoto(id: String, imagenJpeg: ByteArray): CuentaLocal {
@@ -151,21 +128,7 @@ class CuentaDbHelper(
             "cuentas", ContentValues().apply { put("foto", imagenJpeg) },
             "id = ?", arrayOf(id)
         )
-        require(filas == 1) { "No se encontró la cuenta" }
-        return requireNotNull(obtener(id)) { "No se encontró la cuenta" }
-    }
-
-    fun iniciarSesion(correo: String, clave: String): CuentaLocal? {
-        if (correo.isBlank() || clave.isBlank()) return null
-        return readableDatabase.query(
-            "cuentas", null, "correo = ?",
-            arrayOf(ValidadorCuenta.normalizarCorreo(correo)),
-            null, null, null
-        ).use { cursor ->
-            if (!cursor.moveToFirst()) return@use null
-            val sal = cursor.getBlob(cursor.getColumnIndexOrThrow("salt"))
-            val hash = cursor.getBlob(cursor.getColumnIndexOrThrow("clave_hash"))
-            if (MessageDigest.isEqual(hash, derivar(clave, sal))) convertir(cursor) else null
-        }
+        require(filas == 1) { "No se encontró el perfil" }
+        return requireNotNull(obtener(id)) { "No se encontró el perfil" }
     }
 }
