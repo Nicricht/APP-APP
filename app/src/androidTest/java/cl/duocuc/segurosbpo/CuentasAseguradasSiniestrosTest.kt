@@ -47,4 +47,28 @@ class CuentasAseguradasSiniestrosTest {
         db = SiniestroDbHelper(contexto, archivo)
         assertEquals(propio.name, db.listar(propio).first { it.id == creado.id }.asegurado.name)
     }
+
+    @Test fun tresAseguradosDeDemostracionNoVenLosSiniestrosDeLosOtros() {
+        val perfiles = listOf(Asegurado.RICARDO, Asegurado.FRANCISCA, Asegurado.LUIS)
+        val reportes = perfiles.mapIndexed { indice, asegurado ->
+            db.registrar(FormularioUiState(
+                asegurado = asegurado,
+                fechaOcurrencia = "20-10-2026",
+                comuna = "Santiago",
+                descripcion = "Incidente ficticio aislado $indice",
+                datosCorrectos = true
+            ))
+        }
+
+        perfiles.forEachIndexed { indice, asegurado ->
+            val propio = reportes[indice]
+            assertEquals(asegurado.name, db.obtener(propio.id, asegurado)?.asegurado?.name)
+            assertTrue(db.listar(asegurado).any { it.id == propio.id })
+            reportes.filterNot { it.id == propio.id }.forEach { ajeno ->
+                assertNull(db.obtener(ajeno.id, asegurado))
+                assertTrue(db.listar(asegurado).none { it.id == ajeno.id })
+                assertTrue(db.listarGestiones(ajeno.id, asegurado).isEmpty())
+            }
+        }
+    }
 }
