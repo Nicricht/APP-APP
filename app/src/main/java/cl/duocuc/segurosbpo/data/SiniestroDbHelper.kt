@@ -39,6 +39,8 @@ class SiniestroDbHelper(
     databaseName: String = "seguros_bpo.db"
 ) : SQLiteOpenHelper(context, databaseName, null, 9) {
 
+    private val TROZO = 512 * 1024
+
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
             CREATE TABLE siniestros (
@@ -634,12 +636,14 @@ class SiniestroDbHelper(
     fun obtenerImagen(
         evidenciaId: Long, siniestroId: Long, asegurado: Asegurado, maxLado: Int = 900
     ): Bitmap? {
-        val contenido = readableDatabase.rawQuery("""
-            SELECT e.contenido FROM evidencias e
+        val autorizado = readableDatabase.rawQuery("""
+            SELECT 1 FROM evidencias e
             JOIN siniestros s ON s.id = e.siniestro_id
             WHERE e.id = ? AND s.id = ? AND s.asegurado = ? AND e.mime LIKE 'image/%'
         """.trimIndent(), arrayOf(evidenciaId.toString(), siniestroId.toString(), asegurado.name))
-            .use { c -> if (c.moveToFirst()) c.getBlob(0) else null } ?: return null
+            .use { it.moveToFirst() }
+        if (!autorizado) return null
+        val contenido = leerContenido(evidenciaId) ?: return null
         return decodificarImagen(contenido, maxLado)
     }
 
@@ -1239,29 +1243,53 @@ class SiniestroDbHelper(
 
     fun obtenerImagenAsignada(
         evidenciaId: Long, siniestroId: Long, liquidador: Liquidador, maxLado: Int = 900
-    ): Bitmap? = readableDatabase.rawQuery("""
-        SELECT e.contenido, e.mime
-        FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
-        WHERE e.id = ? AND s.id = ? AND s.liquidador = ?
-    """.trimIndent(),
-        arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
-    ).use { cursor ->
-        if (!cursor.moveToFirst()) return@use null
-        if (!cursor.getString(1).startsWith("image/")) return@use null
-        decodificarImagen(cursor.getBlob(0), maxLado)
+    ): Bitmap? {
+        val mime = readableDatabase.rawQuery("""
+            SELECT e.mime
+            FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
+            WHERE e.id = ? AND s.id = ? AND s.liquidador = ?
+        """.trimIndent(),
+            arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
+        ).use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: return null
+        if (!mime.startsWith("image/")) return null
+        val contenido = leerContenido(evidenciaId) ?: return null
+        return decodificarImagen(contenido, maxLado)
     }
 
     fun obtenerArchivoAsignado(
         evidenciaId: Long, siniestroId: Long, liquidador: Liquidador
-    ): ArchivoEvidencia? = readableDatabase.rawQuery("""
-        SELECT e.nombre_archivo, e.mime, e.contenido
-        FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
-        WHERE e.id = ? AND s.id = ? AND s.liquidador = ?
-    """.trimIndent(),
-        arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
-    ).use { cursor ->
-        if (!cursor.moveToFirst()) return@use null
-        ArchivoEvidencia(cursor.getString(0), cursor.getString(1), cursor.getBlob(2))
+    ): ArchivoEvidencia? {
+        val datos = readableDatabase.rawQuery("""
+            SELECT e.nombre_archivo, e.mime
+            FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
+            WHERE e.id = ? AND s.id = ? AND s.liquidador = ?
+        """.trimIndent(),
+            arrayOf(evidenciaId.toString(), siniestroId.toString(), liquidador.name)
+        ).use { c -> if (c.moveToFirst()) c.getString(0) to c.getString(1) else null }
+            ?: return null
+        val contenido = leerContenido(evidenciaId) ?: return null
+        return ArchivoEvidencia(datos.first, datos.second, contenido)
+    }
+
+    private fun leerContenido(evidenciaId: Long): ByteArray? {
+        val db = readableDatabase
+        val total = db.rawQuery(
+            "SELECT length(contenido) FROM evidencias WHERE id = ?",
+            arrayOf(evidenciaId.toString())
+        ).use { c -> if (c.moveToFirst()) c.getLong(0) else null } ?: return null
+        if (total <= 0L) return null
+        val salida = java.io.ByteArrayOutputStream(total.toInt())
+        var desde = 1L
+        while (desde <= total) {
+            val trozo = db.rawQuery(
+                "SELECT substr(contenido, ?, ?) FROM evidencias WHERE id = ?",
+                arrayOf(desde.toString(), TROZO.toString(), evidenciaId.toString())
+            ).use { c -> if (c.moveToFirst()) c.getBlob(0) else null } ?: return null
+            if (trozo.isEmpty()) break
+            salida.write(trozo)
+            desde += trozo.size
+        }
+        return salida.toByteArray().takeIf { it.isNotEmpty() }
     }
 
     private fun decodificarImagen(contenido: ByteArray, maxLado: Int): Bitmap? {

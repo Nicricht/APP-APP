@@ -17,14 +17,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.model.coincideCon
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.components.BuscadorCasos
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import kotlinx.coroutines.launch
 
@@ -37,6 +43,7 @@ fun DisponiblesLiquidadorScreen(
 ) {
     val aviso = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var busqueda by rememberSaveable(liquidador) { mutableStateOf("") }
 
     Scaffold(
         topBar = { BarraSuperior("Casos disponibles") }
@@ -51,10 +58,23 @@ fun DisponiblesLiquidadorScreen(
                 "Sin asignar en " + liquidador.equipo,
                 style = MaterialTheme.typography.titleLarge
             )
+            if (disponibles.isNotEmpty()) {
+                BuscadorCasos(texto = busqueda, onTexto = { busqueda = it })
+            }
+
+            val visibles = disponibles.filter { it.coincideCon(busqueda) }
+
             if (disponibles.isEmpty()) {
                 Text("No hay siniestros pendientes de asignación en tu área.")
+            } else if (visibles.isEmpty()) {
+                Text("Ningún caso disponible coincide con la búsqueda.")
+            } else {
+                Text(
+                    "Mostrando " + visibles.size + " de " + disponibles.size + " caso(s)",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
-            disponibles.forEach { disponible ->
+            visibles.forEach { disponible ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.padding(14.dp),

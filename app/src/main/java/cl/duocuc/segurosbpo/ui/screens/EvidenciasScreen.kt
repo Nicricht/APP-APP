@@ -528,8 +528,12 @@ internal fun FilaDocumento(
     onEliminar: (() -> Unit)?
 ) {
     var miniatura by remember(tipo, nombre, detalle) { mutableStateOf<Bitmap?>(null) }
+    var intentada by remember(tipo, nombre, detalle) { mutableStateOf(false) }
     if (esImagen) {
-        LaunchedEffect(tipo, nombre, detalle) { miniatura = cargarMiniatura() }
+        LaunchedEffect(tipo, nombre, detalle) {
+            miniatura = cargarMiniatura()
+            intentada = true
+        }
     }
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -559,6 +563,13 @@ internal fun FilaDocumento(
             Text(tipo, style = MaterialTheme.typography.titleSmall)
             Text(nombre, style = MaterialTheme.typography.bodySmall)
             Text(detalle, style = MaterialTheme.typography.bodySmall)
+            if (esImagen && intentada && miniatura == null) {
+                Text(
+                    "No se pudo abrir la vista previa",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
         Column {
             if (onDescargar != null) {
