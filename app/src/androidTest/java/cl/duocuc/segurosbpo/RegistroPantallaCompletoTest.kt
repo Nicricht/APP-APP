@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.ui.screens.FormularioScreen
@@ -70,5 +71,34 @@ class RegistroPantallaCompletoTest {
         assertEquals(0, llamadas.get())
         assertFalse(vm.uiState.value.reporteExitoso)
         rule.onNodeWithText("Debes confirmar que los datos son correctos").assertExists()
+    }
+
+    @Test fun reporteSinDetectorDeDuplicadosConfiguradoConfirmaYPermiteRegresar() {
+        val llamadas = AtomicInteger(0)
+        val regreso = AtomicBoolean(false)
+        rule.setContent {
+            FormularioScreen(
+                aseguradoActual = Asegurado.CAMILA,
+                onRegistroExitoso = {
+                    llamadas.incrementAndGet()
+                    "SIN-26-090003"
+                },
+                onVolver = { regreso.set(true) },
+                onVerMisSiniestros = { regreso.set(true) }
+            )
+        }
+        rule.onNodeWithText("Volver a mis siniestros").performScrollTo().performClick()
+        assertTrue(regreso.get())
+        rule.onNodeWithText("Fecha en que ocurrió (día-mes-año)").performScrollTo()
+            .performTextInput("20-10-2026")
+        rule.onNodeWithText("Comuna donde ocurrió").performScrollTo()
+            .performTextInput("Santiago")
+        rule.onNodeWithText("Cuéntanos brevemente qué pasó").performScrollTo()
+            .performTextInput("Reporte de prueba sin buscar duplicados")
+        rule.onNodeWithText("Confirmo que los datos que entregué son correctos")
+            .performScrollTo().performClick()
+        rule.onNodeWithText("Reportar").performScrollTo().performClick()
+        rule.onNodeWithText("Ver mis siniestros").performScrollTo().assertExists()
+        assertEquals(1, llamadas.get())
     }
 }
