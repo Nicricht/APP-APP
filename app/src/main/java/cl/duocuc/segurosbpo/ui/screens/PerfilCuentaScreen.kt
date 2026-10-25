@@ -90,7 +90,7 @@ fun PerfilCuentaScreen(
                 ) ?: throw IllegalArgumentException("La imagen no se puede abrir")
                 runCatching { onGuardarFoto(imagen) ?: "Foto actualizada" }
                     .getOrElse { it.message ?: "No se pudo guardar la foto" }
-            }.getOrElse { it.message ?: "Error desconocido al leer" }
+            }.getOrElse { it.message ?: "No se pudo abrir la imagen" }
         }
     }
     Scaffold(topBar = { TopAppBar(title = { Text("Mi perfil") }) }) { margen ->
