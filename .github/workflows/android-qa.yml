@@ -1,7 +1,7 @@
-name: Android Kotlin QA
+name: Android Entrega
 on:
   push:
-    branches: [qa]
+    branches: [entrega-final-android-seguros-bpo]
     paths:
       - 'app/**'
       - 'gradle/**'
@@ -41,35 +41,8 @@ jobs:
           sdkmanager "platforms;android-37.2"
       - name: Dar permisos a Gradle
         run: chmod +x gradlew
-      - name: Preparar firma persistente de APK QA
-        if: github.event_name == 'push' && github.ref == 'refs/heads/qa'
-        shell: bash
-        env:
-          QA_KEYSTORE_BASE64: ${{ secrets.QA_KEYSTORE_BASE64 }}
-          QA_SIGNING_STORE_PASSWORD: ${{ secrets.QA_SIGNING_STORE_PASSWORD }}
-          QA_SIGNING_KEY_ALIAS: ${{ secrets.QA_SIGNING_KEY_ALIAS }}
-          QA_SIGNING_KEY_PASSWORD: ${{ secrets.QA_SIGNING_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$QA_KEYSTORE_BASE64" && -z "$QA_SIGNING_STORE_PASSWORD" && -z "$QA_SIGNING_KEY_ALIAS" && -z "$QA_SIGNING_KEY_PASSWORD" ]]; then
-            echo "Firma persistente no configurada; este APK usa la clave debug temporal." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          if [[ -z "$QA_KEYSTORE_BASE64" || -z "$QA_SIGNING_STORE_PASSWORD" || -z "$QA_SIGNING_KEY_ALIAS" || -z "$QA_SIGNING_KEY_PASSWORD" ]]; then
-            echo "::error::Los cuatro secretos de firma QA deben configurarse conjuntamente."
-            exit 1
-          fi
-          umask 077
-          archivo="$RUNNER_TEMP/segurosbpo-qa.jks"
-          printf '%s' "$QA_KEYSTORE_BASE64" | base64 --decode > "$archivo"
-          test -s "$archivo"
-          echo "QA_SIGNING_KEYSTORE=$archivo" >> "$GITHUB_ENV"
-          echo "QA_SIGNING_STORE_PASSWORD=$QA_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
-          echo "QA_SIGNING_KEY_ALIAS=$QA_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
-          echo "QA_SIGNING_KEY_PASSWORD=$QA_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
-          echo "Firma QA persistente configurada desde secretos; no se publica el almacén." >> "$GITHUB_STEP_SUMMARY"
-      - name: Compilar y ejecutar pruebas unitarias y compilar pruebas Android
-        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest :app:createDebugUnitTestCoverageReport --no-daemon
+      - name: Compilar APK y ejecutar pruebas unitarias
+        run: ./gradlew :app:assembleDebug :app:createDebugUnitTestCoverageReport --no-daemon
 
       - name: Comprobar firma pública de APK
         shell: bash

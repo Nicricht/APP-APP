@@ -1,70 +1,56 @@
-# APP-APP: Seguimiento de Siniestros
+# Seguros BPO — Entrega Android DSY1105
 
-Proyecto de Desarrollo de Aplicaciones Móviles (DSY1105). Es una aplicación Android para registrar y consultar siniestros de seguros con datos ficticios.
+Aplicación Android de seguimiento de siniestros con dos perfiles de demostración: **Asegurado** y **Liquidador**. Es un proyecto académico con datos locales ficticios.
 
-## Plan de finalizacion y control QA (23-10-2026)
+## Tecnología y alcance
 
-Para continuar el desarrollo, consultar estos documentos vigentes en la rama `qa`:
-
-- [Plan maestro para terminar la app](docs/PLAN_MAESTRO_FINALIZACION.md): roles Asegurado/Liquidador, cuentas demo, asignacion por area, tomar caso, flujos, arquitectura, mejoras visuales y backlog BPO-00 a BPO-12.
-- [Protocolo QA obligatorio](docs/PROTOCOLO_QA_OBLIGATORIO.md): todo cambio se integra y prueba en `qa` antes de proponer una promocion; `main` y `entrega-01` permanecen intactas.
-- [Matriz de aceptacion y pruebas](docs/MATRIZ_ACEPTACION_Y_PRUEBAS.md): casos para permisos, migraciones, documentos, estados, graficos, Android, APK y recorrido completo.
-
-**Importante:** estos son planes de implementacion, no funcionalidades ya terminadas. El QA instrumentado del commit auditado del 23-10-2026 estaba fallando y debe corregirse primero. Registro/login y boton `Tomar caso` son ampliaciones acordadas respecto de la identificacion simulada y la asignacion por analista opcional del caso original.
-
-## Herramientas utilizadas
-
-- Android Studio y Kotlin.
-- Jetpack Compose y Material Design 3 para las pantallas.
-- MVVM con ViewModel y StateFlow.
-- Navigation Compose para cambiar entre pantallas.
-- SQLiteOpenHelper para guardar la información en el teléfono.
-- Cámara y galería con ActivityResultContracts.
-
-La estructura y los componentes siguen las actividades realizadas en `MiRegistroAvatar`.
+- Kotlin, Jetpack Compose y Material 3.
+- Arquitectura MVVM, ViewModel/StateFlow y Navigation Compose.
+- SQLiteOpenHelper para cuentas, siniestros, historial, documentos y avisos.
+- Cámara, galería y selector de documentos del sistema.
+- Todo funciona localmente. **No hay backend Java, Spring Boot, Retrofit, API REST ni microservicios en esta entrega.**
 
 ## Funcionalidades
 
-- Selección de un asegurado ficticio.
-- Registro de siniestros y número de identificación.
-- Lista de siniestros y búsqueda.
-- Consulta del detalle y corrección de la descripción.
-- Historial de movimientos registrados.
-- Adjuntar fotografías, imágenes y archivos PDF.
-- Perfil simulado de liquidador, gestiones y cambios de etapa.
+- Crear cuenta o entrar con usuarios de demostración y separar los datos por perfil.
+- Reportar siniestros de Vehículos u Hogar con validaciones y número identificador.
+- Consultar, buscar y editar casos; ver etapa, próximo paso, historial y documentos.
+- Adjuntar imágenes y archivos PDF con límites de tipo, tamaño y cantidad.
+- Liquidadores: tomar casos por especialidad, registrar gestiones, solicitar documentos, cambiar etapas y cerrar casos según las reglas.
+- Avisos locales, perfiles y estadísticas.
 
-Los datos se almacenan localmente. En esta evaluación no se usan microservicios, Retrofit ni Spring Boot.
+## Abrir y ejecutar
 
-## Ejecución
+1. Clonar esta rama o descargarla en ZIP desde GitHub; abrir **la carpeta raíz** en Android Studio (donde está `settings.gradle.kts`).
+2. Sincronizar Gradle con Java 25 y Android SDK 37.2, tal como utiliza la CI.
+3. Ejecutar el módulo `app` en un teléfono o emulador. El paquete debug es `cl.duocuc.segurosbpo.prueba`.
+4. Usar el acceso demo o crear datos ficticios; consultar [Cuentas de demostración](docs/CUENTAS_DEMO_QA.md).
 
-1. Abrir el proyecto en Android Studio desde la carpeta que contiene `settings.gradle.kts`.
-2. Esperar la sincronización de Gradle.
-3. Seleccionar un emulador o conectar un teléfono Android.
-4. Ejecutar `app`.
+Para compilar y correr las pruebas unitarias de dominio:
 
-Las instrucciones detalladas están en [Cómo ejecutar Android](docs/COMO_EJECUTAR_ANDROID.md).
+```bash
+./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
+```
 
-## Organización del repositorio
+Las pruebas unitarias están en `app/src/test/`. La batería extendida de pruebas instrumentadas y los ZIP de referencia académica **no se copian a esta rama de entrega**.
 
-- [`main`](../../tree/main): aplicación para presentar, siguiendo el ejemplo del profesor.
-- [`qa`](../../tree/qa): pruebas unitarias adicionales, integración SQLite y pruebas de navegación Android.
+## Calidad verificada en la versión de origen
 
-Las comprobaciones se pueden ver en [GitHub Actions](../../actions). La compilación correcta no sustituye las pruebas de cámara y galería en un dispositivo.
+Esta rama parte del código productivo del commit [`9558431d`](https://github.com/Nicricht/APP-APP/commit/9558431de12b50e0547d05dffa3171ee1023190d).
 
-## Documentación
+La batería completa sigue disponible en [la rama de QA](https://github.com/Nicricht/APP-APP/tree/feature/qa-cobertura-real-20261024) y en la [PR #12](https://github.com/Nicricht/APP-APP/pull/12).
 
-- [Bitácora de avances de QA](docs/BITACORA_AVANCES_QA.md): historial de cada cambio, commit, pruebas y pendientes.
+- [Android instrumented QA](https://github.com/Nicricht/APP-APP/actions/runs/40157481013): **345/345 pruebas aprobadas** en el commit de origen.
+- [Android Kotlin QA](https://github.com/Nicricht/APP-APP/actions/runs/40157481003): compilación, pruebas unitarias e instalación/arranque APK en API 30 y API 35.
+- JaCoCo de origen: **100 % de líneas**, **99,53 % de ramas** (cinco rutas del código generado por Compose sin cubrir). No afirmar 100 % de ramas.
+- La evidencia automática no sustituye una demostración manual con cámara/galería en dispositivo real.
 
+## Documentación para presentar
 
-- [Control final de los 100 puntos](docs/CONTROL_FINAL_100_PUNTOS.md).
-- [Guía para explicar el proyecto en la presentación](docs/GUIA_DEFENSA_ORAL.md).
-- [Guía completa del caso y pauta](docs/GUIA_MAESTRA_DSY1105.md).
-- [Estado de avance](docs/ETAPA_1_ANDROID.md).
-- [Cómo ejecutar el proyecto](docs/COMO_EJECUTAR_ANDROID.md).
+- [Guía maestra DSY1105](docs/GUIA_MAESTRA_DSY1105.md) — requisitos y pauta.
+- [Guía de defensa oral](docs/GUIA_DEFENSA_ORAL.md).
+- [Polimorfismo y animaciones](docs/POO_ANIMACIONES_EN_LA_DEFENSA.md).
+- [Auditoría de la pauta](docs/AUDITORIA_PAUTA_DSY1105_2026-10-24.md) — riesgos y evidencias, evaluación docente pendiente.
+- [Cómo ejecutar Android](docs/COMO_EJECUTAR_ANDROID.md) — contiene instrucciones de QA histórico; para esta entrega usar las indicaciones superiores.
 
-## Pendiente de revisión final
-
-- Probar todos los recorridos en un emulador o teléfono.
-- Verificar permisos, documentos y migraciones de SQLite.
-- Terminar las funcionalidades locales que se acuerden para esta evaluación.
-- Reunir las evidencias de GitHub y Trello de ambos integrantes.
+La rama de entrega se prepara sin modificar `main`, `qa` ni `entrega-01`. No es una declaración de nota 100/100; esa evaluación corresponde al docente.
