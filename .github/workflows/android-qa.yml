@@ -1,21 +1,26 @@
-name: Android Kotlin QA
+name: Android Entrega
 on:
   push:
-    branches: [entrega-01]
+    branches: [entrega-final-android-seguros-bpo]
     paths:
       - 'app/**'
       - 'gradle/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - '.github/workflows/android-qa.yml'
+      - '.github/scripts/**'
   pull_request:
     paths:
       - 'app/**'
       - 'gradle/**'
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
+      - '.github/scripts/**'
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   android-qa:
     runs-on: ubuntu-latest
@@ -36,8 +41,38 @@ jobs:
           sdkmanager "platforms;android-37.2"
       - name: Dar permisos a Gradle
         run: chmod +x gradlew
-      - name: Compilar Android y ejecutar las pruebas unitarias
-        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
+      - name: Compilar APK y ejecutar pruebas unitarias
+        run: ./gradlew :app:assembleDebug :app:createDebugUnitTestCoverageReport --no-daemon
+
+      - name: Comprobar firma pública de APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          herramienta="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "$herramienta"
+          if ! "$herramienta" verify --print-certs app/build/outputs/apk/debug/app-debug.apk > firma-qa.txt 2>&1; then
+            cat firma-qa.txt
+            echo "::error::La APK no superó la verificación criptográfica de apksigner."
+            exit 1
+          fi
+          cat firma-qa.txt
+          if ! grep -Eiq 'SHA[- ]?256' firma-qa.txt; then
+            echo "::error::La salida de apksigner no incluye una huella pública SHA-256."
+            exit 1
+          fi
+          if [[ -n "${QA_SIGNING_KEYSTORE:-}" ]]; then
+            echo "APK QA: certificado persistente configurado (huella pública en artifact)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "APK QA: certificado debug temporal (no garantiza actualizaciones entre runners)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar certificado público de APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: firma-publica-apk-qa
+          path: firma-qa.txt
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Publicar APK de depuración
         uses: actions/upload-artifact@v4
@@ -45,4 +80,54 @@ jobs:
           name: SegurosBPO-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Publicar informe JaCoCo de líneas y ramas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-unitaria-lineas-ramas
+          path: |
+            app/build/reports/coverage/test/debug/
+            app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: warn
+          retention-days: 14
+
+  instalar-android:
+    needs: android-qa
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [30, 35]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: SegurosBPO-debug-apk
+          path: apk
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Permitir acceso a KVM
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Verificar APK instalable y arranque
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_4
+          disable-animations: true
+          script: bash .github/scripts/verificar-instalacion.sh ${{ matrix.api }}
+      - name: Guardar evidencia APK Android
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seguros-bpo-instalacion-api-${{ matrix.api }}
+          path: evidencia-apk/
+          if-no-files-found: ignore
           retention-days: 14
