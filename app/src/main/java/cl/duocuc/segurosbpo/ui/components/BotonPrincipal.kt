@@ -11,6 +11,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,22 +24,7 @@ import cl.duocuc.segurosbpo.ui.style.estiloAltoBoton
 import cl.duocuc.segurosbpo.ui.style.EstilosBotones
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  BotonPrincipal.kt  —  COMPONENTE REUTILIZABLE
-//  ---------------------------------------------------------------------
-//  Un componente es una función @Composable que:
-//   1) recibe DATOS por parámetro (texto, habilitado, icono)
-//   2) recibe EVENTOS por parámetro (onClick: () -> Unit)
-//   3) NO conoce el ViewModel: solo dibuja.
-//
-//  El parámetro "modifier" (valor por defecto Modifier) permite que la
-//  pantalla decida el ancho: fillMaxWidth(), weight(1f), etc.
-// =====================================================================
 
-/**
- * Botón de acción principal (relleno, con sombra y ícono opcional).
- * @param icono recurso R.drawable.xxx, o null si no lleva ícono.
- */
 @Composable
 fun BotonPrincipal(
     texto: String,
@@ -46,18 +35,18 @@ fun BotonPrincipal(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.estiloAltoBoton(),          // height: 52dp
+        modifier = modifier.estiloAltoBoton(),
         enabled = habilitado,
-        shape = EstilosBotones.forma,                     // border-radius
-        colors = EstilosBotones.colorPrincipal(),       // background / color
-        elevation = EstilosBotones.elevacion(),           // box-shadow
-        contentPadding = EstilosBotones.relleno           // padding
+        shape = EstilosBotones.forma,
+        colors = EstilosBotones.colorPrincipal(),
+        elevation = EstilosBotones.elevacion(),
+        contentPadding = EstilosBotones.relleno
     ) {
-        // El contenido del botón es un "slot": aquí se ordena en fila
+
         if (icono != null) {
             Icon(
                 painter = painterResource(id = icono),
-                contentDescription = null,              // decorativo: el texto ya describe
+                contentDescription = null,
                 modifier = Modifier.size(ButtonDefaults.IconSize)
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
@@ -66,17 +55,20 @@ fun BotonPrincipal(
     }
 }
 
-// @Preview: ver el componente en Android Studio SIN ejecutar la app (vista Split).
+
 @Preview(showBackground = true)
 @Composable
-private fun BotonPrincipalPreview() {
+internal fun BotonPrincipalPreview() {
     SegurosBpoTheme {
+        var pulsaciones by remember { mutableStateOf(0) }
+        val pulsar = { pulsaciones += 1 }
         Column(Modifier.padding(16.dp)) {
-            BotonPrincipal(texto = "Registrarme", onClick = {}, modifier = Modifier.fillMaxWidth())
+            BotonPrincipal(texto = "Registrarme", onClick = pulsar, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.size(8.dp))
-            BotonPrincipal(texto = "Con ícono", onClick = {}, icono = R.drawable.ic_check, modifier = Modifier.fillMaxWidth())
+            BotonPrincipal(texto = "Con ícono", onClick = pulsar, icono = R.drawable.ic_check, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.size(8.dp))
-            BotonPrincipal(texto = "Deshabilitado", onClick = {}, habilitado = false, modifier = Modifier.fillMaxWidth())
+            BotonPrincipal(texto = "Deshabilitado", onClick = pulsar, habilitado = false, modifier = Modifier.fillMaxWidth())
+            Text("Pulsaciones: " + pulsaciones)
         }
     }
 }

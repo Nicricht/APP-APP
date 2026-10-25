@@ -14,17 +14,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimarioClaro,
-    onPrimary = PrimarioClaro,
+    primary = Primario,
+    onPrimary = Blanco,
     primaryContainer = PrimarioOscuro,
-    onPrimaryContainer = PrimarioClaro,
-    secondary = Secundario,
-    onSecondary = Blanco,
+    onPrimaryContainer = Blanco,
+    secondary = PrimarioClaro,
+    onSecondary = TextoOscuro,
     tertiary = Acento,
-    onTertiary = Blanco,
+    onTertiary = TextoOscuro,
     background = FondoOscuro,
     onBackground = TextoClaro,
-    surface = SuperficieClara,
+    surface = SuperficieOscura,
     onSurface = TextoClaro
 )
 
@@ -44,7 +44,10 @@ private val LightColorScheme = lightColorScheme(
 
 )
 
-//border-radius
+
+internal fun admiteColoresDinamicos(solicitado: Boolean, sdk: Int): Boolean =
+    solicitado && sdk >= Build.VERSION_CODES.S
+
 private val Formas = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
@@ -52,14 +55,26 @@ private val Formas = Shapes(
 )
 
 @Composable
+fun SegurosBpoTheme(content: @Composable () -> Unit) {
+    SegurosBpoTheme(isSystemInDarkTheme(), true, content)
+}
+
+@Composable
 fun SegurosBpoTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean,
+    content: @Composable () -> Unit
+) {
+    SegurosBpoTheme(darkTheme, true, content)
+}
+
+@Composable
+fun SegurosBpoTheme(
+    darkTheme: Boolean,
+    dynamicColor: Boolean,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        admiteColoresDinamicos(dynamicColor, Build.VERSION.SDK_INT) -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }

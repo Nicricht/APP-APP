@@ -19,11 +19,6 @@ import cl.duocuc.segurosbpo.ui.style.EstiloTarjeta
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  TarjetaEstadistica.kt  —  Número grande + etiqueta (ej. "128 Seguidores").
-//  Se usa dentro de una Row con Modifier.weight(1f) para que las tres
-//  tarjetas midan lo mismo (como flex: 1 en CSS).
-// =====================================================================
 
 @Composable
 fun TarjetaEstadistica(
@@ -40,7 +35,7 @@ fun TarjetaEstadistica(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = Dimens.espacioMedio),
-            horizontalAlignment = Alignment.CenterHorizontally // text-align: center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = valor,
@@ -59,7 +54,7 @@ fun TarjetaEstadistica(
 
 @Preview(showBackground = true)
 @Composable
-private fun TarjetaEstadisticaPreview() {
+internal fun TarjetaEstadisticaPreview() {
     SegurosBpoTheme {
         Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TarjetaEstadistica("128", "Seguidores", Modifier.weight(1f))
