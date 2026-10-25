@@ -83,10 +83,17 @@ class SiniestrosViewModel @JvmOverloads constructor(
     val cargaEquipos = _cargaEquipos.asStateFlow()
     private val _actualizadoEn = MutableStateFlow(marcaDeTiempo())
     val actualizadoEn = _actualizadoEn.asStateFlow()
+    private val _companias = MutableStateFlow(db.listarCompanias())
+    val companias = _companias.asStateFlow()
+    private val _tipos = MutableStateFlow(db.listarTipos())
+    val tipos = _tipos.asStateFlow()
+    private val _cargaPersonas = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val cargaPersonas = _cargaPersonas.asStateFlow()
+    private var identidadLiquidador: String? = null
+    private var nombreLiquidador: String = ""
+
     private val _archivados = MutableStateFlow<List<Siniestro>>(emptyList())
     val archivados = _archivados.asStateFlow()
-    private val _pendientesPorCaso = MutableStateFlow<Map<Long, List<String>>>(emptyMap())
-    val pendientesPorCaso = _pendientesPorCaso.asStateFlow()
 
     fun seleccionarLiquidador(nuevo: Liquidador) {
         _liquidador.value = nuevo
@@ -99,7 +106,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun refrescarAsignados() {
-        _casosLiquidador.value = db.listarAsignados(_liquidador.value)
+        _casosLiquidador.value = db.listarAsignados(_liquidador.value, identidadLiquidador)
         _disponiblesLiquidador.value = db.listarDisponibles(_liquidador.value)
         _seguimientosVencidos.value = db.listarSeguimientosVencidos(_liquidador.value)
         _actualizadoEn.value = marcaDeTiempo()
@@ -107,7 +114,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun tomarCasoLiquidador(id: Long): String? {
         val resultado = runCatching {
-            db.tomarCaso(id, _liquidador.value)
+            db.tomarCaso(
+                id, _liquidador.value, identidadLiquidador.orEmpty(), nombreLiquidador
+            )
         }
         val mensaje = resultado.fold(
             onSuccess = { asignado ->
@@ -190,7 +199,6 @@ class SiniestrosViewModel @JvmOverloads constructor(
         _solicitudes.value = emptyList()
         _consultas.value = emptyList()
         _evaluacion.value = null
-        _pendientesPorCaso.value = emptyMap()
         _busqueda.value = ""
         _asegurado.value = nuevo
         preferencias.edit().putString("asegurado", nuevo.name).apply()
@@ -207,9 +215,13 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun buscarPosibleDuplicado(estado: FormularioUiState): String? =
         if (estado.asegurado.name != _asegurado.value.name) null else db.buscarPosibleDuplicado(estado)
 
+    var ultimoRegistrado: Long? = null
+        private set
+
     fun registrar(estado: FormularioUiState): String {
         require(estado.asegurado == _asegurado.value) { "El asegurado seleccionado cambió" }
         val nuevo = db.registrar(estado)
+        ultimoRegistrado = nuevo.id
         refrescar()
         refrescarAsignados()
         return nuevo.numero
@@ -225,7 +237,42 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     suspend fun cargarImagen(siniestroId: Long, evidenciaId: Long): Bitmap? {
         val propietario = _asegurado.value
-        return withContext(Dispatchers.IO) { db.obtenerImagen(evidenciaId, siniestroId, propietario) }
+        return withContext(Dispatchers.IO) {
+            runCatching { db.obtenerImagen(evidenciaId, siniestroId, propietario) }.getOrNull()
+        }
+    }
+
+    suspend fun descargarDocumentoLiquidador(
+        siniestroId: Long, evidenciaId: Long, destino: Uri
+    ): String? {
+        val equipo = _liquidador.value
+        val contexto = getApplication<Application>()
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val archivo = db.obtenerArchivoAsignado(evidenciaId, siniestroId, equipo)
+                    ?: return@runCatching "El documento no está disponible"
+                val salida = contexto.contentResolver.openOutputStream(destino)
+                    ?: return@runCatching "No se pudo escribir el archivo"
+                salida.use { it.write(archivo.bytes) }
+                null
+            }.getOrElse { mensajeError(it, "No se pudo descargar el documento") }
+        }
+    }
+
+    suspend fun cargarMiniatura(siniestroId: Long, evidenciaId: Long): Bitmap? {
+        val propietario = _asegurado.value
+        return withContext(Dispatchers.IO) {
+            runCatching { db.obtenerImagen(evidenciaId, siniestroId, propietario, 240) }.getOrNull()
+        }
+    }
+
+    suspend fun cargarMiniaturaLiquidador(siniestroId: Long, evidenciaId: Long): Bitmap? {
+        val equipo = _liquidador.value
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                db.obtenerImagenAsignada(evidenciaId, siniestroId, equipo, 240)
+            }.getOrNull()
+        }
     }
 
     fun refrescarGestiones(id: Long) {
@@ -240,7 +287,6 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun refrescarAvisos() {
         db.generarRecordatorios()
         _avisos.value = db.listarAvisos(_asegurado.value)
-        _pendientesPorCaso.value = db.pendientesPorCaso(_asegurado.value)
     }
 
     fun marcarAvisoLeido(id: Long) {
@@ -367,18 +413,42 @@ class SiniestrosViewModel @JvmOverloads constructor(
         return error
     }
 
+    fun identificarLiquidador(id: String?, nombre: String = "") {
+        identidadLiquidador = id
+        nombreLiquidador = nombre
+        refrescarAsignados()
+        refrescarArchivados()
+    }
+
+    fun crearCompania(etiqueta: String, plazo: Int): String? {
+        val error = runCatching { db.crearCompania(etiqueta, plazo) }
+            .exceptionOrNull()?.let { mensajeError(it, "No se pudo crear la compañía") }
+        if (error == null) _companias.value = db.listarCompanias()
+        return error
+    }
+
+    fun crearTipoSiniestro(
+        etiqueta: String, esVehiculo: Boolean, documentos: List<String>
+    ): String? {
+        val error = runCatching { db.crearTipoSiniestro(etiqueta, esVehiculo, documentos) }
+            .exceptionOrNull()?.let { mensajeError(it, "No se pudo crear el tipo de siniestro") }
+        if (error == null) _tipos.value = db.listarTipos()
+        return error
+    }
+
     fun refrescarArchivados() {
-        _archivados.value = db.listarArchivados(_liquidador.value)
+        _archivados.value = db.listarArchivados(_liquidador.value, identidadLiquidador)
     }
 
     fun refrescarAnalista() {
         _sinAsignar.value = db.listarSinAsignar()
         _cargaEquipos.value = db.cargaPorLiquidador()
+        _cargaPersonas.value = db.cargaPorPersona()
         _actualizadoEn.value = marcaDeTiempo()
     }
 
-    fun asignarCaso(id: Long, equipo: Liquidador): String? {
-        val error = runCatching { db.asignarLiquidador(id, equipo) }
+    fun asignarCaso(id: Long, equipo: Liquidador, personaId: String, persona: String): String? {
+        val error = runCatching { db.asignarLiquidador(id, equipo, personaId, persona) }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo asignar el caso") }
         if (error == null) {
             refrescarAnalista()

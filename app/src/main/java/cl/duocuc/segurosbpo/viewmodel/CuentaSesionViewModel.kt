@@ -6,6 +6,8 @@ import java.io.ByteArrayOutputStream
 import androidx.lifecycle.AndroidViewModel
 import cl.duocuc.segurosbpo.data.CuentaDbHelper
 import cl.duocuc.segurosbpo.model.CuentaLocal
+import cl.duocuc.segurosbpo.model.Liquidador
+import cl.duocuc.segurosbpo.model.RolCuenta
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -69,6 +71,19 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             onFailure = { mensajeError(it, "No se pudo guardar la foto") }
         )
     }
+
+    fun crearLiquidador(nombre: String, equipo: Liquidador, telefono: String): String? {
+        val resultado = runCatching { db.crearLiquidador(nombre, equipo, telefono) }
+        return resultado.fold(
+            onSuccess = { _usuarios.value = cargar(); null },
+            onFailure = { mensajeError(it, "No se pudo crear el liquidador") }
+        )
+    }
+
+    fun liquidadoresDe(equipo: Liquidador): List<CuentaLocal> =
+        _usuarios.value.filter {
+            it.rol == RolCuenta.LIQUIDADOR && it.equipo == equipo.name
+        }
 
     fun cerrarSesion() {
         preferencias.edit().remove("cuenta_id").apply()
