@@ -80,7 +80,7 @@ fun PerfilCuentaScreen(
                 val opciones = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 BitmapFactory.decodeByteArray(archivo.bytes, 0, archivo.bytes.size, opciones)
                 var escala = 1
-                while (opciones.outWidth / escala > 600 || opciones.outHeight / escala > 600) {
+                while (opciones.outWidth / escala > 600) {
                     escala *= 2
                 }
                 opciones.inJustDecodeBounds = false
