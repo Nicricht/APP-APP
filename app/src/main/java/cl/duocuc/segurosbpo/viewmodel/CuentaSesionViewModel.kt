@@ -76,7 +76,9 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             guardar(it)
             return null
         }
-        return resultado.exceptionOrNull()?.message ?: "No se pudo registrar la cuenta"
+        return resultado.exceptionOrNull()?.let {
+            mensajeError(it, "No se pudo registrar la cuenta")
+        } ?: "No se pudo registrar la cuenta"
     }
 
     private fun crearAseguradoDemo(): CuentaLocal = CuentaLocal(
@@ -116,7 +118,9 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             _cuenta.value = it
             return null
         }
-        return resultado.exceptionOrNull()?.message ?: "No se pudo guardar"
+        return resultado.exceptionOrNull()?.let {
+            mensajeError(it, "No se pudo guardar")
+        } ?: "No se pudo guardar"
     }
 
     fun actualizarFoto(bitmap: Bitmap): String? {
@@ -132,7 +136,9 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
             _cuenta.value = it
             return null
         }
-        return resultado.exceptionOrNull()?.message ?: "No se pudo guardar la foto"
+        return resultado.exceptionOrNull()?.let {
+            mensajeError(it, "No se pudo guardar la foto")
+        } ?: "No se pudo guardar la foto"
     }
 
     fun cerrarSesion() {
