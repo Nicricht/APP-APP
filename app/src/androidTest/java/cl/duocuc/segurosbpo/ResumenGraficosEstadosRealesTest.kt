@@ -1,6 +1,8 @@
 package cl.duocuc.segurosbpo
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -40,6 +42,26 @@ class ResumenGraficosEstadosRealesTest {
         etapa = etapa,
         ultimaActualizacion = fecha
     )
+
+    @Test fun unaRecomposicionAjenaALosCasosNoAlteraLosTotalesDelResumen() {
+        val ronda = mutableStateOf(0)
+        val cartera = listOf(
+            caso(131, TipoSiniestro.CHOQUE, EtapaSiniestro.EVALUACION, "20-10-2026"),
+            caso(132, TipoSiniestro.DANO_AGUA, EtapaSiniestro.CERRADO, "20-10-2026")
+        )
+        rule.setContent {
+            Column {
+                Text("Ronda visual: ${ronda.value}")
+                ResumenGraficosCasos(casos = cartera, equipo = "Mixto")
+            }
+        }
+        rule.onNodeWithText("Casos asignados a este liquidador: 2").assertExists()
+        rule.onNodeWithText("Abiertos: 1").assertExists()
+        rule.runOnIdle { ronda.value = 1 }
+        rule.onNodeWithText("Ronda visual: 1").assertExists()
+        rule.onNodeWithText("Casos asignados a este liquidador: 2").assertExists()
+        rule.onNodeWithText("Cerrados: 1").assertExists()
+    }
 
     @Test fun resumenVacioPredeterminadoNoMuestraGraficasInventadas() {
         rule.setContent {
