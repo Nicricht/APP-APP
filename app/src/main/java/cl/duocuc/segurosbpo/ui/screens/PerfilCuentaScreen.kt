@@ -1,80 +1,85 @@
 package cl.duocuc.segurosbpo.ui.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
+import cl.duocuc.segurosbpo.permisos.Permisos
+import cl.duocuc.segurosbpo.ui.components.AvatarCuenta
+import cl.duocuc.segurosbpo.ui.components.AvatarImagen
+import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilCuentaScreen(
     cuenta: CuentaLocal,
-    onGuardarTelefono: (String) -> String?,
     onGuardarFoto: (Bitmap) -> String?,
+    onEditar: () -> Unit,
     onVolver: () -> Unit,
     onCerrarSesion: () -> Unit
 ) {
     val contexto = LocalContext.current
-    val editable = cuenta.correo.isNotBlank()
-    var telefono by rememberSaveable(cuenta.id) { mutableStateOf(cuenta.telefono) }
     var mensaje by remember { mutableStateOf<String?>(null) }
-    val foto = remember(cuenta.foto) {
-        cuenta.foto?.let { bytes ->
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+    var permisoRechazado by remember { mutableStateOf(false) }
+    var fotoPendiente by remember(cuenta.id) { mutableStateOf<Bitmap?>(null) }
+
+    val camara = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { imagen ->
+        if (imagen == null) {
+            mensaje = "Captura cancelada"
+        } else {
+            fotoPendiente = imagen
+            mensaje = null
         }
-    }
-    val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) {
-        imagen ->
-        mensaje = if (imagen == null) "Captura cancelada"
-        else runCatching { onGuardarFoto(imagen) ?: "Foto actualizada" }
-            .getOrElse { it.message ?: "No se pudo guardar la foto" }
     }
     val permisoCamara = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { concedido ->
-        if (concedido) camara.launch(null) else mensaje = "No se otorgó permiso de cámara"
+        if (concedido) {
+            permisoRechazado = false
+            camara.launch(null)
+        } else {
+            mensaje = "Sin permiso de cámara no se puede tomar la foto de perfil"
+            permisoRechazado = true
+        }
     }
-    val galeria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+    val galeria = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
         if (uri == null) {
             mensaje = "Selección cancelada"
         } else {
-            mensaje = runCatching {
+            val elegida = runCatching {
                 val archivo = ProcesadorEvidencia.desdeSelector(contexto, uri)
                 require(archivo.mime.startsWith("image/")) { "Debes seleccionar una imagen" }
                 val opciones = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -85,55 +90,136 @@ fun PerfilCuentaScreen(
                 }
                 opciones.inJustDecodeBounds = false
                 opciones.inSampleSize = escala
-                val imagen = BitmapFactory.decodeByteArray(
-                    archivo.bytes, 0, archivo.bytes.size, opciones
-                ) ?: throw IllegalArgumentException("La imagen no se puede abrir")
-                runCatching { onGuardarFoto(imagen) ?: "Foto actualizada" }
-                    .getOrElse { it.message ?: "No se pudo guardar la foto" }
-            }.getOrElse { it.message ?: "No se pudo abrir la imagen" }
+                BitmapFactory.decodeByteArray(archivo.bytes, 0, archivo.bytes.size, opciones)
+                    ?: throw IllegalArgumentException("La imagen no se puede abrir")
+            }
+            fotoPendiente = elegida.getOrNull()
+            mensaje = elegida.exceptionOrNull()?.message
         }
     }
-    Scaffold(topBar = { TopAppBar(title = { Text("Mi perfil") }) }) { margen ->
+
+    Scaffold(
+        topBar = { BarraSuperior("Mi perfil", onVolver = onVolver) },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(onClick = onEditar) {
+                Text("Editar perfil")
+            }
+        }
+    ) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TextButton(onClick = onVolver) { Text("Volver") }
-            foto?.let {
-                Image(
-                    bitmap = it, contentDescription = "Foto de perfil",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(96.dp).clip(CircleShape)
+            val pendiente = fotoPendiente
+            if (pendiente == null) {
+                AvatarCuenta(
+                    foto = cuenta.foto,
+                    descripcion = "Foto de perfil",
+                    tamano = 120.dp
                 )
-            }
-            Text(cuenta.nombre, style = MaterialTheme.typography.headlineSmall)
-            Text(if (cuenta.rol == RolCuenta.ASEGURADO) "Asegurado" else "Liquidador")
-            if (cuenta.equipo != null) Text("Equipo: " + cuenta.equipo)
-            if (cuenta.correo.isNotEmpty()) Text("Correo: " + cuenta.correo)
-            if (editable) {
-                OutlinedTextField(
-                    value = telefono, onValueChange = { telefono = it },
-                    label = { Text("Teléfono de contacto") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Button(onClick = {
-                    mensaje = onGuardarTelefono(telefono) ?: "Datos actualizados"
-                }) { Text("Guardar teléfono") }
-                Button(onClick = {
-                    if (ContextCompat.checkSelfPermission(
-                            contexto, Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED) camara.launch(null)
-                    else permisoCamara.launch(Manifest.permission.CAMERA)
-                }) { Text("Tomar foto de perfil") }
-                Button(onClick = { galeria.launch("image/*") }) {
-                    Text("Elegir foto de la galería")
-                }
             } else {
-                Text("Perfil ficticio de demostración. Los datos no son editables.")
+                AvatarImagen(
+                    imagen = pendiente.asImageBitmap(),
+                    descripcion = "Foto de perfil sin guardar",
+                    tamano = 120.dp
+                )
             }
+
+            Text(cuenta.nombre, style = MaterialTheme.typography.headlineSmall)
+            Text(
+                when (cuenta.rol) {
+                    RolCuenta.ASEGURADO -> "Persona asegurada"
+                    RolCuenta.ANALISTA -> "Analista de administración"
+                    RolCuenta.LIQUIDADOR ->
+                        "Liquidador · equipo " + (cuenta.equipo ?: "").lowercase()
+                },
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (cuenta.rut.isNotBlank()) {
+                        DatoPerfil("RUT", cuenta.rut)
+                    }
+                    if (cuenta.rol == RolCuenta.ANALISTA) {
+                        DatoPerfil("Área", "Administración de siniestros")
+                    }
+                    DatoPerfil("Correo", cuenta.correo.ifBlank { "Sin correo" })
+                    DatoPerfil("Teléfono", cuenta.telefono.ifBlank { "Sin teléfono" })
+                }
+            }
+
+            Text("Foto de perfil", style = MaterialTheme.typography.titleMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        if (Permisos.tiene(contexto, Permisos.CAMARA)) camara.launch(null)
+                        else permisoCamara.launch(Permisos.CAMARA)
+                    }
+                ) { Text("Cámara") }
+                OutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    onClick = { galeria.launch("image/*") }
+                ) { Text("Galería") }
+            }
+
+            if (pendiente != null) {
+                Text(
+                    "Foto sin guardar",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            fotoPendiente = null
+                            mensaje = null
+                        }
+                    ) { Text("Descartar") }
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            val error = runCatching { onGuardarFoto(pendiente) }
+                                .getOrElse { it.message ?: "No se pudo guardar la foto" }
+                            mensaje = error ?: "Foto actualizada"
+                            if (error == null) fotoPendiente = null
+                        }
+                    ) { Text("Guardar") }
+                }
+            }
+
             mensaje?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-            Button(onClick = onCerrarSesion) { Text("Cerrar sesión") }
+            if (permisoRechazado) {
+                OutlinedButton(onClick = { Permisos.abrirAjustes(contexto) }) {
+                    Text("Ir a Ajustes")
+                }
+            }
+
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onCerrarSesion
+            ) { Text("Cambiar de usuario") }
         }
+    }
+}
+
+@Composable
+private fun DatoPerfil(etiqueta: String, valor: String) {
+    Column {
+        Text(etiqueta, style = MaterialTheme.typography.labelMedium)
+        Text(valor, style = MaterialTheme.typography.bodyLarge)
     }
 }
