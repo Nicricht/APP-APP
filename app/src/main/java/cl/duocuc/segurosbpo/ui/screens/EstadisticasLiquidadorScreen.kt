@@ -26,6 +26,7 @@ import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
 @Composable
 fun EstadisticasLiquidadorScreen(
     liquidador: Liquidador,
+    responsable: String,
     casos: List<Siniestro>,
     disponibles: List<Siniestro>,
     seguimientosVencidos: Set<Long>
@@ -40,7 +41,7 @@ fun EstadisticasLiquidadorScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Equipo de " + liquidador.equipo, style = MaterialTheme.typography.titleLarge)
-            Text("Responsable: " + liquidador.nombre)
+            Text("Responsable: " + responsable)
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(

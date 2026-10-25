@@ -141,7 +141,11 @@ fun DetalleSiniestroScreen(
                 DatoDetalle("Tipo", siniestro.tipo.etiqueta)
                 DatoDetalle(
                     "Liquidador",
-                    siniestro.liquidadorAsignado?.nombre ?: "Pendiente de asignación"
+                    siniestro.liquidadorNombre
+                        ?: siniestro.liquidadorAsignado?.let {
+                            "Equipo " + it.equipo + ", por asignar"
+                        }
+                        ?: "Pendiente de asignación"
                 )
                 DatoDetalle("Última actualización", siniestro.ultimaActualizacion)
             }

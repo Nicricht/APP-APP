@@ -554,6 +554,7 @@ fun AppNavegacion(
                     composable(Ruta.Liquidador.ruta) {
                         CasosLiquidadorScreen(
                             liquidador = liquidador,
+                            responsable = sesion.nombre,
                             casos = casosLiquidador,
                             archivados = archivados,
                             seguimientosVencidos = seguimientosVencidos,
@@ -634,6 +635,7 @@ fun AppNavegacion(
                     composable(Ruta.EstadisticasLiquidador.ruta) {
                         EstadisticasLiquidadorScreen(
                             liquidador = liquidador,
+                            responsable = sesion.nombre,
                             casos = casosLiquidador,
                             disponibles = disponiblesLiquidador,
                             seguimientosVencidos = seguimientosVencidos

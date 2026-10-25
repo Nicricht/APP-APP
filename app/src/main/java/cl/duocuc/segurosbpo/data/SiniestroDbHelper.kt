@@ -550,7 +550,9 @@ class SiniestroDbHelper(
         return casos
     }
 
-    fun archivarCaso(siniestroId: Long, liquidador: Liquidador) {
+    fun archivarCaso(
+        siniestroId: Long, liquidador: Liquidador, responsable: String = liquidador.equipo
+    ) {
         val caso = obtenerAsignado(siniestroId, liquidador)
             ?: throw IllegalArgumentException("El caso no está asignado a tu equipo")
         require(caso.etapa == EtapaSiniestro.CERRADO) {
@@ -562,7 +564,7 @@ class SiniestroDbHelper(
             db.update("siniestros", ContentValues().apply { put("archivado", 1) },
                 "id = ?", arrayOf(siniestroId.toString()))
             insertarGestion(
-                db, siniestroId, liquidador.nombre,
+                db, siniestroId, responsable,
                 "El caso se archivó en la bandeja del equipo.", false
             )
             db.setTransactionSuccessful()
@@ -686,7 +688,8 @@ class SiniestroDbHelper(
     }
 
     fun registrarGestionAsignada(siniestroId: Long, liquidador: Liquidador,
-        descripcion: String, visible: Boolean
+        descripcion: String, visible: Boolean,
+        responsable: String = liquidador.equipo
     ) {
         ReglasEtapa.validarGestion(descripcion)?.let { throw IllegalArgumentException(it) }
         val db = writableDatabase
@@ -698,7 +701,7 @@ class SiniestroDbHelper(
             ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
             require(caso != null) { "El caso no está asignado a este liquidador" }
             require(caso != EtapaSiniestro.CERRADO.name) { "No se modifica un caso cerrado" }
-            insertarGestion(db, siniestroId, liquidador.nombre, descripcion.trim(), visible)
+            insertarGestion(db, siniestroId, responsable, descripcion.trim(), visible)
             val valores = ContentValues().apply { put("ultima_actualizacion", fechaActual()) }
             db.update("siniestros", valores, "id = ? AND liquidador = ?",
                 arrayOf(siniestroId.toString(), liquidador.name))
@@ -710,7 +713,8 @@ class SiniestroDbHelper(
 
     fun avanzarAsignado(siniestroId: Long, liquidador: Liquidador,
         resultado: String, mensajeCierre: String,
-        destino: EtapaSiniestro? = null
+        destino: EtapaSiniestro? = null,
+        responsable: String = liquidador.equipo
     ) {
         val db = writableDatabase
         db.beginTransaction()
@@ -742,7 +746,7 @@ class SiniestroDbHelper(
             val nota = if (siguiente == EtapaSiniestro.CERRADO)
                 "Caso cerrado: " + resultado + ". " + mensajeCierre.trim()
                 else "Etapa actualizada a " + siguiente.paso
-            insertarGestion(db, siniestroId, liquidador.nombre, nota, true)
+            insertarGestion(db, siniestroId, responsable, nota, true)
             insertarAviso(db, siniestroId, nota)
             db.setTransactionSuccessful()
         } finally {
@@ -791,7 +795,10 @@ class SiniestroDbHelper(
         return resultado
     }
 
-    fun solicitarDocumento(siniestroId: Long, liquidador: Liquidador, tipo: String, comentario: String) {
+    fun solicitarDocumento(
+        siniestroId: Long, liquidador: Liquidador, tipo: String, comentario: String,
+        responsable: String = liquidador.equipo
+    ) {
         val nombre = tipo.trim()
         require(nombre.isNotEmpty() && nombre.length <= 100) { "Indica un documento de hasta 100 caracteres" }
         require(comentario.length <= 500) { "El comentario no puede superar 500 caracteres" }
@@ -816,7 +823,7 @@ class SiniestroDbHelper(
                 put("fecha_solicitud", fechaActual())
             })
             val nota = "Documento solicitado: " + nombre
-            insertarGestion(db, siniestroId, liquidador.nombre, nota, true)
+            insertarGestion(db, siniestroId, responsable, nota, true)
             insertarAviso(db, siniestroId, "Necesitamos el documento: " + nombre, solicitudId)
             db.update("siniestros", ContentValues().apply {
                 put("ultima_actualizacion", fechaActual())
@@ -827,7 +834,9 @@ class SiniestroDbHelper(
         }
     }
 
-    fun marcarSolicitudRecibida(solicitudId: Long, liquidador: Liquidador) {
+    fun marcarSolicitudRecibida(
+        solicitudId: Long, liquidador: Liquidador, responsable: String = liquidador.equipo
+    ) {
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -844,7 +853,7 @@ class SiniestroDbHelper(
                 put("fecha_entrega", ahora)
             }, "id = ?", arrayOf(solicitudId.toString()))
             insertarGestion(
-                db, datos.first, liquidador.nombre,
+                db, datos.first, responsable,
                 "Se dio por recibido el documento: " + datos.second, true
             )
             insertarAviso(
@@ -860,7 +869,9 @@ class SiniestroDbHelper(
         }
     }
 
-    fun anularSolicitud(solicitudId: Long, liquidador: Liquidador) {
+    fun anularSolicitud(
+        solicitudId: Long, liquidador: Liquidador, responsable: String = liquidador.equipo
+    ) {
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -874,7 +885,7 @@ class SiniestroDbHelper(
             require(datos != null) { "La solicitud no está pendiente en un caso de tu equipo" }
             db.delete("solicitudes_documentos", "id = ?", arrayOf(solicitudId.toString()))
             insertarGestion(
-                db, datos.first, liquidador.nombre,
+                db, datos.first, responsable,
                 "Ya no se requiere el documento: " + datos.second, true
             )
             insertarAviso(
@@ -1065,7 +1076,10 @@ class SiniestroDbHelper(
         }
     }
 
-    fun responderConsulta(consultaId: Long, liquidador: Liquidador, respuesta: String) {
+    fun responderConsulta(
+        consultaId: Long, liquidador: Liquidador, respuesta: String,
+        responsable: String = liquidador.equipo
+    ) {
         ValidadorConsulta.errorRespuesta(respuesta)?.let { throw IllegalArgumentException(it) }
         val db = writableDatabase
         db.beginTransaction()
@@ -1083,7 +1097,7 @@ class SiniestroDbHelper(
                 put("fecha_respuesta", fechaActual())
             }, "id = ?", arrayOf(consultaId.toString()))
             insertarGestion(
-                db, siniestroId, liquidador.nombre,
+                db, siniestroId, responsable,
                 "Se respondió la consulta de la persona asegurada.", true
             )
             insertarAviso(db, siniestroId, "Respondimos tu consulta. Revisa el detalle del caso.")
@@ -1440,7 +1454,8 @@ class SiniestroDbHelper(
     }
 
     fun eliminarEvidenciaLiquidador(
-        evidenciaId: Long, siniestroId: Long, liquidador: Liquidador
+        evidenciaId: Long, siniestroId: Long, liquidador: Liquidador,
+        responsable: String = liquidador.equipo
     ) {
         val db = writableDatabase
         db.beginTransaction()
@@ -1461,7 +1476,7 @@ class SiniestroDbHelper(
             }
             db.delete("evidencias", "id = ?", arrayOf(evidenciaId.toString()))
             insertarGestion(
-                db, siniestroId, liquidador.nombre,
+                db, siniestroId, responsable,
                 "Se eliminó el documento del caso: " + datos.first, false
             )
             db.setTransactionSuccessful()

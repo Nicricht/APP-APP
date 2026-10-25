@@ -92,6 +92,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
     private var identidadLiquidador: String? = null
     private var nombreLiquidador: String = ""
 
+    private fun responsable(): String =
+        nombreLiquidador.ifBlank { _liquidador.value.equipo }
+
     private val _archivados = MutableStateFlow<List<Siniestro>>(emptyList())
     val archivados = _archivados.asStateFlow()
 
@@ -140,7 +143,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun solicitarDocumentoLiquidador(id: Long, tipo: String, comentario: String): String? {
         val error = runCatching {
-            db.solicitarDocumento(id, _liquidador.value, tipo, comentario)
+            db.solicitarDocumento(id, _liquidador.value, tipo, comentario, responsable())
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo solicitar el documento") }
         if (error == null) {
             refrescarAsignados()
@@ -153,7 +156,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun registrarGestionLiquidador(id: Long, descripcion: String, visible: Boolean): String? {
         val error = runCatching {
-            db.registrarGestionAsignada(id, _liquidador.value, descripcion, visible)
+            db.registrarGestionAsignada(
+                id, _liquidador.value, descripcion, visible, responsable()
+            )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la gestión") }
         if (error == null) {
             refrescarAsignados()
@@ -164,7 +169,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun avanzarLiquidador(id: Long, resultado: String, mensaje: String): String? {
         val error = runCatching {
-            db.avanzarAsignado(id, _liquidador.value, resultado, mensaje)
+            db.avanzarAsignado(
+                id, _liquidador.value, resultado, mensaje, null, responsable()
+            )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo avanzar de etapa") }
         if (error == null) {
             refrescarAsignados()
@@ -177,7 +184,10 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun cerrarAnticipadoLiquidador(id: Long, resultado: String, mensaje: String): String? {
         val error = runCatching {
-            db.avanzarAsignado(id, _liquidador.value, resultado, mensaje, EtapaSiniestro.CERRADO)
+            db.avanzarAsignado(
+                id, _liquidador.value, resultado, mensaje,
+                EtapaSiniestro.CERRADO, responsable()
+            )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo cerrar el siniestro") }
         if (error == null) {
             refrescarAsignados()
@@ -370,7 +380,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun archivarCaso(id: Long): String? {
-        val error = runCatching { db.archivarCaso(id, _liquidador.value) }
+        val error = runCatching { db.archivarCaso(id, _liquidador.value, responsable()) }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo archivar el caso") }
         if (error == null) {
             refrescarAsignados()
@@ -390,7 +400,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun marcarSolicitudRecibida(siniestroId: Long, solicitudId: Long): String? {
-        val error = runCatching { db.marcarSolicitudRecibida(solicitudId, _liquidador.value) }
+        val error = runCatching {
+            db.marcarSolicitudRecibida(solicitudId, _liquidador.value, responsable())
+        }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo confirmar la recepción") }
         if (error == null) {
             cargarGestionesLiquidador(siniestroId)
@@ -402,7 +414,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun anularSolicitud(siniestroId: Long, solicitudId: Long): String? {
-        val error = runCatching { db.anularSolicitud(solicitudId, _liquidador.value) }
+        val error = runCatching { db.anularSolicitud(solicitudId, _liquidador.value, responsable()) }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo anular la solicitud") }
         if (error == null) {
             cargarGestionesLiquidador(siniestroId)
@@ -474,7 +486,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun responderConsulta(siniestroId: Long, consultaId: Long, respuesta: String): String? {
-        val error = runCatching { db.responderConsulta(consultaId, _liquidador.value, respuesta) }
+        val error = runCatching {
+            db.responderConsulta(consultaId, _liquidador.value, respuesta, responsable())
+        }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la respuesta") }
         if (error == null) {
             cargarGestionesLiquidador(siniestroId)
@@ -517,7 +531,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun eliminarEvidenciaLiquidador(siniestroId: Long, evidenciaId: Long): String? {
         val error = runCatching {
-            db.eliminarEvidenciaLiquidador(evidenciaId, siniestroId, _liquidador.value)
+            db.eliminarEvidenciaLiquidador(
+                evidenciaId, siniestroId, _liquidador.value, responsable()
+            )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo eliminar el documento") }
         if (error == null) {
             cargarEvidenciasLiquidador(siniestroId)

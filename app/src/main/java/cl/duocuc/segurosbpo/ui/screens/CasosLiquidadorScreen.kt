@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CasosLiquidadorScreen(
     liquidador: Liquidador,
+    responsable: String,
     casos: List<Siniestro>,
     archivados: List<Siniestro>,
     seguimientosVencidos: Set<Long>,
@@ -72,7 +73,7 @@ fun CasosLiquidadorScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Equipo de " + liquidador.equipo, style = MaterialTheme.typography.titleLarge)
-            Text("Responsable: " + liquidador.nombre, style = MaterialTheme.typography.bodySmall)
+            Text("Responsable: " + responsable, style = MaterialTheme.typography.bodySmall)
 
             val base = if (viendoArchivados) archivados else casos
             val etapasPresentes = EtapaSiniestro.entries.filter { etapa ->

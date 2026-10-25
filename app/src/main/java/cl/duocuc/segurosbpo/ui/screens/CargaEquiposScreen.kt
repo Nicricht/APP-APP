@@ -66,7 +66,6 @@ fun CargaEquiposScreen(
                             "Equipo " + equipo.equipo,
                             style = MaterialTheme.typography.titleMedium
                         )
-                        Text(equipo.nombre, style = MaterialTheme.typography.bodySmall)
                         LinearProgressIndicator(
                             progress = { if (mayor == 0) 0f else cantidad.toFloat() / mayor },
                             modifier = Modifier.fillMaxWidth()
