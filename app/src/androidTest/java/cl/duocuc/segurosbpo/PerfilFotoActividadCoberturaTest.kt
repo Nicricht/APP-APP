@@ -413,4 +413,16 @@ class PerfilFotoActividadCoberturaTest {
         rule.onNodeWithText("Error de almacenamiento").assertExists()
         rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
     }
+
+    @Test fun proveedorDeGaleriaSinMensajeDeErrorMuestraRespuestaComprensible() {
+        val guardadas = AtomicInteger()
+        montar(
+            seleccion = Uri.parse("content://cl.duocuc.segurosbpo.qa.error_sin_mensaje/foto"),
+            guardadas = guardadas
+        )
+        rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
+        rule.onNodeWithText("No se pudo abrir la imagen").assertExists()
+        rule.onNodeWithText("Foto actualizada").assertDoesNotExist()
+        assertEquals(0, guardadas.get())
+    }
 }
