@@ -41,7 +41,7 @@ fun ResumenGraficosCasos(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(remember { titulo }, style = MaterialTheme.typography.titleMedium)
+            Text(titulo, style = MaterialTheme.typography.titleMedium)
             Text(
                 descripcion + ": " + resumen.total,
                 style = MaterialTheme.typography.bodyMedium
