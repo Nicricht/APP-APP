@@ -1,5 +1,7 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +14,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,16 +31,15 @@ fun HistorialSiniestroScreen(
     onVolver: () -> Unit
 ) {
     LaunchedEffect(siniestro?.id) { if (siniestro != null) onCargar() }
-    Scaffold(topBar = { TopAppBar(title = { Text("Historial del siniestro") }) }) { margen ->
+    Scaffold(topBar = { BarraSuperior("Historial del siniestro") }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextButton(onClick = onVolver) { Text("Volver al detalle") }
             if (siniestro == null) {
                 Text("No se encontró un siniestro de este asegurado")
             } else {
-                Text(siniestro.numero, style = MaterialTheme.typography.titleLarge)
+                CodigoSiniestro(siniestro.numero, estilo = MaterialTheme.typography.titleLarge)
                 Text("Gestiones visibles para el asegurado")
                 if (gestiones.isEmpty()) Text("Todavía no existen movimientos registrados.")
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {

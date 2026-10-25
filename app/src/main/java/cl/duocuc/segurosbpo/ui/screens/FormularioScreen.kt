@@ -1,5 +1,6 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -17,7 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import android.app.DatePickerDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
+import cl.duocuc.segurosbpo.ui.components.LocalAccionesBarra
+import java.util.Calendar
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,6 +52,7 @@ import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
 import cl.duocuc.segurosbpo.ui.components.BotonSecundario
 import cl.duocuc.segurosbpo.ui.components.CampoTexto
@@ -155,14 +161,32 @@ fun FormularioContent(
     onVolver: () -> Unit,
     onVerMisSiniestros: () -> Unit
 ){
+    val contexto = LocalContext.current
+    val temaOscuro = LocalAccionesBarra.current.temaOscuro
+    val abrirSelectorFecha = {
+        val calendario = Calendar.getInstance()
+        val formato = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).apply { isLenient = false }
+        runCatching { formato.parse(uiState.fechaOcurrencia) }.getOrNull()?.let {
+            calendario.time = it
+        }
+        DatePickerDialog(
+            contexto,
+            if (temaOscuro) R.style.SelectorFechaRuedaOscuro else R.style.SelectorFechaRueda,
+            { _, anio, mes, dia ->
+                onFechaCambia(String.format(Locale.ROOT, "%02d-%02d-%04d", dia, mes + 1, anio))
+            },
+            calendario.get(Calendar.YEAR),
+            calendario.get(Calendar.MONTH),
+            calendario.get(Calendar.DAY_OF_MONTH)
+        ).apply {
+            datePicker.maxDate = System.currentTimeMillis()
+        }.show()
+    }
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.titulo_formulario)) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+            BarraSuperior(
+                titulo = stringResource(R.string.titulo_formulario),
+                destacada = true
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -177,7 +201,6 @@ fun FormularioContent(
                 modifier = Modifier.padding(Dimens.espacioPantalla),
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
             ) {
-                androidx.compose.material3.TextButton(onClick = onVolver) { Text("Volver a mis siniestros") }
 
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_datos)) {
                     Text(
@@ -256,9 +279,10 @@ fun FormularioContent(
                         valor = uiState.fechaOcurrencia,
                         onValorCambia = onFechaCambia,
                         etiqueta = stringResource(R.string.campo_fecha),
-                        icono = R.drawable.ic_check,
+                        icono = R.drawable.ic_calendario,
                         error = uiState.errorFecha,
-                        tipoTeclado = KeyboardType.Number
+                        tipoTeclado = KeyboardType.Number,
+                        onPulsar = { abrirSelectorFecha() }
                     )
                     if (ValidadorSiniestro.reporteFueraDePlazo(
                             uiState.fechaOcurrencia,

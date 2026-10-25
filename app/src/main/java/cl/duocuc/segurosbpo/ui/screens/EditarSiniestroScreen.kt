@@ -1,5 +1,7 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import cl.duocuc.segurosbpo.ui.components.BarraSuperior
+import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,11 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,16 +32,15 @@ fun EditarSiniestroScreen(
 ) {
     var descripcion by remember(siniestro?.id) { mutableStateOf(siniestro?.descripcion.orEmpty()) }
     val error = descripcion.isBlank()
-    Scaffold(topBar = { TopAppBar(title = { Text("Corregir reporte") }) }) { margen ->
+    Scaffold(topBar = { BarraSuperior("Corregir reporte") }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            TextButton(onClick = onVolver) { Text("Volver") }
             if (siniestro == null || siniestro.etapa != EtapaSiniestro.RECIBIDO) {
                 Text("Este reporte no se puede editar")
             } else {
-                Text(siniestro.numero, style = MaterialTheme.typography.titleMedium)
+                CodigoSiniestro(siniestro.numero)
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },

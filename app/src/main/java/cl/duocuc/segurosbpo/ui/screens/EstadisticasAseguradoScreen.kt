@@ -1,5 +1,6 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,7 +9,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,12 +23,11 @@ fun EstadisticasAseguradoScreen(
     onVolver: () -> Unit
 ) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Mis estadísticas") }) }
+        topBar = { BarraSuperior("Mis estadísticas", onVolver = onVolver) }
     ) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState()).padding(16.dp)
         ) {
-            TextButton(onClick = onVolver) { Text("Volver a mis siniestros") }
             ResumenGraficosCasos(
                 casos = siniestros,
                 equipo = "",
