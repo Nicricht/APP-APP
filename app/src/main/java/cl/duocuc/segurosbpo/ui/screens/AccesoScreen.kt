@@ -95,9 +95,7 @@ fun AccesoScreen(
                     label = { Text("Teléfono") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     isError = erroresRegistro?.telefono != null,
-                    supportingText = if (erroresRegistro?.telefono != null) {
-                        { Text(erroresRegistro?.telefono.orEmpty(), color = MaterialTheme.colorScheme.error) }
-                    } else null
+                    supportingText = null // Mutación temporal TDD: se espera prueba ROJA.
                 )
             }
             OutlinedTextField(
