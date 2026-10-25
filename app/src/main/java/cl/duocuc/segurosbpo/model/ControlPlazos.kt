@@ -15,7 +15,7 @@ object ControlPlazos {
         val origen = runCatching { formato.parse(fecha.take(10)) }.getOrNull() ?: return 0
         val final = runCatching {
             formato.parse(formato.format(ahora))
-        }.getOrNull() ?: return 0
+        }.getOrNull() ?: return -1L
         return maxOf(0L, TimeUnit.MILLISECONDS.toDays(final.time - origen.time))
     }
 }
