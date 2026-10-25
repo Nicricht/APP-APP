@@ -417,7 +417,12 @@ class PerfilFotoActividadCoberturaTest {
     @Test fun proveedorDeGaleriaSinMensajeDeErrorMuestraRespuestaComprensible() {
         val guardadas = AtomicInteger()
         montar(
-            seleccion = Uri.parse("content://cl.duocuc.segurosbpo.qa.error_sin_mensaje/foto"),
+            seleccion = Uri.Builder().scheme("content")
+                .authority("cl.duocuc.segurosbpo.qa.error_sin_mensaje")
+                .appendPath("foto")
+                .appendQueryParameter("mime", "image/jpeg")
+                .appendQueryParameter("nombre", "foto.jpg")
+                .build(),
             guardadas = guardadas
         )
         rule.onNodeWithText("Elegir foto de la galería").performScrollTo().performClick()
