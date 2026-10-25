@@ -1,5 +1,10 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,12 +43,15 @@ import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.Compania
 import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.TipoSiniestro
+import cl.duocuc.segurosbpo.model.ValidadorSiniestro
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
 import cl.duocuc.segurosbpo.ui.components.BotonSecundario
 import cl.duocuc.segurosbpo.ui.components.CampoTexto
 import cl.duocuc.segurosbpo.ui.components.CasillaConTexto
-import cl.duocuc.segurosbpo.ui.components.GrupoRadio
-import cl.duocuc.segurosbpo.ui.components.ImagenEncabezado
+import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
 import cl.duocuc.segurosbpo.ui.components.InterruptorConTexto
 import cl.duocuc.segurosbpo.ui.components.TarjetaSeccion
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -50,9 +63,54 @@ import androidx.compose.runtime.getValue
 
 @Composable
 fun FormularioScreen(
-    viewModel: FormularioViewModel = viewModel()
+    aseguradoActual: Asegurado,
+    onRegistroExitoso: (FormularioUiState) -> String,
+    onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit,
+    onPosibleDuplicado: (FormularioUiState) -> String? = { null }
+) {
+    FormularioScreen(
+        aseguradoActual,
+        onRegistroExitoso,
+        onVolver,
+        onVerMisSiniestros,
+        viewModel(),
+        onPosibleDuplicado
+    )
+}
+
+@Composable
+fun FormularioScreen(
+    aseguradoActual: Asegurado,
+    onRegistroExitoso: (FormularioUiState) -> String,
+    onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit,
+    viewModel: FormularioViewModel,
+    onPosibleDuplicado: (FormularioUiState) -> String? = { null }
 ){
+    var duplicado by remember { mutableStateOf<String?>(null) }
+    if (duplicado != null) {
+        AlertDialog(
+            onDismissRequest = { duplicado = null },
+            title = { Text("Posible siniestro duplicado") },
+            text = { Text("Ya existe un caso abierto: " + duplicado +
+                ". Si se trata de otro incidente, puedes continuar.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val numero = onRegistroExitoso(viewModel.uiState.value)
+                    viewModel.confirmarRegistro(numero)
+                    duplicado = null
+                }) { Text("Continuar de todos modos") }
+            },
+            dismissButton = {
+                TextButton(onClick = { duplicado = null }) { Text("Revisar datos") }
+            }
+        )
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(aseguradoActual) {
+        viewModel.seleccionarAsegurado(aseguradoActual)
+    }
     FormularioContent(
         uiState = uiState,
         onAseguradoSeleccionado = viewModel::onAseguradoSeleccionado,
@@ -63,8 +121,20 @@ fun FormularioScreen(
         onTipoSeleccionado = viewModel::onTipoSeleccionado,
         onTercerosCambia = viewModel::onTercerosCambia,
         onDatosCorrectosCambia = viewModel::onDatosCorrectosCambia,
-        onRegistrar = viewModel::onRegistrar,
-        onLimpiar = viewModel::onLimpiar
+        onRegistrar = {
+            if (viewModel.onRegistrar()) {
+                val numeroExistente = onPosibleDuplicado(viewModel.uiState.value)
+                if (numeroExistente != null) {
+                    duplicado = numeroExistente
+                } else {
+                    val numero = onRegistroExitoso(viewModel.uiState.value)
+                    viewModel.confirmarRegistro(numero)
+                }
+            }
+        },
+        onLimpiar = viewModel::onLimpiar,
+        onVolver = onVolver,
+        onVerMisSiniestros = onVerMisSiniestros
     )
 }
 
@@ -81,7 +151,9 @@ fun FormularioContent(
     onTercerosCambia: (Boolean) -> Unit,
     onDatosCorrectosCambia: (Boolean) -> Unit,
     onRegistrar: () -> Unit,
-    onLimpiar: () -> Unit
+    onLimpiar: () -> Unit,
+    onVolver: () -> Unit,
+    onVerMisSiniestros: () -> Unit
 ){
     Scaffold(
         topBar = {
@@ -101,45 +173,33 @@ fun FormularioContent(
             padding(innerPadding).
             verticalScroll(rememberScrollState())
         ) {
-            ImagenEncabezado(
-                imagen = R.drawable.banner_registro,
-                descripcion = stringResource(R.string.cd_banner),
-                titulo = stringResource(R.string.banner_titulo),
-                subtitulo = stringResource(R.string.baner_subtitulo)
-            )
             Column(
                 modifier = Modifier.padding(Dimens.espacioPantalla),
                 verticalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)
             ) {
-                //Card 1: Quien reporta
+                androidx.compose.material3.TextButton(onClick = onVolver) { Text("Volver a mis siniestros") }
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_datos)) {
                     Text(
                         text = stringResource(R.string.etiqueta_asegurado),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    GrupoRadio(
-                        opciones = Asegurado.entries,
-                        seleccionada = uiState.asegurado,
-                        onSeleccionar = onAseguradoSeleccionado,
-                        textoDe = {it.etiqueta}
-                    )
+                    Text(uiState.asegurado.etiqueta, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
 
-                    //RNF-10: el RUT se muestra parcialmente oculto
+
                     Text(
                         text = stringResource(R.string.rut_asegurado, uiState.asegurado.rutOculto),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                //Card 2: Que paso
-                TarjetaSeccion(titulo = stringResource(R.string.seccion_que_paso)) {
-                    Text(
-                        text = stringResource(R.string.etiqueta_compania),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
 
-                    GrupoRadio(
+                TarjetaSeccion(titulo = stringResource(R.string.seccion_que_paso)) {
+                    SelectorOpciones(
+                        titulo = stringResource(R.string.etiqueta_compania),
                         opciones = Compania.entries,
                         seleccionada = uiState.compania,
                         onSeleccionar = onCompaniaSeleccionada,
@@ -155,12 +215,8 @@ fun FormularioContent(
                         )
                     }
 
-                    Text(
-                        text = stringResource(R.string.etiqueta_tipo),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    GrupoRadio(
+                    SelectorOpciones(
+                        titulo = stringResource(R.string.etiqueta_tipo),
                         opciones = TipoSiniestro.entries,
                         seleccionada = uiState.tipoSiniestro,
                         onSeleccionar = onTipoSeleccionado,
@@ -172,10 +228,11 @@ fun FormularioContent(
                         onValorCambia = onDescripcionCambia,
                         etiqueta = stringResource(R.string.campo_descripcion),
                         icono = R.drawable.ic_correo,
+                        multilinea = true,
                         error = uiState.errorDescripcion
                     )
 
-                    //solo para siniestros de vehiculo (Aclaracion N 4)
+
                     if (uiState.tipoSiniestro.esVehiculo) {
                         InterruptorConTexto(
                             texto = stringResource(R.string.opcion_terceros),
@@ -193,7 +250,7 @@ fun FormularioContent(
                     }
                 }
 
-                //Card 3: Donde y cuando
+
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_donde_cuando)) {
                     CampoTexto(
                         valor = uiState.fechaOcurrencia,
@@ -203,6 +260,16 @@ fun FormularioContent(
                         error = uiState.errorFecha,
                         tipoTeclado = KeyboardType.Number
                     )
+                    if (ValidadorSiniestro.reporteFueraDePlazo(
+                            uiState.fechaOcurrencia,
+                            SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).format(Date())
+                        )) {
+                        Text(
+                            text = "Reporte fuera de plazo: pasaron más de 30 días desde el siniestro. Puedes continuar con el reporte.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                     CampoTexto(
                         valor = uiState.comuna,
                         onValorCambia = onComunaCambia,
@@ -212,7 +279,7 @@ fun FormularioContent(
                     )
                 }
 
-                //confirmacion de los datos
+
                 Column {
                     CasillaConTexto(
                         texto = stringResource(R.string.opcion_datos_correctos),
@@ -231,7 +298,7 @@ fun FormularioContent(
                     }
                 }
 
-                //botones
+
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.espacioMedio)) {
                     BotonSecundario(
                         texto = stringResource(R.string.btn_limpiar),
@@ -247,9 +314,21 @@ fun FormularioContent(
                     )
                 }
 
-                //mensaje de exito con el numero de siniestro (RF-03)
-                if(uiState.reporteExitoso){
-                    MensajeExito(numero = uiState.numeroSiniestro)
+
+                AnimatedVisibility(
+                    visible = uiState.reporteExitoso,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        MensajeExito(numero = uiState.numeroSiniestro)
+                        BotonPrincipal(
+                            texto = "Ver mis siniestros",
+                            onClick = onVerMisSiniestros,
+                            icono = R.drawable.ic_check,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 Spacer(Modifier.height(Dimens.espacioGrande))
             }
@@ -280,7 +359,7 @@ private fun  MensajeExito(numero: String){
                     modifier = Modifier.padding(start = Dimens.espacioChico)
                 )
             }
-            //Aclaracion N 2: que viene ahora para el asegurado
+
             Text(
                 text = stringResource(R.string.proximo_paso_recibido),
                 style = MaterialTheme.typography.bodyMedium,

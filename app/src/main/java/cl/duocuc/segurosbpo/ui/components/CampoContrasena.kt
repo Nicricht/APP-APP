@@ -1,5 +1,6 @@
 package cl.duocuc.segurosbpo.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -9,6 +10,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -22,14 +27,6 @@ import cl.duocuc.segurosbpo.ui.style.EstiloCampo
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  CampoContrasena.kt  —  Campo con puntos (••••) y botón "ojo".
-//  ---------------------------------------------------------------------
-//  visualTransformation cambia CÓMO se muestra el texto, no lo que vale:
-//   - PasswordVisualTransformation() -> ••••••
-//   - VisualTransformation.None      -> texto normal
-//  Si la contraseña se ve o no es ESTADO: lo decide el ViewModel.
-// =====================================================================
 
 @Composable
 fun CampoContrasena(
@@ -53,7 +50,7 @@ fun CampoContrasena(
                 modifier = Modifier.size(Dimens.tamanoIcono)
             )
         },
-        trailingIcon = {                                   // ícono a la DERECHA, presionable
+        trailingIcon = {
             IconButton(onClick = onAlternarVisible) {
                 Icon(
                     painter = painterResource(
@@ -78,15 +75,19 @@ fun CampoContrasena(
 
 @Preview(showBackground = true)
 @Composable
-private fun CampoContrasenaPreview() {
+internal fun CampoContrasenaPreview() {
     SegurosBpoTheme {
-        CampoContrasena(
-            valor = "secreto",
-            onValorCambia = {},
-            etiqueta = "Contraseña",
-            visible = false,
-            onAlternarVisible = {},
-            modifier = Modifier.padding(16.dp)
-        )
+        var clave by remember { mutableStateOf("secreto") }
+        var visible by remember { mutableStateOf(false) }
+        Column(Modifier.padding(16.dp)) {
+            CampoContrasena(
+                valor = clave,
+                onValorCambia = { clave = it },
+                etiqueta = "Contraseña",
+                visible = visible,
+                onAlternarVisible = { visible = !visible }
+            )
+            Text("Caracteres: " + clave.length)
+        }
     }
 }

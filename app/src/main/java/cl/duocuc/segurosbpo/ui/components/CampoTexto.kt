@@ -9,6 +9,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -20,20 +24,7 @@ import cl.duocuc.segurosbpo.ui.style.EstiloCampo
 import cl.duocuc.segurosbpo.ui.theme.Dimens
 import cl.duocuc.segurosbpo.ui.theme.SegurosBpoTheme
 
-// =====================================================================
-//  CampoTexto.kt  —  CAMPO DE TEXTO REUTILIZABLE (el <input> de HTML)
-//  ---------------------------------------------------------------------
-//  IMPORTANTE: en Compose un campo NO guarda su propio texto.
-//   - "valor" es lo que se muestra (viene del estado del ViewModel).
-//   - "onValorCambia" avisa cada vez que el usuario escribe una letra.
-//  Si no actualizamos el estado en onValorCambia, el campo NO cambia.
-//  Esto se llama "estado elevado" (state hoisting).
-// =====================================================================
 
-/**
- * @param error      mensaje de error bajo el campo; null = sin error.
- * @param tipoTeclado Text, Email, Number, Phone... (cambia el teclado del celular)
- */
 @Composable
 fun CampoTexto(
     valor: String,
@@ -42,26 +33,29 @@ fun CampoTexto(
     @DrawableRes icono: Int,
     modifier: Modifier = Modifier,
     error: String? = null,
-    tipoTeclado: KeyboardType = KeyboardType.Text
+    tipoTeclado: KeyboardType = KeyboardType.Text,
+    multilinea: Boolean = false
 ) {
     OutlinedTextField(
         value = valor,
         onValueChange = onValorCambia,
         modifier = modifier.fillMaxWidth(),
-        label = { Text(etiqueta) },                       // texto flotante (como <label>)
-        leadingIcon = {                                   // ícono a la izquierda
+        label = { Text(etiqueta) },
+        leadingIcon = {
             Icon(
                 painter = painterResource(id = icono),
                 contentDescription = null,
                 modifier = Modifier.size(Dimens.tamanoIcono)
             )
         },
-        isError = error != null,                          // borde rojo si hay error
-        supportingText = { if (error != null) Text(error) }, // texto de ayuda bajo el campo
-        singleLine = true,                                // una sola línea
+        isError = error != null,
+        supportingText = if (error != null) { { Text(error) } } else null,
+        singleLine = !multilinea,
+        minLines = if (multilinea) 3 else 1,
+        maxLines = if (multilinea) 5 else 1,
         keyboardOptions = KeyboardOptions(
             keyboardType = tipoTeclado,
-            imeAction = ImeAction.Next                    // botón "Siguiente" en el teclado
+            imeAction = if (multilinea) ImeAction.Default else ImeAction.Next
         ),
         shape = EstiloCampo.forma,
         colors = EstiloCampo.colores()
@@ -70,14 +64,15 @@ fun CampoTexto(
 
 @Preview(showBackground = true)
 @Composable
-private fun CampoTextoPreview() {
+internal fun CampoTextoPreview() {
     SegurosBpoTheme {
+        var correo by remember { mutableStateOf("ana@") }
         CampoTexto(
-            valor = "ana@",
-            onValorCambia = {},
+            valor = correo,
+            onValorCambia = { correo = it },
             etiqueta = "Correo electrónico",
             icono = R.drawable.ic_correo,
-            error = "Ingresa un correo válido",
+            error = if ("@" in correo && correo.endsWith(".cl")) null else "Ingresa un correo válido",
             modifier = Modifier.padding(16.dp)
         )
     }
