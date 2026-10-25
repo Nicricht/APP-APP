@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
@@ -36,11 +37,13 @@ private val LightColorScheme = lightColorScheme(
     secondary = Secundario,
     onSecondary = Blanco,
     tertiary = Acento,
-    onTertiary = Blanco,
+    onTertiary = TextoOscuro,
     background = FondoClaro,
     onBackground = TextoOscuro,
     surface = SuperficieClara,
-    onSurface = TextoOscuro
+    onSurface = TextoOscuro,
+    surfaceVariant = Color(0xFFEAF0F1),
+    onSurfaceVariant = Color(0xFF476073)
 
 )
 
@@ -56,7 +59,7 @@ private val Formas = Shapes(
 
 @Composable
 fun SegurosBpoTheme(content: @Composable () -> Unit) {
-    SegurosBpoTheme(isSystemInDarkTheme(), true, content)
+    SegurosBpoTheme(isSystemInDarkTheme(), false, content)
 }
 
 @Composable
@@ -64,7 +67,7 @@ fun SegurosBpoTheme(
     darkTheme: Boolean,
     content: @Composable () -> Unit
 ) {
-    SegurosBpoTheme(darkTheme, true, content)
+    SegurosBpoTheme(darkTheme, false, content)
 }
 
 @Composable

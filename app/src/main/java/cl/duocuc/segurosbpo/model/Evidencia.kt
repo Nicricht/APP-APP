@@ -8,5 +8,6 @@ data class Evidencia(
     val nombreArchivo: String,
     val tipoMime: String,
     val tamanoBytes: Int,
-    val fechaRegistro: String
+    val fechaRegistro: String,
+    val observacion: String = ""
 )

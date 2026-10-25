@@ -25,6 +25,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
@@ -87,9 +89,7 @@ fun AppNavegacion() {
     if (sesion == null) {
         AccesoScreen(
             onIniciar = cuentaVm::iniciar,
-            onRegistrar = cuentaVm::registrar,
-            onDemoLiquidador = cuentaVm::accederLiquidadorDemo,
-            onDemoAsegurado = cuentaVm::accederAseguradoDemo
+            onRegistrar = cuentaVm::registrar
         )
         return
     }
@@ -100,6 +100,7 @@ fun AppNavegacion() {
     val estadisticasAsegurado by siniestrosVm.estadisticasAsegurado.collectAsStateWithLifecycle()
     val busqueda by siniestrosVm.busqueda.collectAsStateWithLifecycle()
     val evidencias by siniestrosVm.evidencias.collectAsStateWithLifecycle()
+    val evidenciasLiquidador by siniestrosVm.evidenciasLiquidador.collectAsStateWithLifecycle()
     val solicitudes by siniestrosVm.solicitudes.collectAsStateWithLifecycle()
     val solicitudesLiquidador by siniestrosVm.solicitudesLiquidador.collectAsStateWithLifecycle()
     val avisos by siniestrosVm.avisos.collectAsStateWithLifecycle()
@@ -236,6 +237,7 @@ fun AppNavegacion() {
                 onGestionar = { navController.navigate(Ruta.Liquidador.ruta) },
                 onVerDetalle = { navController.navigate(Ruta.Detalle.crear(it)) },
                 onVerEstadisticas = { navController.navigate(Ruta.Estadisticas.ruta) },
+                siniestroDestacado = estadisticasAsegurado.maxByOrNull { it.id },
                 permitirCambioAsegurado = false,
                 permitirGestor = false,
                 onCerrarSesion = cuentaVm::cerrarSesion,
@@ -255,6 +257,7 @@ fun AppNavegacion() {
                 onCargar = siniestrosVm::refrescarAvisos,
                 onMarcarLeido = siniestrosVm::marcarAvisoLeido,
                 onAbrirCaso = { navController.navigate(Ruta.Detalle.crear(it)) },
+                onAdjuntarDocumento = { navController.navigate(Ruta.Evidencias.crear(it)) },
                 onVolver = { navController.navigateUp() }
             )
         }
@@ -269,6 +272,8 @@ fun AppNavegacion() {
                 onTomarCaso = siniestrosVm::tomarCasoLiquidador,
                 gestiones = gestionesLiquidador,
                 solicitudes = solicitudesLiquidador,
+                evidencias = evidenciasLiquidador,
+                onAbrirEvidencia = siniestrosVm::obtenerArchivoLiquidador,
                 onSolicitarDocumento = siniestrosVm::solicitarDocumentoLiquidador,
                 onSeleccionarLiquidador = siniestrosVm::seleccionarLiquidador,
                 onCargarGestiones = siniestrosVm::cargarGestionesLiquidador,
@@ -335,8 +340,13 @@ fun AppNavegacion() {
                 onVolver = { navController.navigateUp() },
                 onCargar = { siniestrosVm.refrescarEvidencias(id) },
                 onCargarImagen = { evidenciaId -> siniestrosVm.cargarImagen(id, evidenciaId) },
-                onGuardarFoto = { tipo, bitmap -> siniestrosVm.guardarFoto(id, tipo, bitmap) },
-                onGuardarArchivo = { tipo, uri -> siniestrosVm.guardarArchivo(id, tipo, uri) }
+                onAbrirArchivo = { evidenciaId -> siniestrosVm.obtenerArchivoAsegurado(id, evidenciaId) },
+                onGuardarFoto = { tipo, detalle, bitmap ->
+                    siniestrosVm.guardarFoto(id, tipo, detalle, bitmap)
+                },
+                onGuardarArchivo = { tipo, detalle, uri ->
+                    siniestrosVm.guardarArchivo(id, tipo, detalle, uri)
+                }
             )
         }
         composable(
@@ -359,6 +369,33 @@ fun AppNavegacion() {
             )
         }
           }
+            }
+            val destinosBarra = if (sesion.rol == RolCuenta.ASEGURADO) listOf(
+                Triple(Ruta.MisSiniestros.ruta, "Inicio", R.drawable.ic_inicio),
+                Triple(Ruta.Reportar.ruta, "Reportar", R.drawable.ic_reportar),
+                Triple(Ruta.Avisos.ruta, "Avisos", R.drawable.ic_avisos),
+                Triple(Ruta.Perfil.ruta, "Perfil", R.drawable.ic_persona)
+            ) else listOf(
+                Triple(Ruta.Liquidador.ruta, "Casos", R.drawable.ic_casos),
+                Triple(Ruta.Perfil.ruta, "Perfil", R.drawable.ic_persona)
+            )
+            if (destinosBarra.any { it.first == rutaActual }) {
+                NavigationBar {
+                    destinosBarra.forEach { (ruta, nombre, icono) ->
+                        NavigationBarItem(
+                            selected = rutaActual == ruta,
+                            onClick = {
+                                navController.navigate(ruta) {
+                                    launchSingleTop = true
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    restoreState = true
+                                }
+                            },
+                            icon = { Icon(painterResource(icono), contentDescription = null) },
+                            label = { Text(nombre) }
+                        )
+                    }
+                }
             }
         }
     }

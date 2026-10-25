@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import java.io.ByteArrayOutputStream
 import androidx.lifecycle.AndroidViewModel
 import cl.duocuc.segurosbpo.data.CuentaDbHelper
+import cl.duocuc.segurosbpo.data.VisualizadorEvidencias
 import cl.duocuc.segurosbpo.model.Asegurado
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.Liquidador
@@ -133,6 +134,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun cerrarSesion() {
+        VisualizadorEvidencias.limpiarTemporales(getApplication())
         preferencias.edit().remove("cuenta_id").apply()
         _cuenta.value = null
     }

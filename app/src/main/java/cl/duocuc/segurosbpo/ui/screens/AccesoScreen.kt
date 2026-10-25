@@ -1,15 +1,19 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.foundation.Image
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -25,22 +29,22 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.ErroresRegistro
-import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ValidadorCuenta
 import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.components.CampoContrasena
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccesoScreen(
     onIniciar: (String, String) -> String?,
-    onRegistrar: (String, String, String, String, String, String) -> String?,
-    onDemoLiquidador: (Liquidador) -> Unit,
-    onDemoAsegurado: () -> Unit
+    onRegistrar: (String, String, String, String, String, String) -> String?
 ) {
+    val contexto = LocalContext.current
     var registro by rememberSaveable { mutableStateOf(false) }
     var nombre by rememberSaveable { mutableStateOf("") }
     var rut by rememberSaveable { mutableStateOf("") }
@@ -48,6 +52,8 @@ fun AccesoScreen(
     var telefono by rememberSaveable { mutableStateOf("") }
     var clave by remember { mutableStateOf("") }
     var confirmacion by remember { mutableStateOf("") }
+    var mostrarClave by rememberSaveable { mutableStateOf(false) }
+    var mostrarConfirmacion by rememberSaveable { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf<String?>(null) }
     var mostrarErroresRegistro by rememberSaveable { mutableStateOf(false) }
     val erroresRegistro = if (registro && mostrarErroresRegistro) {
@@ -63,7 +69,7 @@ fun AccesoScreen(
     Scaffold(topBar = { TopAppBar(title = { Text("Seguros BPO") }) }) { margen ->
         Column(
             modifier = Modifier.fillMaxSize().padding(margen)
-                .verticalScroll(rememberScrollState()).padding(20.dp),
+                .imePadding().verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Image(
@@ -72,12 +78,14 @@ fun AccesoScreen(
                 modifier = Modifier.size(82.dp).align(Alignment.CenterHorizontally)
             )
             Text(
-                if (registro) "Crear cuenta de asegurado" else "Iniciar sesión",
-                style = MaterialTheme.typography.headlineSmall
+                if (registro) "Crear cuenta" else "Bienvenido a Seguros BPO",
+                style = MaterialTheme.typography.headlineMedium
             )
             Text(
-                "Accede a tus siniestros y documentos registrados en este dispositivo.",
-                style = MaterialTheme.typography.bodySmall
+                if (registro) "Ingresa tus datos para comenzar a gestionar tus siniestros."
+                else "Consulta tus siniestros, documentos y próximos pasos.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             if (registro) {
                 OutlinedTextField(
@@ -91,16 +99,19 @@ fun AccesoScreen(
                 OutlinedTextField(
                     value = rut, onValueChange = { rut = it; mensaje = null },
                     label = { Text("RUT") }, modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("12.345.678-5") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                     isError = errorRut != null,
                     supportingText = if (errorRut != null) {
                         { Text(errorRut, color = MaterialTheme.colorScheme.error) }
-                    } else null
+                    } else { { Text("Ejemplo: 12.345.678-5") } }
                 )
             }
             OutlinedTextField(
                 value = correo, onValueChange = { correo = it; mensaje = null },
                 label = { Text("Correo electrónico") },
                 singleLine = true, modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 isError = errorCorreo != null,
                 supportingText = if (errorCorreo != null) {
                     { Text(errorCorreo, color = MaterialTheme.colorScheme.error) }
@@ -111,32 +122,30 @@ fun AccesoScreen(
                     value = telefono, onValueChange = { telefono = it; mensaje = null },
                     label = { Text("Teléfono") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     isError = errorTelefono != null,
                     supportingText = if (errorTelefono != null) {
                         { Text(errorTelefono, color = MaterialTheme.colorScheme.error) }
                     } else null
                 )
             }
-            OutlinedTextField(
-                value = clave, onValueChange = { clave = it; mensaje = null },
-                label = { Text("Contraseña") },
-                visualTransformation = PasswordVisualTransformation(),
+            CampoContrasena(
+                valor = clave, onValorCambia = { clave = it; mensaje = null },
+                etiqueta = "Contraseña",
+                visible = mostrarClave,
+                onAlternarVisible = { mostrarClave = !mostrarClave },
                 modifier = Modifier.fillMaxWidth(),
-                isError = errorClave != null,
-                supportingText = if (errorClave != null) {
-                    { Text(errorClave, color = MaterialTheme.colorScheme.error) }
-                } else null
+                error = errorClave
             )
             if (registro) {
-                OutlinedTextField(
-                    value = confirmacion, onValueChange = { confirmacion = it; mensaje = null },
-                    label = { Text("Confirmar contraseña") },
-                    visualTransformation = PasswordVisualTransformation(),
+                CampoContrasena(
+                    valor = confirmacion,
+                    onValorCambia = { confirmacion = it; mensaje = null },
+                    etiqueta = "Confirmar contraseña",
+                    visible = mostrarConfirmacion,
+                    onAlternarVisible = { mostrarConfirmacion = !mostrarConfirmacion },
                     modifier = Modifier.fillMaxWidth(),
-                    isError = errorConfirmacion != null,
-                    supportingText = if (errorConfirmacion != null) {
-                        { Text(errorConfirmacion, color = MaterialTheme.colorScheme.error) }
-                    } else null
+                    error = errorConfirmacion
                 )
             }
             mensaje?.let {
@@ -150,6 +159,9 @@ fun AccesoScreen(
                     } else onIniciar(correo, clave)
                     mensaje = resultado
                     mostrarErroresRegistro = registro && resultado != null
+                    if (registro && resultado == null) {
+                        Toast.makeText(contexto, "Cuenta creada correctamente", Toast.LENGTH_LONG).show()
+                    }
                 }
             ) {
                 Text(if (registro) "Crear cuenta" else "Iniciar sesión")
@@ -161,29 +173,19 @@ fun AccesoScreen(
                     mostrarErroresRegistro = false
                     clave = ""
                     confirmacion = ""
+                    mostrarClave = false
+                    mostrarConfirmacion = false
                 }
             ) {
                 Text(if (registro) "Ya tengo cuenta" else "Crear cuenta de asegurado")
             }
             if (!registro) {
-                Button(onClick = onDemoAsegurado, modifier = Modifier.fillMaxWidth()) {
-                    Text("Acceder al perfil de Camila Rojas")
-                }
-                Text(
-                    "Perfiles de liquidación disponibles",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    "Acceso rápido a los perfiles de trabajo configurados en este dispositivo.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Button(onClick = { onDemoLiquidador(Liquidador.VEHICULOS) },
-                    modifier = Modifier.fillMaxWidth()) {
-                    Text("Equipo de vehículos")
-                }
-                Button(onClick = { onDemoLiquidador(Liquidador.HOGAR) },
-                    modifier = Modifier.fillMaxWidth()) {
-                    Text("Equipo de hogar")
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Acceso para liquidadores", style = MaterialTheme.typography.titleMedium)
+                        Text("Si eres liquidador, inicia sesión con el correo y la contraseña asignados a tu equipo. El registro público es solo para asegurados.",
+                            style = MaterialTheme.typography.bodySmall)
+                    }
                 }
             }
         }

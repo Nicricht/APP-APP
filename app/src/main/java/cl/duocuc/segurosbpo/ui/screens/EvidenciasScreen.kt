@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +52,10 @@ import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.ValidadorBorradorEvidencia
+import cl.duocuc.segurosbpo.model.TipoDocumento
+import cl.duocuc.segurosbpo.data.ArchivoEvidencia
+import cl.duocuc.segurosbpo.data.VisualizadorEvidencias
+import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
 import cl.duocuc.segurosbpo.viewmodel.BorradorEvidenciaViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
@@ -70,16 +76,17 @@ fun EvidenciasScreen(
     onVolver: () -> Unit,
     onCargar: () -> Unit,
     onCargarImagen: suspend (Long) -> Bitmap?,
-    onGuardarFoto: suspend (String, Bitmap) -> String?,
-    onGuardarArchivo: suspend (String, Uri) -> String?
+    onAbrirArchivo: suspend (Long) -> ArchivoEvidencia?,
+    onGuardarFoto: suspend (String, String, Bitmap) -> String?,
+    onGuardarArchivo: suspend (String, String, Uri) -> String?
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val aviso = remember { SnackbarHostState() }
     var tipoDocumento by rememberSaveable(siniestro?.id) { mutableStateOf("") }
+    var detalle by rememberSaveable(siniestro?.id) { mutableStateOf("") }
     var mostrarError by rememberSaveable(siniestro?.id) { mutableStateOf(false) }
     var imagenVista by remember(siniestro?.id) { mutableStateOf<Bitmap?>(null) }
-    var identificadorImagen by remember(siniestro?.id) { mutableStateOf<Long?>(null) }
     val borrador: BorradorEvidenciaViewModel = viewModel(key = "borrador-evidencia-" + siniestro?.id)
     val fotoPendiente = borrador.fotoPendiente
     val archivoPendiente = borrador.archivoPendiente
@@ -90,7 +97,7 @@ fun EvidenciasScreen(
     LaunchedEffect(borrador.resultado) {
         val resultado = borrador.resultado ?: return@LaunchedEffect
         onCargar()
-        if (borrador.guardadoCorrecto) tipoDocumento = ""
+        if (borrador.guardadoCorrecto) { tipoDocumento = ""; detalle = "" }
         aviso.showSnackbar(resultado)
         borrador.consumirResultado()
     }
@@ -101,6 +108,24 @@ fun EvidenciasScreen(
     fun validarTipo(accion: () -> Unit) {
         mostrarError = tipoDocumento.isBlank()
         if (!mostrarError) accion()
+    }
+
+    if (imagenVista != null) {
+        AlertDialog(
+            onDismissRequest = { imagenVista = null },
+            title = { Text("Imagen adjunta") },
+            text = {
+                Image(
+                    bitmap = imagenVista!!.asImageBitmap(),
+                    contentDescription = "Vista ampliada del documento",
+                    modifier = Modifier.fillMaxWidth().height(320.dp),
+                    contentScale = ContentScale.Fit
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { imagenVista = null }) { Text("Cerrar") }
+            }
+        )
     }
 
     val camara = rememberLauncherForActivityResult(
@@ -138,7 +163,7 @@ fun EvidenciasScreen(
         snackbarHost = { SnackbarHost(aviso) }
     ) { margen ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(margen)
+            modifier = Modifier.fillMaxSize().padding(margen).imePadding()
                 .verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -169,23 +194,28 @@ fun EvidenciasScreen(
                         }
                     }
                 }
-                Text("Expediente local: los archivos se conservan en este dispositivo.",
-                    style = MaterialTheme.typography.bodySmall)
                 if (siniestro.etapa == EtapaSiniestro.CERRADO) {
                     Text("No se pueden agregar evidencias a un siniestro cerrado.")
                 } else {
+                    SelectorOpciones(
+                        titulo = "Tipo de documento *",
+                        opciones = TipoDocumento.paraSolicitudes(solicitudes.map { it.tipo }),
+                        seleccionada = tipoDocumento.takeIf(String::isNotBlank),
+                        onSeleccionar = { tipoDocumento = it; mostrarError = false },
+                        textoDe = { it },
+                        placeholder = "Seleccionar documento"
+                    )
+                    if (mostrarError) Text("Selecciona un tipo de documento",
+                        color = MaterialTheme.colorScheme.error)
                     OutlinedTextField(
-                        value = tipoDocumento,
-                        onValueChange = { tipoDocumento = it; mostrarError = false },
-                        enabled = !guardando,
+                        value = detalle,
+                        onValueChange = { if (it.length <= 500) detalle = it },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Tipo de documento *") },
-                        placeholder = { Text("Ej.: fotografía del daño") },
-                        isError = mostrarError,
-                        supportingText = {
-                            Text(if (mostrarError) "Indica el tipo de documento" else "Obligatorio")
-                        },
-                        singleLine = true
+                        label = { Text("Agregar detalles (opcional)") },
+                        placeholder = { Text("Información adicional sobre el archivo") },
+                        minLines = 2,
+                        maxLines = 4,
+                        supportingText = { Text("${detalle.length}/500") }
                     )
                     Button(
                         enabled = !guardando && evidencias.size < 15,
@@ -236,7 +266,10 @@ fun EvidenciasScreen(
                                     ),
                                     modifier = Modifier.fillMaxWidth(),
                                     onClick = {
-                                        borrador.guardar(tipoDocumento, onGuardarFoto, onGuardarArchivo)
+                                        borrador.guardar(tipoDocumento,
+                                            { tipo, foto -> onGuardarFoto(tipo, detalle, foto) },
+                                            { tipo, uri -> onGuardarArchivo(tipo, detalle, uri) }
+                                        )
                                     }
                                 ) { Text(if (guardando) "Guardando…" else "Guardar documento") }
                                 TextButton(enabled = !guardando,
@@ -258,22 +291,25 @@ fun EvidenciasScreen(
                                 style = MaterialTheme.typography.bodySmall)
                             Text("${evidencia.tamanoBytes / 1024} KB · ${evidencia.tipoMime}",
                                 style = MaterialTheme.typography.bodySmall)
+                            if (evidencia.observacion.isNotBlank()) {
+                                Text(evidencia.observacion)
+                            }
                             if (evidencia.tipoMime.startsWith("image/")) {
                                 TextButton(onClick = {
                                     scope.launch {
                                         imagenVista = onCargarImagen(evidencia.id)
-                                        identificadorImagen = evidencia.id
                                         if (imagenVista == null) aviso.showSnackbar("No se pudo abrir la imagen")
                                     }
                                 }) { Text("Ver imagen") }
-                                if (identificadorImagen == evidencia.id && imagenVista != null) {
-                                    Image(
-                                        bitmap = imagenVista!!.asImageBitmap(),
-                                        contentDescription = "Vista previa: ${evidencia.tipoDocumento}",
-                                        modifier = Modifier.fillMaxWidth().height(220.dp),
-                                        contentScale = ContentScale.Fit
-                                    )
-                                }
+                            } else if (evidencia.tipoMime == "application/pdf") {
+                                TextButton(onClick = {
+                                    scope.launch {
+                                        val archivo = onAbrirArchivo(evidencia.id)
+                                        val error = if (archivo == null) "No se pudo recuperar el PDF"
+                                            else VisualizadorEvidencias.abrir(context, evidencia.id, archivo)
+                                        error?.let { aviso.showSnackbar(it) }
+                                    }
+                                }) { Text("Abrir PDF") }
                             }
                         }
                     }

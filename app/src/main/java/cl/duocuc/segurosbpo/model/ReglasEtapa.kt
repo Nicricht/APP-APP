@@ -1,6 +1,12 @@
 package cl.duocuc.segurosbpo.model
 
 object ReglasEtapa {
+    /** Los documentos se solicitan antes de liquidar; evita liquidación con pendientes nuevos. */
+    fun validarSolicitudDocumento(etapa: EtapaSiniestro): String? =
+        if (etapa != EtapaSiniestro.EVALUACION)
+            "Los documentos se solicitan durante la evaluación del siniestro"
+        else null
+
     fun siguiente(actual: EtapaSiniestro): EtapaSiniestro? = when (actual) {
         EtapaSiniestro.RECIBIDO -> EtapaSiniestro.EVALUACION
         EtapaSiniestro.EVALUACION -> EtapaSiniestro.LIQUIDACION

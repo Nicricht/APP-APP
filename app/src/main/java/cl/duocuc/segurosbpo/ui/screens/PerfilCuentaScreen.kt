@@ -9,6 +9,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -31,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -40,6 +45,8 @@ import androidx.core.content.ContextCompat
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
 import cl.duocuc.segurosbpo.model.CuentaLocal
 import cl.duocuc.segurosbpo.model.RolCuenta
+import cl.duocuc.segurosbpo.R
+import cl.duocuc.segurosbpo.ui.components.AvatarCircular
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,45 +102,83 @@ fun PerfilCuentaScreen(
     }
     Scaffold(topBar = { TopAppBar(title = { Text("Mi perfil") }) }) { margen ->
         Column(
-            Modifier.fillMaxSize().padding(margen).verticalScroll(rememberScrollState())
+            Modifier.fillMaxSize().padding(margen).imePadding().verticalScroll(rememberScrollState())
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             TextButton(onClick = onVolver) { Text("Volver") }
-            foto?.let {
-                Image(
-                    bitmap = it, contentDescription = "Foto de perfil",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(96.dp).clip(CircleShape)
-                )
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (foto != null) {
+                    Image(
+                        bitmap = foto, contentDescription = "Foto de perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(100.dp).clip(CircleShape)
+                    )
+                } else {
+                    AvatarCircular(imagen = R.drawable.avatar_usuario,
+                        descripcion = "Foto predeterminada del perfil", tamano = 100.dp)
+                }
+                Text(cuenta.nombre, style = MaterialTheme.typography.headlineSmall)
+                Text(if (cuenta.rol == RolCuenta.ASEGURADO) "Asegurado" else "Liquidador",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelLarge)
+                if (cuenta.equipo != null) Text("Equipo: " + cuenta.equipo,
+                    style = MaterialTheme.typography.bodySmall)
             }
-            Text(cuenta.nombre, style = MaterialTheme.typography.headlineSmall)
-            Text(if (cuenta.rol == RolCuenta.ASEGURADO) "Asegurado" else "Liquidador")
-            if (cuenta.equipo != null) Text("Equipo: " + cuenta.equipo)
-            if (cuenta.correo.isNotEmpty()) Text("Correo: " + cuenta.correo)
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Datos personales", style = MaterialTheme.typography.titleMedium)
+                    DatoPerfil("RUT", cuenta.rut.ifBlank { "No registrado" })
+                    DatoPerfil("Correo", cuenta.correo.ifBlank { "Acceso de demostración" })
+                    DatoPerfil("Teléfono", cuenta.telefono.ifBlank { "No registrado" })
+                }
+            }
             if (editable) {
-                OutlinedTextField(
-                    value = telefono, onValueChange = { telefono = it },
-                    label = { Text("Teléfono de contacto") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Button(onClick = {
-                    mensaje = onGuardarTelefono(telefono) ?: "Datos actualizados"
-                }) { Text("Guardar teléfono") }
-                Button(onClick = {
-                    if (ContextCompat.checkSelfPermission(
-                            contexto, Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED) camara.launch(null)
-                    else permisoCamara.launch(Manifest.permission.CAMERA)
-                }) { Text("Tomar foto de perfil") }
-                Button(onClick = { galeria.launch("image/*") }) {
-                    Text("Elegir foto de la galería")
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Editar información", style = MaterialTheme.typography.titleMedium)
+                        OutlinedTextField(
+                            value = telefono, onValueChange = { telefono = it },
+                            label = { Text("Teléfono de contacto") },
+                            modifier = Modifier.fillMaxWidth(), singleLine = true
+                        )
+                        Button(onClick = {
+                            mensaje = onGuardarTelefono(telefono) ?: "Datos actualizados"
+                        }, modifier = Modifier.fillMaxWidth()) { Text("Guardar teléfono") }
+                        Text("Foto de perfil", style = MaterialTheme.typography.titleSmall)
+                        OutlinedButton(onClick = {
+                            if (ContextCompat.checkSelfPermission(
+                                    contexto, Manifest.permission.CAMERA
+                                ) == PackageManager.PERMISSION_GRANTED) camara.launch(null)
+                            else permisoCamara.launch(Manifest.permission.CAMERA)
+                        }, modifier = Modifier.fillMaxWidth()) { Text("Tomar una foto") }
+                        OutlinedButton(onClick = { galeria.launch("image/*") },
+                            modifier = Modifier.fillMaxWidth()) {
+                            Text("Elegir de la galería")
+                        }
+                    }
                 }
             } else {
-                Text("Este perfil de acceso rápido es de consulta. Para actualizar tus datos, inicia sesión con una cuenta registrada.")
+                Text("Este perfil de demostración es de consulta. Para editar tus datos, utiliza una cuenta registrada.",
+                    style = MaterialTheme.typography.bodyMedium)
             }
-            mensaje?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-            Button(onClick = onCerrarSesion) { Text("Cerrar sesión") }
+            mensaje?.let {
+                Text(it, color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium)
+            }
+            OutlinedButton(onClick = onCerrarSesion, modifier = Modifier.fillMaxWidth()) {
+                Text("Cerrar sesión", color = MaterialTheme.colorScheme.error)
+            }
         }
+    }
+}
+
+@Composable
+private fun DatoPerfil(etiqueta: String, valor: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(etiqueta, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium)
+        Text(valor, style = MaterialTheme.typography.bodyLarge)
     }
 }
