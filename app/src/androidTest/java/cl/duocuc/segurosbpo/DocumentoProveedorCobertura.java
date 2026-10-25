@@ -29,6 +29,7 @@ public class DocumentoProveedorCobertura extends ContentProvider {
     }
 
     @Override public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+        if ("1".equals(uri.getQueryParameter("error_sin_mensaje"))) throw new FileNotFoundException();
         if ("1".equals(uri.getQueryParameter("sin_entrada"))) return null;
         byte[] contenido;
         if ("1".equals(uri.getQueryParameter("grande"))) {
