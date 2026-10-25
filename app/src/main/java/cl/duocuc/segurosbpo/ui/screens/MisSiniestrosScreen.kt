@@ -17,6 +17,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.ui.components.AvatarCircular
 import cl.duocuc.segurosbpo.ui.components.EtiquetaInteres
@@ -54,13 +57,14 @@ fun MisSiniestrosScreen(
     permitirCambioAsegurado: Boolean = true,
     permitirGestor: Boolean = true,
     onCerrarSesion: () -> Unit = {},
-    onVerPerfil: () -> Unit = {}
+    onVerPerfil: () -> Unit = {},
+    onAbrirMenu: () -> Unit = {}
 ) {
     var mostrarUsuarios by remember { mutableStateOf(false) }
     if (mostrarUsuarios) {
         AlertDialog(
             onDismissRequest = { mostrarUsuarios = false },
-            title = { Text("Selecciona un asegurado ficticio") },
+            title = { Text("Selecciona un asegurado") },
             text = {
                 LazyColumn {
                     items(Asegurado.entries) { usuario ->
@@ -77,7 +81,16 @@ fun MisSiniestrosScreen(
             confirmButton = { TextButton(onClick = { mostrarUsuarios = false }) { Text("Cerrar") } }
         )
     }
-    Scaffold(topBar = { TopAppBar(title = { Text("Mis siniestros") }) }) { margen ->
+    Scaffold(topBar = {
+        TopAppBar(
+            title = { Text("Mis siniestros") },
+            navigationIcon = {
+                IconButton(onClick = onAbrirMenu) {
+                    Icon(painterResource(R.drawable.ic_menu), contentDescription = "Abrir menú de navegación")
+                }
+            }
+        )
+    }) { margen ->
         Column(
             Modifier.fillMaxSize().padding(margen).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -97,28 +110,17 @@ fun MisSiniestrosScreen(
                     Text("RUT: ${asegurado.rutOculto}", style = MaterialTheme.typography.bodySmall)
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (permitirCambioAsegurado) {
-                    TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
-                } else {
-                    TextButton(onClick = onCerrarSesion) { Text("Cerrar sesión") }
-                }
-                Button(onClick = onReportar) { Text("Reportar") }
+            if (permitirCambioAsegurado) {
+                TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (permitirGestor) TextButton(onClick = onGestionar) { Text("Liquidador") }
-                TextButton(onClick = onVerPerfil) { Text("Mi perfil") }
+            Button(onClick = onReportar, modifier = Modifier.fillMaxWidth()) {
+                Text("Reportar un siniestro")
+            }
+            if (avisosNoLeidos > 0) {
                 TextButton(onClick = onVerAvisos) {
-                    Text(if (avisosNoLeidos > 0) "Avisos ($avisosNoLeidos)" else "Avisos")
+                    Text("Tienes $avisosNoLeidos avisos sin leer")
                 }
             }
-            Button(onClick = onVerEstadisticas, modifier = Modifier.fillMaxWidth()) {
-                Text("Mis estadísticas")
-            }
-            Text(
-                "Demostración académica. Los registros y documentos se guardan en este teléfono.",
-                style = MaterialTheme.typography.bodySmall
-            )
             OutlinedTextField(
                 value = busqueda,
                 onValueChange = onBuscar,

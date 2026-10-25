@@ -109,7 +109,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
 
     fun actualizarTelefono(telefono: String): String? {
         val actual = _cuenta.value ?: return "Inicia sesión"
-        if (actual.correo.isBlank()) return "El perfil de demostración no es editable"
+        if (actual.correo.isBlank()) return "Este perfil no permite modificar datos personales"
         val resultado = runCatching { db.actualizarTelefono(actual.id, telefono) }
         return resultado.fold(
             onSuccess = { _cuenta.value = it; null },
@@ -119,7 +119,7 @@ class CuentaSesionViewModel(application: Application) : AndroidViewModel(applica
 
     fun actualizarFoto(bitmap: Bitmap): String? {
         val actual = _cuenta.value ?: return "Inicia sesión"
-        if (actual.correo.isBlank()) return "El perfil de demostración no es editable"
+        if (actual.correo.isBlank()) return "Este perfil no permite modificar datos personales"
         val salida = ByteArrayOutputStream()
         if (!runCatching { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, salida) }
                 .getOrDefault(false)) {

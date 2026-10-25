@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Siniestro
+import cl.duocuc.segurosbpo.model.TextoPresentacion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,8 +51,8 @@ fun HistorialSiniestroScreen(
                                 verticalArrangement = Arrangement.spacedBy(5.dp)
                             ) {
                                 Text(gestion.fecha, style = MaterialTheme.typography.labelMedium)
-                                Text(gestion.descripcion, style = MaterialTheme.typography.bodyLarge)
-                                Text("Responsable: "+gestion.responsable,
+                                Text(TextoPresentacion.gestion(gestion.descripcion), style = MaterialTheme.typography.bodyLarge)
+                                Text("Responsable: "+TextoPresentacion.responsable(gestion.responsable),
                                     style = MaterialTheme.typography.bodySmall)
                             }
                         }

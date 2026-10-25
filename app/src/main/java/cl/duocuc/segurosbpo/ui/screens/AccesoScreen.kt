@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.foundation.Image
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -22,11 +24,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.model.ErroresRegistro
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ValidadorCuenta
+import cl.duocuc.segurosbpo.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,12 +66,17 @@ fun AccesoScreen(
                 .verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            Image(
+                painter = painterResource(R.drawable.mi_siniestro_logo),
+                contentDescription = "Logo de Seguros BPO",
+                modifier = Modifier.size(82.dp).align(Alignment.CenterHorizontally)
+            )
             Text(
                 if (registro) "Crear cuenta de asegurado" else "Iniciar sesión",
                 style = MaterialTheme.typography.headlineSmall
             )
             Text(
-                "Tus siniestros y documentos se almacenan en este teléfono.",
+                "Accede a tus siniestros y documentos registrados en este dispositivo.",
                 style = MaterialTheme.typography.bodySmall
             )
             if (registro) {
@@ -80,7 +90,7 @@ fun AccesoScreen(
                 )
                 OutlinedTextField(
                     value = rut, onValueChange = { rut = it; mensaje = null },
-                    label = { Text("RUT ficticio") }, modifier = Modifier.fillMaxWidth(),
+                    label = { Text("RUT") }, modifier = Modifier.fillMaxWidth(),
                     isError = errorRut != null,
                     supportingText = if (errorRut != null) {
                         { Text(errorRut, color = MaterialTheme.colorScheme.error) }
@@ -109,7 +119,7 @@ fun AccesoScreen(
             }
             OutlinedTextField(
                 value = clave, onValueChange = { clave = it; mensaje = null },
-                label = { Text("Contraseña de demostración") },
+                label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
                 isError = errorClave != null,
@@ -157,23 +167,23 @@ fun AccesoScreen(
             }
             if (!registro) {
                 Button(onClick = onDemoAsegurado, modifier = Modifier.fillMaxWidth()) {
-                    Text("Continuar como Camila (demo)")
+                    Text("Acceder al perfil de Camila Rojas")
                 }
                 Text(
-                    "Accesos de demostración para liquidadores",
+                    "Perfiles de liquidación disponibles",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    "Estos accesos simulados sirven para evaluar el flujo local y no son autenticación real.",
+                    "Acceso rápido a los perfiles de trabajo configurados en este dispositivo.",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Button(onClick = { onDemoLiquidador(Liquidador.VEHICULOS) },
                     modifier = Modifier.fillMaxWidth()) {
-                    Text("Liquidador de Vehículos (demo)")
+                    Text("Equipo de vehículos")
                 }
                 Button(onClick = { onDemoLiquidador(Liquidador.HOGAR) },
                     modifier = Modifier.fillMaxWidth()) {
-                    Text("Liquidador de Hogar (demo)")
+                    Text("Equipo de hogar")
                 }
             }
         }

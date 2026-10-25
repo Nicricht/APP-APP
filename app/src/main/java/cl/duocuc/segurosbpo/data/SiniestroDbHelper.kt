@@ -31,7 +31,7 @@ import java.util.Locale
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
-) : SQLiteOpenHelper(context, databaseName, null, 5) {
+) : SQLiteOpenHelper(context, databaseName, null, 6) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -109,7 +109,7 @@ class SiniestroDbHelper(
             val id = db.insertOrThrow("siniestros", null, valores)
             val numero = "SIN-$anio-${(id + 4860).toString().padStart(6, '0')}"
             db.execSQL("UPDATE siniestros SET numero = ? WHERE id = ?", arrayOf(numero, id))
-            insertarGestion(db, id, "Ejemplo académico", "Caso ficticio disponible en etapa: " + ejemplo.etapa.etiqueta, true)
+            insertarGestion(db, id, "Sistema", "Caso registrado en etapa: " + ejemplo.etapa.etiqueta, true)
         }
     }
 
@@ -230,6 +230,22 @@ class SiniestroDbHelper(
         if (oldVersion < 5) {
             crearTablaSolicitudes(db)
             crearTablaAvisos(db)
+        }
+        if (oldVersion < 6) {
+            db.execSQL("""
+                UPDATE gestiones
+                SET responsable = 'Sistema',
+                    descripcion = REPLACE(descripcion,
+                        'Caso ficticio disponible en etapa: ', 'Caso registrado en etapa: ')
+                WHERE responsable = 'Ejemplo académico'
+                  AND descripcion LIKE 'Caso ficticio disponible en etapa: %'
+            """.trimIndent())
+            db.execSQL("""
+                UPDATE gestiones
+                SET descripcion = REPLACE(descripcion,
+                    'Documento solicitado entregado localmente: ', 'Documento recibido: ')
+                WHERE descripcion LIKE 'Documento solicitado entregado localmente: %'
+            """.trimIndent())
         }
     }
 
@@ -762,7 +778,7 @@ class SiniestroDbHelper(
                     put("evidencia_id", evidenciaId)
                 }, "id = ?", arrayOf(solicitudId.toString()))
                 insertarGestion(db, siniestroId, "Asegurado",
-                    "Documento solicitado entregado localmente: " + tipoDocumento.trim(), true)
+                    "Documento recibido: " + tipoDocumento.trim(), true)
             } else {
                 insertarGestion(db, siniestroId, "Asegurado",
                     "Documento adjuntado: " + tipoDocumento.trim(), true)

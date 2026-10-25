@@ -130,7 +130,7 @@ fun PerfilCuentaScreen(
                     Text("Elegir foto de la galería")
                 }
             } else {
-                Text("Perfil ficticio de demostración. Los datos no son editables.")
+                Text("Este perfil de acceso rápido es de consulta. Para actualizar tus datos, inicia sesión con una cuenta registrada.")
             }
             mensaje?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
             Button(onClick = onCerrarSesion) { Text("Cerrar sesión") }

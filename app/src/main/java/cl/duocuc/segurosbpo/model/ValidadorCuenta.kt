@@ -43,12 +43,12 @@ object ValidadorCuenta {
         confirmacion: String
     ): ErroresRegistro = ErroresRegistro(
         nombre = if (nombre.trim().length < 3) "Ingresa tu nombre completo" else null,
-        rut = if (!rutValido(rut)) "Ingresa un RUT ficticio válido" else null,
+        rut = if (!rutValido(rut)) "Ingresa un RUT válido" else null,
         correo = if (!Regex("^[^@\\s]+@[^@\\s]+\\.[A-Za-z]{2,}$")
                 .matches(normalizarCorreo(correo))) "Ingresa un correo válido" else null,
         telefono = if (telefono.trim().length < 8) "Ingresa un teléfono válido" else null,
         clave = if (clave.length < 8)
-            "Usa una clave de demostración de al menos 8 caracteres" else null,
+            "La contraseña debe tener al menos 8 caracteres" else null,
         confirmacion = if (clave != confirmacion) "Las claves no coinciden" else null
     )
 

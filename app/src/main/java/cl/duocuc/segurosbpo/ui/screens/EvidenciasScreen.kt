@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.content.Context
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,8 +48,14 @@ import cl.duocuc.segurosbpo.model.EtapaSiniestro
 import cl.duocuc.segurosbpo.model.Evidencia
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
+import cl.duocuc.segurosbpo.model.ValidadorBorradorEvidencia
 import kotlinx.coroutines.launch
 
+private fun nombreArchivoSeleccionado(context: Context, uri: Uri): String = runCatching {
+    context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+        if (it.moveToFirst()) it.getString(0) else null
+    }
+}.getOrNull()?.takeIf { it.isNotBlank() } ?: "Archivo seleccionado"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +77,10 @@ fun EvidenciasScreen(
     var mostrarError by rememberSaveable(siniestro?.id) { mutableStateOf(false) }
     var imagenVista by remember(siniestro?.id) { mutableStateOf<Bitmap?>(null) }
     var identificadorImagen by remember(siniestro?.id) { mutableStateOf<Long?>(null) }
+    var fotoPendiente by remember(siniestro?.id) { mutableStateOf<Bitmap?>(null) }
+    var archivoPendiente by remember(siniestro?.id) { mutableStateOf<Uri?>(null) }
+    var origenPendiente by remember(siniestro?.id) { mutableStateOf("") }
+    var guardando by remember(siniestro?.id) { mutableStateOf(false) }
 
     LaunchedEffect(siniestro?.id, asegurado) { onCargar() }
 
@@ -78,7 +91,7 @@ fun EvidenciasScreen(
 
     fun avisarResultado(error: String?) {
         scope.launch {
-            aviso.showSnackbar(error ?: "Documento guardado en este teléfono")
+            aviso.showSnackbar(error ?: "Documento guardado en el expediente local")
         }
     }
 
@@ -86,7 +99,9 @@ fun EvidenciasScreen(
         ActivityResultContracts.TakePicturePreview()
     ) { foto ->
         if (foto != null) {
-            scope.launch { avisarResultado(onGuardarFoto(tipoDocumento.trim(), foto)) }
+            fotoPendiente = foto
+            archivoPendiente = null
+            origenPendiente = "Fotografía tomada"
         } else {
             scope.launch { aviso.showSnackbar("Captura cancelada") }
         }
@@ -101,14 +116,18 @@ fun EvidenciasScreen(
         ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            scope.launch { avisarResultado(onGuardarArchivo(tipoDocumento.trim(), uri)) }
+            archivoPendiente = uri
+            fotoPendiente = null
+            origenPendiente = nombreArchivoSeleccionado(context, uri)
         }
     }
     val documentos = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            scope.launch { avisarResultado(onGuardarArchivo(tipoDocumento.trim(), uri)) }
+            archivoPendiente = uri
+            fotoPendiente = null
+            origenPendiente = nombreArchivoSeleccionado(context, uri)
         }
     }
 
@@ -136,7 +155,7 @@ fun EvidenciasScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(solicitud.tipo, style = MaterialTheme.typography.titleSmall)
-                            Text(if (solicitud.pendiente) "Pendiente de entrega" else "Entregado localmente")
+                            Text(if (solicitud.pendiente) "Pendiente de entrega" else "Documento registrado")
                             Text("Solicitado: " + solicitud.fechaSolicitud, style = MaterialTheme.typography.bodySmall)
                             if (solicitud.comentario.isNotBlank()) Text(solicitud.comentario)
                             if (solicitud.pendiente && siniestro.etapa != EtapaSiniestro.CERRADO) {
@@ -147,7 +166,7 @@ fun EvidenciasScreen(
                         }
                     }
                 }
-                Text("Los documentos se guardan solo en este teléfono, sin enviar a una aseguradora.",
+                Text("Expediente local: los archivos se conservan en este dispositivo.",
                     style = MaterialTheme.typography.bodySmall)
                 if (siniestro.etapa == EtapaSiniestro.CERRADO) {
                     Text("No se pueden agregar evidencias a un siniestro cerrado.")
@@ -189,6 +208,65 @@ fun EvidenciasScreen(
                     ) { Text("Adjuntar PDF") }
                     Text("Se permiten JPG, PNG, WEBP o PDF. Máximo 5 MB por archivo.",
                         style = MaterialTheme.typography.bodySmall)
+                    if (fotoPendiente != null || archivoPendiente != null) {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("Documento listo para guardar",
+                                    style = MaterialTheme.typography.titleMedium)
+                                Text(origenPendiente)
+                                fotoPendiente?.let { foto ->
+                                    Image(
+                                        bitmap = foto.asImageBitmap(),
+                                        contentDescription = "Vista previa de la fotografía",
+                                        modifier = Modifier.fillMaxWidth().height(180.dp),
+                                        contentScale = ContentScale.Fit
+                                    )
+                                }
+                                Text("Comprueba el tipo de documento antes de guardarlo.")
+                                Button(
+                                    enabled = !guardando && ValidadorBorradorEvidencia.puedeGuardar(
+                                        tipoDocumento, true, evidencias.size
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = {
+                                        guardando = true
+                                        scope.launch {
+                                            val error = try {
+                                                val tipo = tipoDocumento.trim()
+                                                val foto = fotoPendiente
+                                                val archivo = archivoPendiente
+                                                when {
+                                                    foto != null -> onGuardarFoto(tipo, foto)
+                                                    archivo != null -> onGuardarArchivo(tipo, archivo)
+                                                    else -> "Selecciona un documento"
+                                                }
+                                            } catch (e: Exception) {
+                                                e.message ?: "No se pudo guardar el documento"
+                                            } finally {
+                                                guardando = false
+                                            }
+                                            if (error == null) {
+                                                fotoPendiente = null
+                                                archivoPendiente = null
+                                                origenPendiente = ""
+                                                tipoDocumento = ""
+                                                onCargar()
+                                            }
+                                            avisarResultado(error)
+                                        }
+                                    }
+                                ) { Text(if (guardando) "Guardando…" else "Guardar documento") }
+                                TextButton(onClick = {
+                                    fotoPendiente = null
+                                    archivoPendiente = null
+                                    origenPendiente = ""
+                                }) { Text("Cancelar selección") }
+                            }
+                        }
+                    }
                 }
                 Text("Documentos registrados", style = MaterialTheme.typography.titleMedium)
                 if (evidencias.isEmpty()) {
@@ -199,7 +277,7 @@ fun EvidenciasScreen(
                         Column(Modifier.padding(12.dp)) {
                             Text(evidencia.tipoDocumento, style = MaterialTheme.typography.titleSmall)
                             Text(evidencia.nombreArchivo)
-                            Text("Recibido localmente: ${evidencia.fechaRegistro}",
+                            Text("Registrado: ${evidencia.fechaRegistro}",
                                 style = MaterialTheme.typography.bodySmall)
                             Text("${evidencia.tamanoBytes / 1024} KB · ${evidencia.tipoMime}",
                                 style = MaterialTheme.typography.bodySmall)

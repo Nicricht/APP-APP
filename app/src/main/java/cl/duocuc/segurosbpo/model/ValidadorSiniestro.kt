@@ -14,7 +14,7 @@ object ValidadorSiniestro {
             if (!Regex("\\d{2}-\\d{2}-\\d{4}").matches(fecha)) null else formato.parse(fecha)
         } catch (_: Exception) { null }
         return when {
-            parsed == null -> "Escribe una fecha válida (día-mes-año)"
+            parsed == null -> "Selecciona una fecha válida"
             parsed.after(hoy) -> "La fecha no puede ser futura"
             else -> null
         }

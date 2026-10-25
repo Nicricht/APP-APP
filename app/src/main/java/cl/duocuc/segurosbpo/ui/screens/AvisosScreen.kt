@@ -37,7 +37,7 @@ fun AvisosScreen(
         ) {
             TextButton(onClick = onVolver) { Text("Volver a mis siniestros") }
             Text(
-                "Avisos guardados en este teléfono. No son notificaciones enviadas por una aseguradora.",
+                "Avisos de seguimiento generados y guardados en este dispositivo.",
                 style = MaterialTheme.typography.bodySmall
             )
             if (avisos.isEmpty()) Text("No tienes avisos nuevos ni anteriores.")

@@ -8,8 +8,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -24,6 +34,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import cl.duocuc.segurosbpo.ui.screens.AccesoScreen
 import cl.duocuc.segurosbpo.ui.screens.AvisosScreen
@@ -42,6 +53,7 @@ import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.comoAsegurado
 import cl.duocuc.segurosbpo.viewmodel.CuentaSesionViewModel
 import cl.duocuc.segurosbpo.viewmodel.SiniestrosViewModel
+import cl.duocuc.segurosbpo.R
 
 fun idDesdeArgumentos(argumentos: Bundle?): Long = argumentos?.getLong("id") ?: 0L
 
@@ -115,64 +127,75 @@ fun AppNavegacion() {
     }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val drawerScope = rememberCoroutineScope()
+    val rutaActual = navController.currentBackStackEntryAsState().value?.destination?.route
+    fun navegarDesdeMenu(ruta: String) {
+        navController.navigate(ruta) { launchSingleTop = true }
+        drawerScope.launch { drawerState.close() }
+    }
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Text("Seguros BPO · " + sesion.nombre)
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.mi_siniestro_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(46.dp)
+                    )
+                    Column {
+                        Text("Seguros BPO")
+                        Text(sesion.nombre)
+                    }
+                }
+                HorizontalDivider()
                 if (sesion.rol == RolCuenta.ASEGURADO) {
                     NavigationDrawerItem(
                         label = { Text("Panel del asegurado") },
-                        selected = false,
-                        onClick = {
-                            navController.navigate(Ruta.MisSiniestros.ruta)
-                            drawerScope.launch { drawerState.close() }
-                        }
+                        icon = { Icon(painterResource(R.drawable.ic_inicio), contentDescription = null) },
+                        selected = rutaActual == Ruta.MisSiniestros.ruta,
+                        onClick = { navegarDesdeMenu(Ruta.MisSiniestros.ruta) }
                     )
                     NavigationDrawerItem(
                         label = { Text("Reportar siniestro") },
-                        selected = false,
-                        onClick = {
-                            navController.navigate(Ruta.Reportar.ruta)
-                            drawerScope.launch { drawerState.close() }
-                        }
+                        icon = { Icon(painterResource(R.drawable.ic_reportar), contentDescription = null) },
+                        selected = rutaActual == Ruta.Reportar.ruta,
+                        onClick = { navegarDesdeMenu(Ruta.Reportar.ruta) }
                     )
                     NavigationDrawerItem(
-                        label = { Text("Ver estadísticas") },
-                        selected = false,
-                        onClick = {
-                            navController.navigate(Ruta.Estadisticas.ruta)
-                            drawerScope.launch { drawerState.close() }
-                        }
+                        label = { Text("Mis estadísticas") },
+                        icon = { Icon(painterResource(R.drawable.ic_estadisticas), contentDescription = null) },
+                        selected = rutaActual == Ruta.Estadisticas.ruta,
+                        onClick = { navegarDesdeMenu(Ruta.Estadisticas.ruta) }
                     )
                     NavigationDrawerItem(
-                        label = { Text("Centro de avisos") },
-                        selected = false,
-                        onClick = {
-                            navController.navigate(Ruta.Avisos.ruta)
-                            drawerScope.launch { drawerState.close() }
-                        }
+                        label = { Text("Avisos" + if (contarAvisosNoLeidos(avisos) > 0)
+                            " (${contarAvisosNoLeidos(avisos)})" else "") },
+                        icon = { Icon(painterResource(R.drawable.ic_avisos), contentDescription = null) },
+                        selected = rutaActual == Ruta.Avisos.ruta,
+                        onClick = { navegarDesdeMenu(Ruta.Avisos.ruta) }
                     )
                 } else {
                     NavigationDrawerItem(
-                        label = { Text("Panel de trabajo") },
-                        selected = false,
-                        onClick = {
-                            navController.navigate(Ruta.Liquidador.ruta)
-                            drawerScope.launch { drawerState.close() }
-                        }
+                        label = { Text("Gestión de siniestros") },
+                        icon = { Icon(painterResource(R.drawable.ic_casos), contentDescription = null) },
+                        selected = rutaActual == Ruta.Liquidador.ruta,
+                        onClick = { navegarDesdeMenu(Ruta.Liquidador.ruta) }
                     )
                 }
+                HorizontalDivider()
                 NavigationDrawerItem(
-                    label = { Text("Cuenta y perfil") },
-                    selected = false,
-                    onClick = {
-                        navController.navigate(Ruta.Perfil.ruta)
-                        drawerScope.launch { drawerState.close() }
-                    }
+                    label = { Text("Mi perfil") },
+                    icon = { Icon(painterResource(R.drawable.ic_persona), contentDescription = null) },
+                    selected = rutaActual == Ruta.Perfil.ruta,
+                    onClick = { navegarDesdeMenu(Ruta.Perfil.ruta) }
                 )
                 NavigationDrawerItem(
-                    label = { Text("Salir de la cuenta") },
+                    label = { Text("Cerrar sesión") },
+                    icon = { Icon(painterResource(R.drawable.ic_salir), contentDescription = null) },
                     selected = false,
                     onClick = cuentaVm::cerrarSesion
                 )
@@ -180,9 +203,6 @@ fun AppNavegacion() {
         }
     ) {
         Column(Modifier.fillMaxSize()) {
-            TextButton(onClick = { drawerScope.launch { drawerState.open() } }) {
-                Text("Abrir menú")
-            }
             NavHost(
                 modifier = Modifier.weight(1f),
                 navController = navController,
@@ -215,7 +235,8 @@ fun AppNavegacion() {
                 permitirCambioAsegurado = false,
                 permitirGestor = false,
                 onCerrarSesion = cuentaVm::cerrarSesion,
-                onVerPerfil = { navController.navigate(Ruta.Perfil.ruta) }
+                onVerPerfil = { navController.navigate(Ruta.Perfil.ruta) },
+                onAbrirMenu = { drawerScope.launch { drawerState.open() } }
             )
         }
         composable(Ruta.Estadisticas.ruta) {
@@ -253,7 +274,8 @@ fun AppNavegacion() {
                 onVolver = { navController.navigateUp() },
                 permitirElegirEquipo = false,
                 onCerrarSesion = cuentaVm::cerrarSesion,
-                onVerPerfil = { navController.navigate(Ruta.Perfil.ruta) }
+                onVerPerfil = { navController.navigate(Ruta.Perfil.ruta) },
+                onAbrirMenu = { drawerScope.launch { drawerState.open() } }
             )
         }
         }

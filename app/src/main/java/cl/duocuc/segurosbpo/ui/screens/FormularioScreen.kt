@@ -25,12 +25,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -46,12 +48,16 @@ import cl.duocuc.segurosbpo.model.TipoSiniestro
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 import cl.duocuc.segurosbpo.ui.components.BotonPrincipal
 import cl.duocuc.segurosbpo.ui.components.BotonSecundario
 import cl.duocuc.segurosbpo.ui.components.CampoTexto
 import cl.duocuc.segurosbpo.ui.components.CasillaConTexto
 import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
+import cl.duocuc.segurosbpo.ui.components.SelectorComuna
+import cl.duocuc.segurosbpo.model.FechaFormulario
 import cl.duocuc.segurosbpo.ui.components.InterruptorConTexto
 import cl.duocuc.segurosbpo.ui.components.TarjetaSeccion
 import cl.duocuc.segurosbpo.ui.theme.Dimens
@@ -155,6 +161,7 @@ fun FormularioContent(
     onVolver: () -> Unit,
     onVerMisSiniestros: () -> Unit
 ){
+    val contexto = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -252,14 +259,37 @@ fun FormularioContent(
 
 
                 TarjetaSeccion(titulo = stringResource(R.string.seccion_donde_cuando)) {
-                    CampoTexto(
-                        valor = uiState.fechaOcurrencia,
-                        onValorCambia = onFechaCambia,
-                        etiqueta = stringResource(R.string.campo_fecha),
-                        icono = R.drawable.ic_check,
-                        error = uiState.errorFecha,
-                        tipoTeclado = KeyboardType.Number
-                    )
+                    OutlinedButton(
+                        onClick = {
+                            val inicial = Calendar.getInstance().apply {
+                                val partes = uiState.fechaOcurrencia.split("-")
+                                if (partes.size == 3) {
+                                    runCatching { set(partes[2].toInt(), partes[1].toInt() - 1,
+                                        partes[0].toInt()) }
+                                }
+                            }
+                            val dialogo = android.app.DatePickerDialog(
+                                contexto,
+                                { _, anio, mes, dia ->
+                                    val utc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                                        clear()
+                                        set(anio, mes, dia, 12, 0, 0)
+                                    }
+                                    onFechaCambia(FechaFormulario.formatear(utc.timeInMillis))
+                                },
+                                inicial.get(Calendar.YEAR), inicial.get(Calendar.MONTH),
+                                inicial.get(Calendar.DAY_OF_MONTH)
+                            )
+                            dialogo.datePicker.maxDate = System.currentTimeMillis()
+                            dialogo.show()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(painterResource(R.drawable.ic_calendario), contentDescription = null)
+                        Text(if (uiState.fechaOcurrencia.isBlank()) " Elegir fecha del siniestro"
+                            else " Fecha: ${uiState.fechaOcurrencia}")
+                    }
+                    uiState.errorFecha?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     if (ValidadorSiniestro.reporteFueraDePlazo(
                             uiState.fechaOcurrencia,
                             SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).format(Date())
@@ -270,12 +300,10 @@ fun FormularioContent(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    CampoTexto(
-                        valor = uiState.comuna,
-                        onValorCambia = onComunaCambia,
-                        etiqueta = stringResource(R.string.campo_comuna),
-                        icono = R.drawable.ic_ubicacion,
-                        error = uiState.errorComuna
+                    SelectorComuna(
+                        comuna = uiState.comuna,
+                        error = uiState.errorComuna,
+                        onSeleccionar = onComunaCambia
                     )
                 }
 
