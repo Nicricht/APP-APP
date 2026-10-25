@@ -210,7 +210,8 @@ fun FormularioContent(
                         opciones = Compania.entries,
                         seleccionada = uiState.compania,
                         onSeleccionar = onCompaniaSeleccionada,
-                        textoDe = {it.etiqueta}
+                        textoDe = {it.etiqueta},
+                        placeholder = "Selecciona una compañía"
                     )
 
                     uiState.errorCompania?.let {
@@ -227,8 +228,14 @@ fun FormularioContent(
                         opciones = TipoSiniestro.entries,
                         seleccionada = uiState.tipoSiniestro,
                         onSeleccionar = onTipoSeleccionado,
-                        textoDe = {it.etiqueta}
+                        textoDe = {it.etiqueta},
+                        placeholder = "Selecciona el tipo de siniestro"
                     )
+
+                    uiState.errorTipo?.let { mensaje ->
+                        Text(mensaje, color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium)
+                    }
 
                     CampoTexto(
                         valor = uiState.descripcion,
@@ -240,7 +247,7 @@ fun FormularioContent(
                     )
 
 
-                    if (uiState.tipoSiniestro.esVehiculo) {
+                    if (uiState.tipoSiniestro?.esVehiculo == true) {
                         InterruptorConTexto(
                             texto = stringResource(R.string.opcion_terceros),
                             activado = uiState.huboTerceros,

@@ -9,6 +9,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -56,44 +58,21 @@ fun DetalleSiniestroScreen(
                 Text("No se encontró el siniestro de este asegurado")
             } else {
                 Text(siniestro.numero, style = MaterialTheme.typography.headlineSmall)
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Etapa: ${siniestro.etapa.etiqueta}", style = MaterialTheme.typography.titleLarge)
-                        Text("Compañía: ${siniestro.compania.etiqueta}")
-                        Text("Tipo: ${siniestro.tipo.etiqueta}")
-                        Text("Ocurrencia: ${siniestro.fechaOcurrencia}")
-                        if (ValidadorSiniestro.reporteFueraDePlazo(
-                                siniestro.fechaOcurrencia, siniestro.fechaReporte
-                            )) {
-                            Text(
-                                "Reporte fuera de plazo (más de 30 días desde el siniestro)",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        Text("Reporte: ${siniestro.fechaReporte}")
-                        Text("Comuna: ${siniestro.comuna}")
-                        Text("Descripción: ${siniestro.descripcion}")
-                        Text("Última actualización: ${siniestro.ultimaActualizacion}")
-                        Text("Liquidador: " + (siniestro.liquidadorAsignado?.nombre ?: "Pendiente de asignación"))
-                        if (siniestro.etapa == EtapaSiniestro.CERRADO) {
-                            Text("Resultado: " + (siniestro.resultadoCierre ?: "No informado"))
-                            Text("Mensaje de cierre: " + (siniestro.mensajeCierre ?: "No disponible"))
-                        }
-                    }
-                }
-                Text("¿Qué sigue?", style = MaterialTheme.typography.titleMedium)
                 val pendientes = solicitudes.filter { it.pendiente }
-                if (pendientes.isNotEmpty()) {
-                    Text(
-                        "Tienes ${pendientes.size} documento(s) pendiente(s) por entregar.",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    pendientes.forEach { solicitud ->
-                        Text("Pendiente: " + solicitud.tipo)
+                val puedeAdjuntar = siniestro.etapa != EtapaSiniestro.CERRADO
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Estado actual", style = MaterialTheme.typography.labelLarge)
+                        Text(siniestro.etapa.etiqueta, style = MaterialTheme.typography.headlineSmall)
+                        Text("Última actualización: ${siniestro.ultimaActualizacion}",
+                            style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                val proximoPaso = if (pendientes.isNotEmpty())
+                Text("Próximo paso", style = MaterialTheme.typography.titleLarge)
+                val proximoPaso = if (pendientes.isNotEmpty() && !puedeAdjuntar)
+                    "Este caso está cerrado. Puedes revisar los documentos, pero ya no admite nuevos adjuntos."
+                else if (pendientes.isNotEmpty())
                     "Adjunta los documentos solicitados para que tu caso pueda continuar."
                 else when (siniestro.etapa) {
                     EtapaSiniestro.RECIBIDO -> "Estamos revisando tu reporte para asignarlo a un liquidador. No necesitas hacer nada por ahora."
@@ -101,11 +80,47 @@ fun DetalleSiniestroScreen(
                     EtapaSiniestro.LIQUIDACION -> "Estamos definiendo la resolución con tu compañía de seguros."
                     EtapaSiniestro.CERRADO -> "Tu caso terminó. Revisa el resultado registrado."
                 }
-                Text(proximoPaso)
-                Button(onClick = onHistorial) { Text("Ver historial") }
-                Button(onClick = onEvidencias) { Text("Documentos y evidencias") }
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(proximoPaso)
+                        pendientes.forEach { solicitud ->
+                            Text("• ${solicitud.tipo}", style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error)
+                        }
+                        Button(onClick = onEvidencias, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (pendientes.isEmpty() || !puedeAdjuntar) "Ver documentos y evidencias"
+                                else "Adjuntar documento")
+                        }
+                    }
+                }
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Datos del siniestro", style = MaterialTheme.typography.titleMedium)
+                        Text("Compañía: ${siniestro.compania.etiqueta}")
+                        Text("Tipo: ${siniestro.tipo.etiqueta}")
+                        Text("Fecha: ${siniestro.fechaOcurrencia}")
+                        Text("Comuna: ${siniestro.comuna}")
+                        Text("Descripción: ${siniestro.descripcion}")
+                        Text("Liquidador: " + (siniestro.liquidadorAsignado?.nombre
+                            ?: "Pendiente de asignación"))
+                        if (ValidadorSiniestro.reporteFueraDePlazo(
+                                siniestro.fechaOcurrencia, siniestro.fechaReporte)) {
+                            Text("Reporte fuera de plazo (más de 30 días desde el siniestro)",
+                                color = MaterialTheme.colorScheme.error)
+                        }
+                        if (siniestro.etapa == EtapaSiniestro.CERRADO) {
+                            Text("Resultado: " + (siniestro.resultadoCierre ?: "No informado"))
+                            Text("Mensaje de cierre: " + (siniestro.mensajeCierre ?: "No disponible"))
+                        }
+                    }
+                }
+                OutlinedButton(onClick = onHistorial, modifier = Modifier.fillMaxWidth()) {
+                    Text("Ver historial de gestiones")
+                }
                 if (siniestro.etapa == EtapaSiniestro.RECIBIDO) {
-                    Button(onClick = onEditar) { Text("Corregir descripción") }
+                    OutlinedButton(onClick = onEditar, modifier = Modifier.fillMaxWidth()) {
+                        Text("Corregir descripción")
+                    }
                 }
             }
         }

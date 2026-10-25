@@ -70,7 +70,7 @@ class BorradorEvidenciaViewModel : ViewModel() {
             }
             guardadoCorrecto = error == null
             if (error == null) limpiar()
-            resultado = error ?: "Documento guardado en el expediente local"
+            resultado = error ?: "Documento adjuntado correctamente"
         }
     }
 

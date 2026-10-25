@@ -1,14 +1,20 @@
 package cl.duocuc.segurosbpo.ui.screens
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,10 +41,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import cl.duocuc.segurosbpo.R
 import cl.duocuc.segurosbpo.model.EtapaSiniestro
+import cl.duocuc.segurosbpo.model.Evidencia
+import cl.duocuc.segurosbpo.model.TipoDocumento
+import cl.duocuc.segurosbpo.data.ArchivoEvidencia
+import cl.duocuc.segurosbpo.data.VisualizadorEvidencias
+import cl.duocuc.segurosbpo.ui.components.SelectorOpciones
 import cl.duocuc.segurosbpo.model.Gestion
 import cl.duocuc.segurosbpo.model.Liquidador
 import cl.duocuc.segurosbpo.model.ReglasEtapa
@@ -46,7 +60,9 @@ import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.TextoPresentacion
 import cl.duocuc.segurosbpo.ui.components.ResumenGraficosCasos
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class PestanaLiquidador(val titulo: String) {
     RESUMEN("Resumen"),
@@ -62,6 +78,8 @@ fun CasosLiquidadorScreen(
     casos: List<Siniestro>,
     gestiones: List<Gestion>,
     solicitudes: List<SolicitudDocumento>,
+    evidencias: List<Evidencia>,
+    onAbrirEvidencia: suspend (Long, Long) -> ArchivoEvidencia?,
     onSolicitarDocumento: (Long, String, String) -> String?,
     onSeleccionarLiquidador: (Liquidador) -> Unit,
     onCargarGestiones: (Long) -> Unit,
@@ -128,7 +146,8 @@ fun CasosLiquidadorScreen(
                 }
             }
             Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                modifier = Modifier.fillMaxSize().imePadding()
+                    .verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (permitirElegirEquipo) {
@@ -154,6 +173,8 @@ fun CasosLiquidadorScreen(
                         Text("Responsable: " + liquidador.nombre)
                         ResumenGraficosCasos(casos = casos, equipo = liquidador.equipo)
                         Text("Casos disponibles", style = MaterialTheme.typography.titleLarge)
+                        Text("Los nuevos siniestros de tu área aparecen aquí. Selecciona «Tomar caso» para asignártelo.",
+                            style = MaterialTheme.typography.bodyMedium)
                         if (disponibles.isEmpty()) {
                             Text("No hay siniestros pendientes de asignación en tu área.")
                         }
@@ -238,6 +259,8 @@ fun CasosLiquidadorScreen(
                                     DocumentosDelCaso(
                                         caso = caso,
                                         solicitudes = solicitudes,
+                                        evidencias = evidencias.filter { it.siniestroId == caso.id },
+                                        onAbrirEvidencia = onAbrirEvidencia,
                                         onSolicitarDocumento = onSolicitarDocumento,
                                         mostrar = ::mostrar
                                     )
@@ -387,19 +410,40 @@ private fun GestionesDelCaso(
 private fun DocumentosDelCaso(
     caso: Siniestro,
     solicitudes: List<SolicitudDocumento>,
+    evidencias: List<Evidencia>,
+    onAbrirEvidencia: suspend (Long, Long) -> ArchivoEvidencia?,
     onSolicitarDocumento: (Long, String, String) -> String?,
     mostrar: (String) -> Unit
 ) {
+    val contexto = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var imagenVista by remember { mutableStateOf<Bitmap?>(null) }
+    if (imagenVista != null) {
+        AlertDialog(
+            onDismissRequest = { imagenVista = null },
+            title = { Text("Imagen adjunta") },
+            text = {
+                Image(
+                    bitmap = imagenVista!!.asImageBitmap(),
+                    contentDescription = "Fotografía del siniestro",
+                    modifier = Modifier.fillMaxWidth().height(280.dp),
+                    contentScale = ContentScale.Fit
+                )
+            },
+            confirmButton = { TextButton(onClick = { imagenVista = null }) { Text("Cerrar") } }
+        )
+    }
     var tipoSolicitud by rememberSaveable(caso.id) { mutableStateOf("") }
     var comentarioSolicitud by rememberSaveable(caso.id) { mutableStateOf("") }
-    if (caso.etapa != EtapaSiniestro.CERRADO) {
+    if (ReglasEtapa.validarSolicitudDocumento(caso.etapa) == null) {
         Text("Solicitar documento", style = MaterialTheme.typography.titleMedium)
-        OutlinedTextField(
-            value = tipoSolicitud,
-            onValueChange = { tipoSolicitud = it },
-            label = { Text("Nombre del documento requerido") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+        SelectorOpciones(
+            titulo = "Tipo de documento requerido",
+            opciones = TipoDocumento.opciones,
+            seleccionada = tipoSolicitud.takeIf(String::isNotBlank),
+            onSeleccionar = { tipoSolicitud = it },
+            textoDe = { it },
+            placeholder = "Seleccionar documento"
         )
         OutlinedTextField(
             value = comentarioSolicitud,
@@ -413,13 +457,16 @@ private fun DocumentosDelCaso(
                 comentarioSolicitud.length <= 500,
             onClick = {
                 val error = onSolicitarDocumento(caso.id, tipoSolicitud, comentarioSolicitud)
-                mostrar(error ?: "Solicitud registrada en el expediente local")
+                mostrar(error ?: "Solicitud enviada al asegurado")
                 if (error == null) {
                     tipoSolicitud = ""
                     comentarioSolicitud = ""
                 }
             }
         ) { Text("Registrar solicitud") }
+    } else if (caso.etapa == EtapaSiniestro.LIQUIDACION) {
+        Text("Las solicitudes de documentos se realizan antes de la liquidación.",
+            style = MaterialTheme.typography.bodySmall)
     }
     Text("Documentos solicitados", style = MaterialTheme.typography.titleMedium)
     if (solicitudes.isEmpty()) Text("No hay documentos solicitados.")
@@ -430,6 +477,37 @@ private fun DocumentosDelCaso(
                 Text(if (solicitud.pendiente) "Pendiente" else "Documento registrado")
                 Text("Solicitado: " + solicitud.fechaSolicitud)
                 if (solicitud.comentario.isNotBlank()) Text(solicitud.comentario)
+            }
+        }
+    }
+    Text("Archivos recibidos (${evidencias.size})", style = MaterialTheme.typography.titleMedium)
+    if (evidencias.isEmpty()) Text("El asegurado todavía no ha adjuntado archivos a este caso.")
+    evidencias.forEach { evidencia ->
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(evidencia.tipoDocumento, style = MaterialTheme.typography.titleSmall)
+                Text(evidencia.nombreArchivo)
+                Text("${evidencia.tamanoBytes / 1024} KB · ${evidencia.fechaRegistro}",
+                    style = MaterialTheme.typography.bodySmall)
+                if (evidencia.observacion.isNotBlank()) Text(evidencia.observacion)
+                TextButton(onClick = {
+                    scope.launch {
+                        val archivo = onAbrirEvidencia(caso.id, evidencia.id)
+                        if (archivo == null) {
+                            mostrar("No se pudo recuperar el archivo")
+                        } else if (archivo.mime.startsWith("image/")) {
+                            imagenVista = withContext(Dispatchers.Default) {
+                                BitmapFactory.decodeByteArray(archivo.bytes, 0, archivo.bytes.size)
+                            }
+                            if (imagenVista == null) mostrar("No se pudo mostrar la imagen")
+                        } else {
+                            VisualizadorEvidencias.abrir(contexto, evidencia.id, archivo)
+                                ?.let(mostrar)
+                        }
+                    }
+                }) {
+                    Text(if (evidencia.tipoMime == "application/pdf") "Abrir PDF" else "Ver imagen")
+                }
             }
         }
     }

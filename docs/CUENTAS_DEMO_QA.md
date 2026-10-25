@@ -1,14 +1,26 @@
-# Cuentas académicas de Seguros BPO
+# Perfiles ficticios para evaluar Seguros BPO
 
-La rama `qa` incluye dos cuentas preconfiguradas de **liquidadores ficticios** con acceso mediante el mismo formulario de correo y contraseña que utilizan los asegurados.
+La aplicación **no tiene registro ni inicio de sesión real**. Al abrirla por primera vez aparece "¿Cómo quieres ingresar?", con dos pestañas: **Asegurado** y **Liquidador**. Basta con pulsar "Entrar como…".
 
-| Rol | Correo | Contraseña de demostración | Área |
-|---|---|---|---|
-| Liquidador | `vehiculos@segurosbpo.demo` | `Demo2026!` | Vehículos |
-| Liquidador | `hogar@segurosbpo.demo` | `Demo2026!` | Hogar |
+Esto sigue el caso del curso: FA-01 excluye crear cuentas y claves; S-02 permite identificar usuarios de forma simulada y RNF-08 prohíbe solicitar y almacenar contraseñas.
 
-Para evaluar como asegurado, utilizar Crear cuenta y un RUT **ficticio con dígito verificador válido**. Los accesos directos a Camila y a liquidadores siguen disponibles exclusivamente como atajos didácticos en esta versión de pruebas.
+## Personas aseguradas de demostración
 
-Estas cuentas son locales, no se sincronizan entre teléfonos y **no deben utilizarse con datos verdaderos ni claves reales**. Las contraseñas almacenadas se verifican mediante PBKDF2 con sal, pero los valores de prueba publicados no son secretos ni constituyen autenticación productiva.
+El selector incluye ocho personas ficticias del enunciado: Camila Rojas, Jorge Pizarro, Valentina Soto, Héctor Araya, Daniela Vergara, Ricardo Espinoza, Francisca Morales y Luis Carrasco.
 
-El registro público solo puede crear usuarios con rol `ASEGURADO`. La cuenta de `LIQUIDADOR` se provisiona desde la migración local de SQLite (versión 3), preservando las cuentas existentes.
+Varias tienen siniestros de ejemplo; también pueden registrar nuevos siniestros y adjuntar imágenes o PDF ficticios.
+
+## Equipo de liquidación
+
+| Nombre | Especialidad | Acceso |
+|---|---|---|
+| María P. | Vehículos | Seleccionar pestaña **Liquidador** y tocar su perfil |
+| Pedro C. | Hogar | Seleccionar pestaña **Liquidador** y tocar su perfil |
+
+Para revisar un siniestro recién reportado, el liquidador entra a los **casos disponibles** de su especialidad y pulsa **Tomar caso**. Luego puede abrir sus documentos, solicitar antecedentes y registrar gestiones. Para volver al asegurado, usar **Cambiar perfil**.
+
+## Migración y límites
+
+- Una actualización de la versión previa convierte las cuentas locales antiguas en perfiles elegibles **sin sus hashes ni sales de contraseña**; mantiene fotos, teléfonos e identificadores de casos.
+- Cada cambio de perfil usa la **misma base SQLite del dispositivo**. En otro teléfono los casos creados localmente no aparecerán automáticamente.
+- No es un mecanismo de seguridad real: usar exclusivamente identidades, fotos y documentos **inventados** para las pruebas académicas.

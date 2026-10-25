@@ -31,7 +31,7 @@ import java.util.Locale
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
-) : SQLiteOpenHelper(context, databaseName, null, 6) {
+) : SQLiteOpenHelper(context, databaseName, null, 7) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""
@@ -119,6 +119,7 @@ class SiniestroDbHelper(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 siniestro_id INTEGER NOT NULL,
                 tipo_documento TEXT NOT NULL,
+                observacion TEXT NOT NULL DEFAULT '',
                 nombre_archivo TEXT NOT NULL,
                 mime TEXT NOT NULL,
                 tamano_bytes INTEGER NOT NULL,
@@ -247,22 +248,28 @@ class SiniestroDbHelper(
                 WHERE descripcion LIKE 'Documento solicitado entregado localmente: %'
             """.trimIndent())
         }
+        if (oldVersion in 2..6) {
+            db.execSQL("ALTER TABLE evidencias ADD COLUMN observacion TEXT NOT NULL DEFAULT ''")
+        }
     }
 
     private fun fechaActual(): String =
         SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault()).format(Date())
 
     
-    fun buscarPosibleDuplicado(formulario: FormularioUiState): String? =
-        readableDatabase.query(
+    fun buscarPosibleDuplicado(formulario: FormularioUiState): String? {
+        val compania = formulario.compania ?: return null
+        val tipo = formulario.tipoSiniestro ?: return null
+        return readableDatabase.query(
             "siniestros", arrayOf("numero"),
             "asegurado = ? AND compania = ? AND tipo = ? AND fecha_ocurrencia = ? AND etapa <> ?",
             arrayOf(
-                formulario.asegurado.name, formulario.compania.name, formulario.tipoSiniestro.name,
+                formulario.asegurado.name, compania.name, tipo.name,
                 formulario.fechaOcurrencia, EtapaSiniestro.CERRADO.name
             ),
             null, null, "id DESC", "1"
         ).use { if (it.moveToFirst()) it.getString(0) else null }
+    }
 
     fun registrar(formulario: FormularioUiState): Siniestro {
         val error = listOfNotNull(
@@ -270,9 +277,12 @@ class SiniestroDbHelper(
             ValidadorSiniestro.errorComuna(formulario.comuna),
             ValidadorSiniestro.errorDescripcion(formulario.descripcion),
             ValidadorSiniestro.errorCompania(formulario.compania),
+            ValidadorSiniestro.errorTipo(formulario.tipoSiniestro),
             if (!formulario.datosCorrectos) "Debes confirmar que los datos son correctos" else null
         ).firstOrNull()
         error?.let { throw IllegalArgumentException(it) }
+        val compania = requireNotNull(formulario.compania)
+        val tipo = requireNotNull(formulario.tipoSiniestro)
         val db = writableDatabase
         db.beginTransaction()
         try {
@@ -280,8 +290,8 @@ class SiniestroDbHelper(
             val valores = ContentValues().apply {
                 put("numero", "TEMP-${System.nanoTime()}")
                 put("asegurado", formulario.asegurado.name)
-                put("compania", formulario.compania.name)
-                put("tipo", formulario.tipoSiniestro.name)
+                put("compania", compania.name)
+                put("tipo", tipo.name)
                 put("fecha_ocurrencia", formulario.fechaOcurrencia)
                 put("fecha_reporte", ahora.substring(0, 10))
                 put("comuna", formulario.comuna.trim())
@@ -298,8 +308,8 @@ class SiniestroDbHelper(
             insertarGestion(db, id, "Asegurado", "Reporte registrado con número " + numero, true)
             db.setTransactionSuccessful()
             return Siniestro(
-                id, numero, formulario.asegurado, formulario.compania,
-                formulario.tipoSiniestro, formulario.fechaOcurrencia, ahora.substring(0, 10),
+                id, numero, formulario.asegurado, compania,
+                tipo, formulario.fechaOcurrencia, ahora.substring(0, 10),
                 formulario.comuna.trim(), formulario.descripcion.trim(), formulario.huboTerceros,
                 EtapaSiniestro.RECIBIDO, ahora
             )
@@ -623,7 +633,8 @@ class SiniestroDbHelper(
         try {
             val caso = obtenerAsignado(siniestroId, liquidador)
                 ?: throw IllegalArgumentException("El caso no está asignado a este liquidador")
-            require(caso.etapa != EtapaSiniestro.CERRADO) { "El caso está cerrado" }
+            ReglasEtapa.validarSolicitudDocumento(caso.etapa)
+                ?.let { throw IllegalArgumentException(it) }
             val duplicados = db.rawQuery("""
                 SELECT COUNT(*) FROM solicitudes_documentos
                 WHERE siniestro_id = ? AND tipo = ? COLLATE NOCASE AND fecha_entrega IS NULL
@@ -720,7 +731,7 @@ class SiniestroDbHelper(
         val resultado = mutableListOf<Evidencia>()
         readableDatabase.rawQuery("""
             SELECT e.id, e.siniestro_id, e.tipo_documento, e.nombre_archivo,
-                   e.mime, e.tamano_bytes, e.fecha_registro
+                   e.mime, e.tamano_bytes, e.fecha_registro, e.observacion
             FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
             WHERE s.id = ? AND s.asegurado = ?
             ORDER BY e.id DESC
@@ -728,17 +739,56 @@ class SiniestroDbHelper(
             while (cursor.moveToNext()) {
                 resultado.add(Evidencia(
                     cursor.getLong(0), cursor.getLong(1), cursor.getString(2),
-                    cursor.getString(3), cursor.getString(4), cursor.getInt(5), cursor.getString(6)
+                    cursor.getString(3), cursor.getString(4), cursor.getInt(5), cursor.getString(6),
+                    cursor.getString(7)
                 ))
             }
         }
         return resultado
     }
 
+    fun listarEvidenciasAsignadas(siniestroId: Long, liquidador: Liquidador): List<Evidencia> {
+        val resultado = mutableListOf<Evidencia>()
+        readableDatabase.rawQuery("""
+            SELECT e.id, e.siniestro_id, e.tipo_documento, e.nombre_archivo,
+                   e.mime, e.tamano_bytes, e.fecha_registro, e.observacion
+            FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
+            WHERE s.id = ? AND s.liquidador = ?
+            ORDER BY e.id DESC
+        """.trimIndent(), arrayOf(siniestroId.toString(), liquidador.name)).use { cursor ->
+            while (cursor.moveToNext()) {
+                resultado.add(Evidencia(
+                    cursor.getLong(0), cursor.getLong(1), cursor.getString(2),
+                    cursor.getString(3), cursor.getString(4), cursor.getInt(5),
+                    cursor.getString(6), cursor.getString(7)
+                ))
+            }
+        }
+        return resultado
+    }
+
+    fun obtenerArchivoAsegurado(id: Long, siniestroId: Long, asegurado: Asegurado): ArchivoEvidencia? =
+        obtenerArchivoAutorizado(id, siniestroId, "s.asegurado = ?", asegurado.name)
+
+    fun obtenerArchivoAsignado(id: Long, siniestroId: Long, liquidador: Liquidador): ArchivoEvidencia? =
+        obtenerArchivoAutorizado(id, siniestroId, "s.liquidador = ?", liquidador.name)
+
+    private fun obtenerArchivoAutorizado(
+        id: Long, siniestroId: Long, filtro: String, identificador: String
+    ): ArchivoEvidencia? = readableDatabase.rawQuery("""
+        SELECT e.nombre_archivo, e.mime, e.contenido
+        FROM evidencias e JOIN siniestros s ON s.id = e.siniestro_id
+        WHERE e.id = ? AND s.id = ? AND $filtro
+    """.trimIndent(), arrayOf(id.toString(), siniestroId.toString(), identificador)).use { cursor ->
+        if (cursor.moveToFirst()) ArchivoEvidencia(
+            cursor.getString(0), cursor.getString(1), cursor.getBlob(2)
+        ) else null
+    }
+
     
     fun guardarEvidencia(
         siniestroId: Long, asegurado: Asegurado, tipoDocumento: String,
-        archivo: ArchivoEvidencia
+        archivo: ArchivoEvidencia, observacion: String = ""
     ) {
         val db = writableDatabase
         db.beginTransaction()
@@ -755,9 +805,11 @@ class SiniestroDbHelper(
             ).use { c -> c.moveToFirst(); c.getInt(0) }
             ValidadorEvidencia.error(tipoDocumento, archivo.mime, archivo.bytes.size, cantidad)
                 ?.let { throw IllegalArgumentException(it) }
+            require(observacion.length <= 500) { "Los detalles no pueden superar 500 caracteres" }
             val valores = ContentValues().apply {
                 put("siniestro_id", siniestroId)
                 put("tipo_documento", tipoDocumento.trim())
+                put("observacion", observacion.trim())
                 put("nombre_archivo", archivo.nombre)
                 put("mime", archivo.mime)
                 put("tamano_bytes", archivo.bytes.size)

@@ -53,8 +53,8 @@ data class FormularioUiState(
     val comuna: String = "",
     val descripcion: String = "",
 
-    val compania: Compania = Compania.CORDILLERA,
-    val tipoSiniestro: TipoSiniestro = TipoSiniestro.CHOQUE,
+    val compania: Compania? = null,
+    val tipoSiniestro: TipoSiniestro? = null,
     val huboTerceros: Boolean = false,
     val datosCorrectos: Boolean = false,
 
@@ -62,6 +62,7 @@ data class FormularioUiState(
     val errorComuna: String? = null,
     val errorDescripcion: String? = null,
     val errorCompania: String? = null,
+    val errorTipo: String? = null,
     val errorDatos: String? = null,
 
     val reporteExitoso: Boolean = false,

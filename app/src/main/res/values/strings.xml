@@ -31,7 +31,5 @@
     <string name="cd_banner">Ilustracion de u nformulario</string>
     <string name="cd_portada">Paisaje de montañas al atardecer</string>
     <string name="cd_avatar">Foto del perfil</string>
-    <string name="cd_mostrar_contraseña">Mostrar contraseña</string>
-    <string name="cd_ocultar_contraseña">Ocultar Contraseña</string>
 
 </resources>

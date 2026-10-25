@@ -24,10 +24,11 @@ import androidx.compose.ui.unit.dp
 fun <T> SelectorOpciones(
     titulo: String,
     opciones: List<T>,
-    seleccionada: T,
+    seleccionada: T?,
     onSeleccionar: (T) -> Unit,
     textoDe: (T) -> String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholder: String = "Seleccionar una opción"
 ) {
     var mostrar by remember { mutableStateOf(false) }
 
@@ -42,12 +43,14 @@ fun <T> SelectorOpciones(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = textoDe(seleccionada),
+                text = seleccionada?.let(textoDe) ?: placeholder,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Start,
-                color = MaterialTheme.colorScheme.onSurface
+                color = if (seleccionada == null) MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.onSurface
             )
-            Text(text = "Cambiar", color = MaterialTheme.colorScheme.primary)
+            Text(text = if (seleccionada == null) "Elegir" else "Cambiar",
+                color = MaterialTheme.colorScheme.primary)
         }
     }
 

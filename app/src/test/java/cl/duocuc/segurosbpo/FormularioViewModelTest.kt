@@ -10,13 +10,16 @@ import org.junit.Test
 class FormularioViewModelTest {
     @Test fun formularioVacioMuestraErrores() {
         val vm = FormularioViewModel()
+        assertNull(vm.uiState.value.compania)
+        assertNull(vm.uiState.value.tipoSiniestro)
         assertFalse(vm.onRegistrar())
         val estado = vm.uiState.value
         assertNotNull(estado.errorFecha)
         assertNotNull(estado.errorComuna)
         assertNotNull(estado.errorDescripcion)
         assertNotNull(estado.errorDatos)
-        assertNull(estado.errorCompania)
+        assertNotNull(estado.errorCompania)
+        assertNotNull(estado.errorTipo)
     }
 
     @Test fun formularioCompletoRegistraYEvitaDuplicado() {
@@ -24,6 +27,8 @@ class FormularioViewModelTest {
         vm.onFechaCambia("20-10-2026")
         vm.onComunaCambia("Santiago")
         vm.onDescripcionCambia("Colisión ficticia")
+        vm.onCompaniaSeleccionada(Compania.CORDILLERA)
+        vm.onTipoSeleccionado(TipoSiniestro.CHOQUE)
         vm.onDatosCorrectosCambia(true)
         assertTrue(vm.onRegistrar())
         vm.confirmarRegistro("SIN-26-123456")
@@ -38,6 +43,7 @@ class FormularioViewModelTest {
         vm.onFechaCambia("20-10-2026")
         vm.onComunaCambia("Maipú")
         vm.onDescripcionCambia("Daño por agua")
+        vm.onTipoSeleccionado(TipoSiniestro.DANO_AGUA)
         vm.onDatosCorrectosCambia(true)
         vm.onCompaniaSeleccionada(Compania.PROTEGE)
         assertFalse(vm.onRegistrar())
@@ -63,9 +69,12 @@ class FormularioViewModelTest {
         val vm = FormularioViewModel()
         vm.onAseguradoSeleccionado(Asegurado.JORGE)
         vm.onComunaCambia("Renca")
+        vm.onTipoSeleccionado(TipoSiniestro.CHOQUE)
         vm.onLimpiar()
         assertEquals(Asegurado.JORGE, vm.uiState.value.asegurado)
         assertEquals("", vm.uiState.value.comuna)
+        assertNull(vm.uiState.value.tipoSiniestro)
+        assertNull(vm.uiState.value.compania)
         vm.seleccionarAsegurado(Asegurado.CAMILA)
         assertEquals(Asegurado.CAMILA, vm.uiState.value.asegurado)
     }

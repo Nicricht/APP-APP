@@ -8,6 +8,11 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class ReglasEtapaTest {
+    @Test fun noPermiteNuevasSolicitudesDespuesDeEvaluacion() {
+        assertNull(ReglasEtapa.validarSolicitudDocumento(EtapaSiniestro.EVALUACION))
+        assertNotNull(ReglasEtapa.validarSolicitudDocumento(EtapaSiniestro.LIQUIDACION))
+        assertNotNull(ReglasEtapa.validarSolicitudDocumento(EtapaSiniestro.CERRADO))
+    }
     @Test fun avanzaUnaEtapa() {
         assertEquals(EtapaSiniestro.LIQUIDACION,
             ReglasEtapa.siguiente(EtapaSiniestro.EVALUACION))

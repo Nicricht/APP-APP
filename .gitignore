@@ -1,6 +1,7 @@
 /build
 /app/build
 .gradle
+.gradle-user/
 .kotlin
 /captures
 .externalNativeBuild

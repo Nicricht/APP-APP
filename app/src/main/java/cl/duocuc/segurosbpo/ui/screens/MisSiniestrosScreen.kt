@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -54,6 +56,7 @@ fun MisSiniestrosScreen(
     onGestionar: () -> Unit,
     onVerDetalle: (Long) -> Unit,
     onVerEstadisticas: () -> Unit = {},
+    siniestroDestacado: Siniestro? = null,
     permitirCambioAsegurado: Boolean = true,
     permitirGestor: Boolean = true,
     onCerrarSesion: () -> Unit = {},
@@ -91,11 +94,16 @@ fun MisSiniestrosScreen(
             }
         )
     }) { margen ->
-        Column(
+        LazyColumn(
             Modifier.fillMaxSize().padding(margen).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Seguimiento de seguros", style = MaterialTheme.typography.titleLarge)
+          item {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Hola, ${asegurado.etiqueta.substringBefore(' ')}",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Tus seguros, al día", style = MaterialTheme.typography.headlineMedium)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -106,20 +114,48 @@ fun MisSiniestrosScreen(
                     tamano = 56.dp
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Asegurado: ${asegurado.etiqueta}")
+                    Text(asegurado.etiqueta, style = MaterialTheme.typography.titleMedium)
                     Text("RUT: ${asegurado.rutOculto}", style = MaterialTheme.typography.bodySmall)
                 }
+                TextButton(onClick = onVerPerfil) { Text("Perfil") }
             }
             if (permitirCambioAsegurado) {
                 TextButton(onClick = { mostrarUsuarios = true }) { Text("Cambiar asegurado") }
             }
+            (siniestroDestacado ?: siniestros.maxByOrNull { it.id })?.let { reciente ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Último siniestro", style = MaterialTheme.typography.labelLarge)
+                        Text(reciente.numero, style = MaterialTheme.typography.titleLarge)
+                        Text(reciente.tipo.etiqueta)
+                        Text("Estado: ${reciente.etapa.etiqueta}",
+                            style = MaterialTheme.typography.titleMedium)
+                        TextButton(onClick = { onVerDetalle(reciente.id) }) {
+                            Text("Ver detalle del caso")
+                        }
+                    }
+                }
+            }
             Button(onClick = onReportar, modifier = Modifier.fillMaxWidth()) {
-                Text("Reportar un siniestro")
+                Text("+ Reportar siniestro")
             }
             if (avisosNoLeidos > 0) {
-                TextButton(onClick = onVerAvisos) {
-                    Text("Tienes $avisosNoLeidos avisos sin leer")
+                Card(onClick = onVerAvisos, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(14.dp)) {
+                        Text("Tienes $avisosNoLeidos avisos pendientes",
+                            style = MaterialTheme.typography.titleMedium)
+                        Text("Revisa las novedades y documentos de tus siniestros")
+                    }
                 }
+            }
+            OutlinedButton(onClick = onVerEstadisticas, modifier = Modifier.fillMaxWidth()) {
+                Text("Ver resumen de mis siniestros")
             }
             OutlinedTextField(
                 value = busqueda,
@@ -141,9 +177,9 @@ fun MisSiniestrosScreen(
                     }
                 }
             }
-            if (siniestros.isNotEmpty()) {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(siniestros, key = { it.id }) { siniestro ->
+            }
+          }
+            items(siniestros, key = { it.id }) { siniestro ->
                         Card(onClick = { onVerDetalle(siniestro.id) }, modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                                 Text(siniestro.numero, style = MaterialTheme.typography.titleMedium)
@@ -162,8 +198,6 @@ fun MisSiniestrosScreen(
                                 Text("Actualizado: ${siniestro.ultimaActualizacion}", style = MaterialTheme.typography.bodySmall)
                             }
                         }
-                    }
-                }
             }
         }
     }

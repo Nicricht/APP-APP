@@ -24,8 +24,14 @@ class ValidadorSiniestroTest {
     }
 
     @Test fun companiaInactiva() {
+        assertNotNull(ValidadorSiniestro.errorCompania(null))
         assertNotNull(ValidadorSiniestro.errorCompania(Compania.PROTEGE))
         assertNull(ValidadorSiniestro.errorCompania(Compania.CORDILLERA))
+    }
+
+    @Test fun tipoSinSeleccionEsObligatorio() {
+        assertNotNull(ValidadorSiniestro.errorTipo(null))
+        assertNull(ValidadorSiniestro.errorTipo(cl.duocuc.segurosbpo.model.TipoSiniestro.CHOQUE))
     }
 
     @Test fun camposObligatorios() {

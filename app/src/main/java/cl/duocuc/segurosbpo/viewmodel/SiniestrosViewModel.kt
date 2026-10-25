@@ -4,6 +4,7 @@ import android.app.Application
 import android.graphics.Bitmap
 import android.net.Uri
 import cl.duocuc.segurosbpo.data.ProcesadorEvidencia
+import cl.duocuc.segurosbpo.data.ArchivoEvidencia
 import cl.duocuc.segurosbpo.model.AvisoSiniestro
 import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.Evidencia
@@ -43,6 +44,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     val busqueda = _busqueda.asStateFlow()
     private val _evidencias = MutableStateFlow<List<Evidencia>>(emptyList())
     val evidencias = _evidencias.asStateFlow()
+    private val _evidenciasLiquidador = MutableStateFlow<List<Evidencia>>(emptyList())
+    val evidenciasLiquidador = _evidenciasLiquidador.asStateFlow()
     private val _gestiones = MutableStateFlow<List<Gestion>>(emptyList())
     val gestiones = _gestiones.asStateFlow()
     private val _liquidador = MutableStateFlow(Liquidador.VEHICULOS)
@@ -66,6 +69,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
         _liquidador.value = nuevo
         _gestionesLiquidador.value = emptyList()
         _solicitudesLiquidador.value = emptyList()
+        _evidenciasLiquidador.value = emptyList()
         refrescarAsignados()
     }
 
@@ -96,6 +100,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun cargarGestionesLiquidador(id: Long) {
         _gestionesLiquidador.value = db.listarGestionesAsignadas(id, _liquidador.value)
         _solicitudesLiquidador.value = db.listarSolicitudesAsignadas(id, _liquidador.value)
+        _evidenciasLiquidador.value = db.listarEvidenciasAsignadas(id, _liquidador.value)
     }
 
     fun solicitarDocumentoLiquidador(id: Long, tipo: String, comentario: String): String? {
@@ -193,6 +198,20 @@ class SiniestrosViewModel @JvmOverloads constructor(
         return withContext(Dispatchers.IO) { db.obtenerImagen(evidenciaId, siniestroId, propietario) }
     }
 
+    suspend fun obtenerArchivoAsegurado(siniestroId: Long, evidenciaId: Long): ArchivoEvidencia? {
+        val propietario = _asegurado.value
+        return withContext(Dispatchers.IO) {
+            db.obtenerArchivoAsegurado(evidenciaId, siniestroId, propietario)
+        }
+    }
+
+    suspend fun obtenerArchivoLiquidador(siniestroId: Long, evidenciaId: Long): ArchivoEvidencia? {
+        val responsable = _liquidador.value
+        return withContext(Dispatchers.IO) {
+            db.obtenerArchivoAsignado(evidenciaId, siniestroId, responsable)
+        }
+    }
+
     fun refrescarGestiones(id: Long) {
         _gestiones.value = db.listarGestiones(id, _asegurado.value)
     }
@@ -212,11 +231,12 @@ class SiniestrosViewModel @JvmOverloads constructor(
         refrescarAvisos()
     }
 
-    suspend fun guardarFoto(id: Long, tipoDocumento: String, bitmap: Bitmap): String? {
+    suspend fun guardarFoto(id: Long, tipoDocumento: String, observacion: String, bitmap: Bitmap): String? {
         val propietario = _asegurado.value
         val error = withContext(Dispatchers.IO) {
             runCatching {
-                db.guardarEvidencia(id, propietario, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap))
+                db.guardarEvidencia(id, propietario, tipoDocumento,
+                    ProcesadorEvidencia.desdeCamara(bitmap), observacion)
             }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
         }
         if (error == null) {
@@ -226,12 +246,12 @@ class SiniestrosViewModel @JvmOverloads constructor(
         return error
     }
 
-    suspend fun guardarArchivo(id: Long, tipoDocumento: String, uri: Uri): String? {
+    suspend fun guardarArchivo(id: Long, tipoDocumento: String, observacion: String, uri: Uri): String? {
         val propietario = _asegurado.value
         val error = withContext(Dispatchers.IO) {
             runCatching {
                 val archivo = ProcesadorEvidencia.desdeSelector(getApplication(), uri)
-                db.guardarEvidencia(id, propietario, tipoDocumento, archivo)
+                db.guardarEvidencia(id, propietario, tipoDocumento, archivo, observacion)
             }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
         }
         if (error == null) {
