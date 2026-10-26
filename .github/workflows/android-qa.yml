@@ -41,8 +41,8 @@ jobs:
           sdkmanager "platforms;android-37.2"
       - name: Dar permisos a Gradle
         run: chmod +x gradlew
-      - name: Compilar APK y ejecutar pruebas unitarias
-        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest --no-daemon
+      - name: Compilar APK, ejecutar pruebas unitarias y Android Lint
+        run: ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug --no-daemon
 
       - name: Comprobar firma pública de APK
         shell: bash
@@ -84,6 +84,7 @@ jobs:
           name: resultados-pruebas-unitarias
           path: |
             app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/lint-results-debug.*
           if-no-files-found: warn
           retention-days: 14
 

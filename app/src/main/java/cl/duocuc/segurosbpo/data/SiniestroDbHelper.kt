@@ -225,24 +225,6 @@ class SiniestroDbHelper(
     }
 
     
-    private fun borrarCasosDeEjemplo(db: SQLiteDatabase) {
-        val filtro = """
-            siniestro_id IN (
-                SELECT siniestro_id FROM gestiones
-                WHERE responsable IN ('Registro del caso', 'Ejemplo académico')
-            )
-        """.trimIndent()
-        listOf("evidencias", "solicitudes_documentos", "avisos", "consultas", "evaluaciones")
-            .forEach { tabla -> db.delete(tabla, filtro, null) }
-        db.delete("siniestros", """
-            id IN (
-                SELECT siniestro_id FROM gestiones
-                WHERE responsable IN ('Registro del caso', 'Ejemplo académico')
-            )
-        """.trimIndent(), null)
-        db.delete("gestiones", filtro, null)
-    }
-
     private fun crearTablaEvidencias(db: SQLiteDatabase) {
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS evidencias (
@@ -377,9 +359,8 @@ class SiniestroDbHelper(
             db.execSQL(
                 "ALTER TABLE siniestros ADD COLUMN archivado INTEGER NOT NULL DEFAULT 0"
             )
-            borrarCasosDeEjemplo(db)
         }
-        if (oldVersion < 8) {
+        if (oldVersion >= 5 && oldVersion < 8) {
             db.execSQL("ALTER TABLE avisos ADD COLUMN solicitud_id INTEGER")
         }
         if (oldVersion < 9) {
@@ -388,7 +369,7 @@ class SiniestroDbHelper(
             db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador_id TEXT")
             db.execSQL("ALTER TABLE siniestros ADD COLUMN liquidador_nombre TEXT")
         }
-        if (oldVersion < 10) {
+        if (oldVersion >= 3 && oldVersion < 10) {
             db.execSQL(
                 "ALTER TABLE gestiones ADD COLUMN autor TEXT NOT NULL DEFAULT 'SISTEMA'"
             )
