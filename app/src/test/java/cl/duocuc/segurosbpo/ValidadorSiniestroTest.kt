@@ -1,6 +1,7 @@
 package cl.duocuc.segurosbpo
 
 import cl.duocuc.segurosbpo.model.Compania
+import cl.duocuc.segurosbpo.model.TipoSiniestro
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -26,6 +27,14 @@ class ValidadorSiniestroTest {
     @Test fun companiaInactiva() {
         assertNotNull(ValidadorSiniestro.errorCompania(Compania.PROTEGE))
         assertNull(ValidadorSiniestro.errorCompania(Compania.CORDILLERA))
+    }
+
+    @Test fun companiaDebeGestionarLaLineaDelSeguro() {
+        assertNotNull(ValidadorSiniestro.errorCompaniaTipo(Compania.LITORAL, TipoSiniestro.CHOQUE))
+        assertNotNull(ValidadorSiniestro.errorCompaniaTipo(Compania.VALLE_CENTRAL, TipoSiniestro.INCENDIO))
+        assertNull(ValidadorSiniestro.errorCompaniaTipo(Compania.LITORAL, TipoSiniestro.ROBO_HOGAR))
+        assertNull(ValidadorSiniestro.errorCompaniaTipo(Compania.VALLE_CENTRAL, TipoSiniestro.CHOQUE))
+        assertNull(ValidadorSiniestro.errorCompaniaTipo(Compania.CORDILLERA, TipoSiniestro.INCENDIO))
     }
 
     @Test fun camposObligatorios() {

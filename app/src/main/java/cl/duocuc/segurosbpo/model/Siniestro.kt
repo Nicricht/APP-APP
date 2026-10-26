@@ -24,7 +24,8 @@ data class Siniestro(
     val resultadoCierre: String? = null,
     val mensajeCierre: String? = null,
     val liquidadorId: String? = null,
-    val liquidadorNombre: String? = null
+    val liquidadorNombre: String? = null,
+    val fechaCambioEtapa: String = ultimaActualizacion
 )
 
 fun Siniestro.coincideCon(texto: String): Boolean {

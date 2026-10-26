@@ -538,7 +538,8 @@ fun EvidenciasScreen(
                                     }
                                 }
                             },
-                            onEliminar = if (cerrado) null else { { porEliminar = evidencia } }
+                            // RN-11: los enviados se conservan; solo se quitan los pendientes de envío.
+                            onEliminar = null
                         )
                     }
                 }

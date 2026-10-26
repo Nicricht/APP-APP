@@ -43,7 +43,10 @@ class FormularioViewModel : ViewModel() {
     fun onTipoSeleccionado(tipo: TipoSiniestro){
 
         val terceros = if (tipo.esVehiculo) _uiState.value.huboTerceros else false
-        _uiState.update { it.copy(tipoSiniestro = tipo, huboTerceros = terceros, reporteExitoso = false) }
+        _uiState.update {
+            it.copy(tipoSiniestro = tipo, huboTerceros = terceros,
+                errorCompania = null, reporteExitoso = false)
+        }
     }
 
     fun onTercerosCambia(valor: Boolean){
@@ -63,6 +66,7 @@ class FormularioViewModel : ViewModel() {
         val errorComuna = ValidadorSiniestro.errorComuna(estado.comuna)
         val errorDescripcion = ValidadorSiniestro.errorDescripcion(estado.descripcion)
         val errorCompania = ValidadorSiniestro.errorCompania(estado.compania)
+            ?: ValidadorSiniestro.errorCompaniaTipo(estado.compania, estado.tipoSiniestro)
 
         val errorDatos = if(!estado.datosCorrectos) "Debes confirmar que los datos son correctos" else null
 

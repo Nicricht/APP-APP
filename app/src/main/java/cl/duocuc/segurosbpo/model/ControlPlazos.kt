@@ -8,6 +8,15 @@ import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
 object ControlPlazos {
+    fun diasSinGestionVisibleLiquidador(
+        gestiones: List<Gestion>, fechaAsignacion: String, ahora: Date = Date()
+    ): Long {
+        val ultima = gestiones.lastOrNull {
+            it.visibleAsegurado && it.autor == "LIQUIDADOR"
+        }?.fecha ?: fechaAsignacion
+        return diasCorridos(ultima, ahora)
+    }
+
     fun diasCorridos(fecha: String, ahora: Date = Date()): Long {
         val formato = SimpleDateFormat("dd-MM-yyyy", Locale.ROOT).apply {
             isLenient = false

@@ -6,5 +6,6 @@ data class Gestion(
     val fecha: String,
     val responsable: String,
     val descripcion: String,
-    val visibleAsegurado: Boolean
+    val visibleAsegurado: Boolean,
+    val autor: String = "SISTEMA"
 )

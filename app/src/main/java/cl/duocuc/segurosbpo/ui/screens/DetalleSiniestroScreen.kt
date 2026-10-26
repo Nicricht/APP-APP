@@ -42,6 +42,7 @@ import cl.duocuc.segurosbpo.model.SolicitudDocumento
 import cl.duocuc.segurosbpo.model.ValidadorDesistimiento
 import cl.duocuc.segurosbpo.model.ValidadorEvaluacion
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
+import cl.duocuc.segurosbpo.model.nombreLiquidadorPublico
 import cl.duocuc.segurosbpo.ui.components.AvisoSuperior
 import cl.duocuc.segurosbpo.ui.components.BarraSuperior
 import cl.duocuc.segurosbpo.ui.components.CodigoSiniestro
@@ -129,7 +130,7 @@ fun DetalleSiniestroScreen(
             val pendientes = solicitudes.filter { it.pendiente }
             val cerrado = siniestro.etapa == EtapaSiniestro.CERRADO
             val plazo = ControlPlazos.resumenEtapa(
-                siniestro.ultimaActualizacion,
+                siniestro.fechaCambioEtapa,
                 siniestro.compania.plazoDiasHabiles
             )
 
@@ -141,7 +142,8 @@ fun DetalleSiniestroScreen(
                 DatoDetalle("Tipo", siniestro.tipo.etiqueta)
                 DatoDetalle(
                     "Liquidador",
-                    siniestro.liquidadorNombre
+                    siniestro.liquidadorNombre?.let { nombreLiquidadorPublico(it) +
+                        " · Equipo " + (siniestro.liquidadorAsignado?.equipo ?: "por asignar") }
                         ?: siniestro.liquidadorAsignado?.let {
                             "Equipo " + it.equipo + ", por asignar"
                         }
@@ -161,6 +163,10 @@ fun DetalleSiniestroScreen(
                             )
                         },
                         modifier = Modifier.fillMaxWidth()
+                    )
+                    DatoDetalle(
+                        "Días corridos en esta etapa",
+                        plazo.diasCorridos.toString()
                     )
                     DatoDetalle(
                         "Días hábiles transcurridos",

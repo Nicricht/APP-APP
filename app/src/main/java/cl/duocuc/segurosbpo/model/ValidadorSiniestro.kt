@@ -44,4 +44,12 @@ object ValidadorSiniestro {
 
     fun errorCompania(compania: Compania): String? =
         if (!compania.activa) "No se pueden registrar casos nuevos con esta compañía" else null
+
+    fun errorCompaniaTipo(compania: Compania, tipo: TipoSiniestro): String? = when {
+        compania.name == Compania.LITORAL.name && tipo.esVehiculo ->
+            "Seguros Litoral solo gestiona siniestros de hogar"
+        compania.name == Compania.VALLE_CENTRAL.name && !tipo.esVehiculo ->
+            "Seguros Valle Central solo gestiona siniestros de vehículo"
+        else -> null
+    }
 }

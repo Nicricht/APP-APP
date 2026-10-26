@@ -38,8 +38,28 @@ class CuentaDbHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS cuentas")
-        onCreate(db)
+        // Mantener cuentas, teléfonos y fotografías al actualizar la aplicación.
+        val columnas = mutableSetOf<String>()
+        db.rawQuery("PRAGMA table_info(cuentas)", null).use { cursor ->
+            val nombre = cursor.getColumnIndexOrThrow("name")
+            while (cursor.moveToNext()) columnas.add(cursor.getString(nombre))
+        }
+        if (columnas.isEmpty()) {
+            onCreate(db)
+            return
+        }
+        val faltantes = mapOf(
+            "rut" to "TEXT NOT NULL DEFAULT ''",
+            "correo" to "TEXT NOT NULL DEFAULT ''",
+            "telefono" to "TEXT NOT NULL DEFAULT ''",
+            "rol" to "TEXT NOT NULL DEFAULT 'ASEGURADO'",
+            "equipo" to "TEXT",
+            "foto" to "BLOB"
+        )
+        faltantes.forEach { (columna, definicion) ->
+            if (columna !in columnas) db.execSQL("ALTER TABLE cuentas ADD COLUMN $columna $definicion")
+        }
+        precargar(db)
     }
 
     private fun precargar(db: SQLiteDatabase) {

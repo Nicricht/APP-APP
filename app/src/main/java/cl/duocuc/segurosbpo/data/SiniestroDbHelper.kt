@@ -29,6 +29,7 @@ import cl.duocuc.segurosbpo.model.FormularioUiState
 import cl.duocuc.segurosbpo.model.ValidadorSiniestro
 import cl.duocuc.segurosbpo.model.Siniestro
 import cl.duocuc.segurosbpo.model.TipoSiniestro
+import cl.duocuc.segurosbpo.model.nombreLiquidadorPublico
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,7 +38,7 @@ import java.util.Locale
 class SiniestroDbHelper(
     context: Context,
     databaseName: String = "seguros_bpo.db"
-) : SQLiteOpenHelper(context, databaseName, null, 10) {
+) : SQLiteOpenHelper(context, databaseName, null, 11) {
 
     private val AUTOR_SISTEMA = "SISTEMA"
     private val AUTOR_ASEGURADO = "ASEGURADO"
@@ -64,6 +65,7 @@ class SiniestroDbHelper(
                 resultado_cierre TEXT,
                 mensaje_cierre TEXT,
                 ultima_actualizacion TEXT NOT NULL,
+                fecha_cambio_etapa TEXT NOT NULL,
                 archivado INTEGER NOT NULL DEFAULT 0,
                 liquidador_id TEXT,
                 liquidador_nombre TEXT
@@ -324,7 +326,8 @@ class SiniestroDbHelper(
         val valores = ContentValues().apply {
             put("siniestro_id", siniestroId)
             put("fecha", fechaActual())
-            put("responsable", responsable)
+            put("responsable", if (visible && autor == AUTOR_LIQUIDADOR)
+                nombreLiquidadorPublico(responsable) else responsable)
             put("descripcion", descripcion)
             put("visible_asegurado", if (visible) 1 else 0)
             put("autor", autor)
@@ -389,6 +392,13 @@ class SiniestroDbHelper(
                 "ALTER TABLE gestiones ADD COLUMN autor TEXT NOT NULL DEFAULT 'SISTEMA'"
             )
         }
+        if (oldVersion < 11) {
+            db.execSQL(
+                "ALTER TABLE siniestros ADD COLUMN fecha_cambio_etapa TEXT NOT NULL DEFAULT ''"
+            )
+            // En bases antiguas no se guardaba la fecha real de transición.
+            db.execSQL("UPDATE siniestros SET fecha_cambio_etapa = ultima_actualizacion")
+        }
     }
 
     private fun fechaActual(): String =
@@ -412,6 +422,7 @@ class SiniestroDbHelper(
             ValidadorSiniestro.errorComuna(formulario.comuna),
             ValidadorSiniestro.errorDescripcion(formulario.descripcion),
             ValidadorSiniestro.errorCompania(formulario.compania),
+            ValidadorSiniestro.errorCompaniaTipo(formulario.compania, formulario.tipoSiniestro),
             if (!formulario.datosCorrectos) "Debes confirmar que los datos son correctos" else null
         ).firstOrNull()
         error?.let { throw IllegalArgumentException(it) }
@@ -432,6 +443,7 @@ class SiniestroDbHelper(
                 put("etapa", EtapaSiniestro.RECIBIDO.name)
                 putNull("liquidador")
                 put("ultima_actualizacion", ahora)
+                put("fecha_cambio_etapa", ahora)
             }
             val id = db.insertOrThrow("siniestros", null, valores)
             val anio = SimpleDateFormat("yy", Locale.ROOT).format(Date())
@@ -468,7 +480,8 @@ class SiniestroDbHelper(
             EtapaSiniestro.valueOf(texto("etapa")), texto("ultima_actualizacion"),
             opcional("liquidador")?.let { Liquidador.valueOf(it) },
             opcional("resultado_cierre"), opcional("mensaje_cierre"),
-            opcional("liquidador_id"), opcional("liquidador_nombre")
+            opcional("liquidador_id"), opcional("liquidador_nombre"),
+            texto("fecha_cambio_etapa")
         )
     }
 
@@ -498,6 +511,7 @@ class SiniestroDbHelper(
         db.beginTransaction()
         try {
             val marcadores = tipos.joinToString(",") { "?" }
+            val ahora = fechaActual()
             val filas = db.update(
                 "siniestros",
                 ContentValues().apply {
@@ -505,7 +519,8 @@ class SiniestroDbHelper(
                     put("liquidador_id", personaId)
                     put("liquidador_nombre", personaNombre)
                     put("etapa", EtapaSiniestro.EVALUACION.name)
-                    put("ultima_actualizacion", fechaActual())
+                    put("ultima_actualizacion", ahora)
+                    put("fecha_cambio_etapa", ahora)
                 },
                 "id = ? AND liquidador IS NULL AND etapa = ? AND tipo IN ($marcadores)",
                 arrayOf(
@@ -515,9 +530,11 @@ class SiniestroDbHelper(
                 )
             )
             if (filas == 1) {
+                val nombreVisible = nombreLiquidadorPublico(personaNombre)
                 insertarGestion(
-                    db, siniestroId, personaNombre,
-                    "Caso tomado por " + personaNombre + ", del equipo " + liquidador.equipo, true
+                    db, siniestroId, nombreVisible,
+                    "Caso tomado por " + nombreVisible + ", del equipo " + liquidador.equipo,
+                    true, AUTOR_LIQUIDADOR
                 )
                 insertarAviso(db, siniestroId, "Tu caso está en evaluación")
             }
@@ -535,10 +552,10 @@ class SiniestroDbHelper(
         .asSequence()
         .filter { it.etapa != EtapaSiniestro.CERRADO }
         .filter { caso ->
-            val ultimaVisible = listarGestionesAsignadas(caso.id, liquidador)
-                .lastOrNull { it.visibleAsegurado }?.fecha
-                ?: caso.fechaReporte
-            ControlPlazos.diasCorridos(ultimaVisible, fechaConsulta) >= 7
+            ControlPlazos.diasSinGestionVisibleLiquidador(
+                listarGestionesAsignadas(caso.id, liquidador),
+                caso.fechaCambioEtapa, fechaConsulta
+            ) >= 7
         }
         .map { it.id }
         .toSet()
@@ -675,14 +692,19 @@ class SiniestroDbHelper(
         val resultado = mutableListOf<Gestion>()
         readableDatabase.rawQuery("""
             SELECT g.id, g.siniestro_id, g.fecha, g.responsable,
-                   g.descripcion
+                   g.descripcion, g.autor
             FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
             WHERE s.id = ? AND s.asegurado = ? AND g.visible_asegurado = 1
             ORDER BY g.id ASC
         """.trimIndent(), arrayOf(siniestroId.toString(), asegurado.name)).use { c ->
             while (c.moveToNext()) {
+                val responsable = c.getString(3)
+                val publico = if (c.getString(5) == AUTOR_LIQUIDADOR &&
+                    responsable.contains(' ') && !responsable.startsWith("Documento ") &&
+                    !responsable.startsWith("Equipo "))
+                    nombreLiquidadorPublico(responsable) else responsable
                 resultado.add(Gestion(c.getLong(0), c.getLong(1),
-                    c.getString(2), c.getString(3), c.getString(4),
+                    c.getString(2), publico, c.getString(4),
                     true))
             }
         }
@@ -694,7 +716,7 @@ class SiniestroDbHelper(
         val resultado = mutableListOf<Gestion>()
         readableDatabase.rawQuery("""
             SELECT g.id, g.siniestro_id, g.fecha, g.responsable,
-                   g.descripcion, g.visible_asegurado
+                   g.descripcion, g.visible_asegurado, g.autor
             FROM gestiones g JOIN siniestros s ON s.id = g.siniestro_id
             WHERE s.id = ? AND s.liquidador = ?
             ORDER BY g.id ASC
@@ -702,7 +724,7 @@ class SiniestroDbHelper(
             while (c.moveToNext()) {
                 resultado.add(Gestion(c.getLong(0), c.getLong(1),
                     c.getString(2), c.getString(3), c.getString(4),
-                    c.getInt(5) == 1))
+                    c.getInt(5) == 1, c.getString(6)))
             }
         }
         return resultado
@@ -754,9 +776,11 @@ class SiniestroDbHelper(
             ).use { c -> c.moveToFirst(); c.getInt(0) }
             ReglasEtapa.validar(actual.etapa, siguiente, pendientes, resultado, mensajeCierre)
                 ?.let { throw IllegalArgumentException(it) }
+            val ahora = fechaActual()
             val valores = ContentValues().apply {
                 put("etapa", siguiente.name)
-                put("ultima_actualizacion", fechaActual())
+                put("ultima_actualizacion", ahora)
+                put("fecha_cambio_etapa", ahora)
                 if (siguiente == EtapaSiniestro.CERRADO) {
                     put("resultado_cierre", resultado)
                     put("mensaje_cierre", mensajeCierre.trim())
@@ -1029,6 +1053,7 @@ class SiniestroDbHelper(
                 put("resultado_cierre", "Desistido")
                 put("mensaje_cierre", motivo.trim())
                 put("ultima_actualizacion", ahora)
+                put("fecha_cambio_etapa", ahora)
             }, "id = ?", arrayOf(siniestroId.toString()))
             insertarGestion(
                 db, siniestroId, asegurado.etiqueta,
@@ -1270,10 +1295,12 @@ class SiniestroDbHelper(
                 put("liquidador_nombre", personaNombre)
                 put("etapa", nuevaEtapa)
                 put("ultima_actualizacion", ahora)
+                if (nuevaEtapa != caso.second) put("fecha_cambio_etapa", ahora)
             }, "id = ?", arrayOf(siniestroId.toString()))
             insertarGestion(
                 db, siniestroId, "Analista de administración",
-                "Caso asignado a " + personaNombre + ", del equipo " + liquidador.equipo, true
+                "Caso asignado a " + nombreLiquidadorPublico(personaNombre) +
+                    ", del equipo " + liquidador.equipo, true
             )
             insertarAviso(
                 db, siniestroId,
@@ -1431,7 +1458,7 @@ class SiniestroDbHelper(
                 put("fecha_registro", fechaActual())
             })
             insertarGestion(
-                db, siniestroId, "Documento del liquidador",
+                db, siniestroId, "Liquidador",
                 "Se adjuntó " + tipoDocumento.trim(), true, AUTOR_LIQUIDADOR
             )
             db.setTransactionSuccessful()
@@ -1498,40 +1525,17 @@ class SiniestroDbHelper(
     }
 
     fun eliminarEvidencia(evidenciaId: Long, siniestroId: Long, asegurado: Asegurado) {
-        val db = writableDatabase
-        db.beginTransaction()
-        try {
-            val datos = db.rawQuery("""
-                SELECT e.tipo_documento, s.etapa FROM evidencias e
-                JOIN siniestros s ON s.id = e.siniestro_id
-                WHERE e.id = ? AND s.id = ? AND s.asegurado = ?
-            """.trimIndent(),
-                arrayOf(evidenciaId.toString(), siniestroId.toString(), asegurado.name)
-            ).use { c -> if (c.moveToFirst()) c.getString(0) to c.getString(1) else null }
-            require(datos != null) { "El documento no pertenece a este siniestro" }
-            require(datos.second != EtapaSiniestro.CERRADO.name) {
-                "No puedes eliminar documentos de un caso cerrado"
-            }
-            require(datos.first !in DocumentosLiquidador.tipos) {
-                "Ese documento lo cargó el equipo liquidador y no puedes eliminarlo"
-            }
-            val ahora = fechaActual()
-            db.update("solicitudes_documentos", ContentValues().apply {
-                putNull("fecha_entrega")
-                putNull("evidencia_id")
-            }, "evidencia_id = ?", arrayOf(evidenciaId.toString()))
-            db.delete("evidencias", "id = ?", arrayOf(evidenciaId.toString()))
-            insertarGestion(
-                db, siniestroId, asegurado.etiqueta,
-                "Se eliminó el documento adjuntado: " + datos.first, true, AUTOR_ASEGURADO
-            )
-            db.update("siniestros", ContentValues().apply {
-                put("ultima_actualizacion", ahora)
-            }, "id = ?", arrayOf(siniestroId.toString()))
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
-        }
+        val propio = readableDatabase.rawQuery("""
+            SELECT 1 FROM evidencias e
+            JOIN siniestros s ON s.id = e.siniestro_id
+            WHERE e.id = ? AND s.id = ? AND s.asegurado = ?
+        """.trimIndent(),
+            arrayOf(evidenciaId.toString(), siniestroId.toString(), asegurado.name)
+        ).use { it.moveToFirst() }
+        require(propio) { "El documento no pertenece a este siniestro" }
+        throw IllegalArgumentException(
+            "Un documento ya enviado no se puede eliminar. Puedes adjuntar una versión corregida"
+        )
     }
 
     fun eliminarEvidenciaLiquidador(
