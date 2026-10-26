@@ -6,9 +6,7 @@ plugins {
 android {
     namespace = "cl.duocuc.segurosbpo"
     compileSdk {
-        version = release(37) {
-            minorApiLevel = 2
-        }
+        version = release(37)
     }
 
     defaultConfig {
