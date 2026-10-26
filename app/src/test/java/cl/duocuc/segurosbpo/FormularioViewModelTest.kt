@@ -69,4 +69,23 @@ class FormularioViewModelTest {
         vm.seleccionarAsegurado(Asegurado.CAMILA)
         assertEquals(Asegurado.CAMILA, vm.uiState.value.asegurado)
     }
+    @Test fun cambiarALitoralSeleccionaHogarYQuitaTerceros() {
+        val vm = FormularioViewModel()
+        vm.onTercerosCambia(true)
+        vm.onCompaniaSeleccionada(Compania.LITORAL)
+        assertFalse(vm.uiState.value.tipoSiniestro.esVehiculo)
+        assertFalse(vm.uiState.value.huboTerceros)
+    }
+
+    @Test fun validarRechazaTipoIncompatibleAunqueSeAsigneDirectamente() {
+        val vm = FormularioViewModel()
+        vm.onCompaniaSeleccionada(Compania.VALLE_CENTRAL)
+        vm.onTipoSeleccionado(TipoSiniestro.INCENDIO)
+        vm.onFechaCambia("20-10-2026")
+        vm.onComunaCambia("Maipú")
+        vm.onDescripcionCambia("Daño de prueba")
+        vm.onDatosCorrectosCambia(true)
+        assertFalse(vm.onRegistrar())
+        assertNotNull(vm.uiState.value.errorCompania)
+    }
 }

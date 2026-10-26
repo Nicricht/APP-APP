@@ -127,20 +127,52 @@ fun FormularioScreen(
     var yaAdjuntados by remember { mutableStateOf(false) }
     val alcance = rememberCoroutineScope()
 
+    var enviando by remember { mutableStateOf(false) }
+    var errorEnvio by remember { mutableStateOf<String?>(null) }
+
     fun enviarAdjuntos() {
+        if (enviando) return
         val pendientes = adjuntos
         if (pendientes.isEmpty()) return
-        adjuntos = emptyList()
-        yaAdjuntados = true
+        enviando = true
+        errorEnvio = null
         alcance.launch {
-            pendientes.forEach { adjunto ->
-                when {
-                    adjunto.foto != null -> onGuardarFoto(adjunto.tipo, adjunto.foto)
-                    adjunto.archivo != null -> onGuardarArchivo(adjunto.tipo, adjunto.archivo)
-                    else -> null
+            val fallidos = mutableListOf<AdjuntoReporte>()
+            val errores = mutableListOf<String>()
+            try {
+                pendientes.forEach { adjunto ->
+                    val error = try {
+                        when {
+                            adjunto.foto != null -> onGuardarFoto(adjunto.tipo, adjunto.foto)
+                            adjunto.archivo != null -> onGuardarArchivo(adjunto.tipo, adjunto.archivo)
+                            else -> "No se encontró el archivo"
+                        }
+                    } catch (cancelacion: kotlinx.coroutines.CancellationException) {
+                        throw cancelacion
+                    } catch (error: Exception) {
+                        error.message ?: "No se pudo guardar el archivo"
+                    }
+                    if (error != null) {
+                        fallidos.add(adjunto)
+                        errores.add(adjunto.nombre + ": " + error)
+                    }
                 }
+                adjuntos = fallidos
+                yaAdjuntados = fallidos.isEmpty()
+                errorEnvio = errores.takeIf { it.isNotEmpty() }?.joinToString("\n")
+            } finally {
+                enviando = false
             }
         }
+    }
+
+    fun registrarReporte() {
+        if (viewModel.uiState.value.reporteExitoso) return
+        val resultado = runCatching { onRegistroExitoso(viewModel.uiState.value) }
+        resultado.onSuccess { numero ->
+            viewModel.confirmarRegistro(numero)
+            enviarAdjuntos()
+        }.onFailure { errorEnvio = it.message ?: "No se pudo registrar el siniestro" }
     }
     if (duplicado != null) {
         AlertDialog(
@@ -150,9 +182,7 @@ fun FormularioScreen(
                 ". Si se trata de otro incidente, puedes continuar.") },
             confirmButton = {
                 TextButton(onClick = {
-                    val numero = onRegistroExitoso(viewModel.uiState.value)
-                    viewModel.confirmarRegistro(numero)
-                    enviarAdjuntos()
+                    registrarReporte()
                     duplicado = null
                 }) { Text("Continuar de todos modos") }
             },
@@ -181,22 +211,25 @@ fun FormularioScreen(
                 if (numeroExistente != null) {
                     duplicado = numeroExistente
                 } else {
-                    val numero = onRegistroExitoso(viewModel.uiState.value)
-                    viewModel.confirmarRegistro(numero)
-                    enviarAdjuntos()
+                    registrarReporte()
                 }
             }
         },
         onLimpiar = {
+            if (enviando) return@FormularioContent
+            errorEnvio = null
             adjuntos = emptyList()
             yaAdjuntados = false
             viewModel.onLimpiar()
         },
         onVolver = onVolver,
-        onVerMisSiniestros = onVerMisSiniestros,
+        onVerMisSiniestros = { if (!enviando) onVerMisSiniestros(it) },
         adjuntos = adjuntos,
         onAdjuntos = { adjuntos = it },
-        yaAdjuntados = yaAdjuntados
+        yaAdjuntados = yaAdjuntados,
+        enviando = enviando,
+        errorEnvio = errorEnvio,
+        onReintentar = { enviarAdjuntos() }
     )
 }
 
@@ -218,7 +251,10 @@ fun FormularioContent(
     onVerMisSiniestros: (Boolean) -> Unit,
     adjuntos: List<AdjuntoReporte> = emptyList(),
     onAdjuntos: (List<AdjuntoReporte>) -> Unit = {},
-    yaAdjuntados: Boolean = false
+    yaAdjuntados: Boolean = false,
+    enviando: Boolean = false,
+    errorEnvio: String? = null,
+    onReintentar: () -> Unit = {}
 ){
     val contexto = LocalContext.current
     val temaOscuro = LocalAccionesBarra.current.temaOscuro
@@ -300,7 +336,7 @@ fun FormularioContent(
 
                     SelectorOpciones(
                         titulo = stringResource(R.string.etiqueta_tipo),
-                        opciones = TipoSiniestro.entries,
+                        opciones = TipoSiniestro.entries.filter { uiState.compania.admite(it) },
                         seleccionada = uiState.tipoSiniestro,
                         onSeleccionar = onTipoSeleccionado,
                         textoDe = {it.etiqueta}
@@ -404,10 +440,23 @@ fun FormularioContent(
                         texto = stringResource(R.string.btn_registrar),
                         onClick = onRegistrar,
                         icono = R.drawable.ic_check,
+                        habilitado = !enviando && !uiState.reporteExitoso,
                         modifier = Modifier.weight(1f)
                     )
                 }
 
+
+                if (enviando) Text("Enviando documentos…")
+                errorEnvio?.let { mensaje ->
+                    Text(mensaje, color = MaterialTheme.colorScheme.error)
+                    if (uiState.reporteExitoso && adjuntos.isNotEmpty()) {
+                        BotonPrincipal(
+                            texto = "Reintentar documentos pendientes",
+                            onClick = onReintentar,
+                            habilitado = !enviando
+                        )
+                    }
+                }
 
                 AnimatedVisibility(
                     visible = uiState.reporteExitoso,
@@ -420,6 +469,7 @@ fun FormularioContent(
                             texto = if (yaAdjuntados) "Ver mis siniestros"
                                 else "Adjuntar los documentos",
                             onClick = { onVerMisSiniestros(yaAdjuntados) },
+                            habilitado = !enviando && adjuntos.isEmpty(),
                             icono = R.drawable.ic_check,
                             modifier = Modifier.fillMaxWidth()
                         )

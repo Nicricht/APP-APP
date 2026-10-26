@@ -33,6 +33,12 @@ data class Compania(
     val activa: Boolean,
     val plazoDiasHabiles: Int
 ) {
+    fun admite(tipo: TipoSiniestro): Boolean = when (name) {
+        "LITORAL", "PROTEGE" -> !tipo.esVehiculo
+        "VALLE_CENTRAL" -> tipo.esVehiculo
+        else -> true
+    }
+
     companion object {
         val CORDILLERA = Compania("CORDILLERA", "Seguros Cordillera", true, 10)
         val LITORAL = Compania("LITORAL", "Seguros Litoral", true, 12)

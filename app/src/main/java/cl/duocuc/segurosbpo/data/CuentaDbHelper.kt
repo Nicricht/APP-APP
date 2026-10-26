@@ -14,7 +14,7 @@ import cl.duocuc.segurosbpo.model.ValidadorContacto
 class CuentaDbHelper(
     context: Context,
     nombreBase: String = "cuentas_demo.db"
-) : SQLiteOpenHelper(context, nombreBase, null, 7) {
+) : SQLiteOpenHelper(context, nombreBase, null, 8) {
 
     private val PERSONAL_LIQUIDADOR = mapOf(
         Liquidador.VEHICULOS to listOf("María P. Lagos", "Esteban R. Fuentes"),
@@ -38,8 +38,25 @@ class CuentaDbHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS cuentas")
-        onCreate(db)
+        if (oldVersion < 8) {
+            val tieneFoto = db.rawQuery("PRAGMA table_info(cuentas)", null).use { c ->
+                var existe = false
+                while (c.moveToNext()) {
+                    if (c.getString(c.getColumnIndexOrThrow("name")) == "foto") existe = true
+                }
+                existe
+            }
+            db.execSQL("ALTER TABLE cuentas RENAME TO cuentas_anteriores")
+            onCreate(db)
+            val foto = if (tieneFoto) "foto" else "NULL"
+            db.execSQL("""
+                INSERT OR REPLACE INTO cuentas
+                    (id, nombre, rut, correo, telefono, rol, equipo, foto)
+                SELECT id, nombre, rut, correo, telefono, rol, equipo, $foto
+                FROM cuentas_anteriores
+            """.trimIndent())
+            db.execSQL("DROP TABLE cuentas_anteriores")
+        }
     }
 
     private fun precargar(db: SQLiteDatabase) {

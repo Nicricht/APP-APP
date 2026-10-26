@@ -37,7 +37,13 @@ class FormularioViewModel : ViewModel() {
     }
 
     fun onCompaniaSeleccionada(compania: Compania){
-        _uiState.update { it.copy(compania = compania, errorCompania = null, reporteExitoso = false) }
+        _uiState.update { it.copy(
+            compania = compania,
+            tipoSiniestro = if (compania.admite(it.tipoSiniestro)) it.tipoSiniestro
+                else TipoSiniestro.entries.first { tipo -> compania.admite(tipo) },
+            huboTerceros = if (compania.name in setOf("LITORAL", "PROTEGE")) false else it.huboTerceros,
+            errorCompania = null, reporteExitoso = false
+        ) }
     }
 
     fun onTipoSeleccionado(tipo: TipoSiniestro){
@@ -62,7 +68,7 @@ class FormularioViewModel : ViewModel() {
         val errorFecha = ValidadorSiniestro.errorFecha(estado.fechaOcurrencia)
         val errorComuna = ValidadorSiniestro.errorComuna(estado.comuna)
         val errorDescripcion = ValidadorSiniestro.errorDescripcion(estado.descripcion)
-        val errorCompania = ValidadorSiniestro.errorCompania(estado.compania)
+        val errorCompania = ValidadorSiniestro.errorCompania(estado.compania, estado.tipoSiniestro)
 
         val errorDatos = if(!estado.datosCorrectos) "Debes confirmar que los datos son correctos" else null
 

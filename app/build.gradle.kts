@@ -21,25 +21,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        val rutaAlmacen = System.getenv("QA_SIGNING_KEYSTORE")
-        if (!rutaAlmacen.isNullOrBlank()) {
-            create("qaPersistente") {
-                storeFile = file(rutaAlmacen)
-                storePassword = requireNotNull(System.getenv("QA_SIGNING_STORE_PASSWORD"))
-                keyAlias = requireNotNull(System.getenv("QA_SIGNING_KEY_ALIAS"))
-                keyPassword = requireNotNull(System.getenv("QA_SIGNING_KEY_PASSWORD"))
-            }
-        }
-    }
-
     buildTypes {
         debug {
-            signingConfigs.findByName("qaPersistente")?.let { signingConfig = it }
             applicationIdSuffix = ".prueba"
             versionNameSuffix = "-prueba"
-            enableUnitTestCoverage = true
-            enableAndroidTestCoverage = true
         }
         release {
             optimization {
@@ -70,7 +55,6 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation("androidx.test.espresso:espresso-intents:3.7.0")
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)

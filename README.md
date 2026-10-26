@@ -1,6 +1,6 @@
 # Seguros BPO — Entrega Android DSY1105
 
-Aplicación Android de seguimiento de siniestros con dos perfiles de demostración: **Asegurado** y **Liquidador**. Es un proyecto académico con datos locales ficticios.
+Aplicación Android de seguimiento de siniestros con tres perfiles de demostración: **Asegurado**, **Liquidador** y **Analista**. Es un proyecto académico con datos locales ficticios.
 
 ## Tecnología y alcance
 
@@ -34,16 +34,15 @@ Para compilar y correr las pruebas unitarias de dominio:
 
 Las pruebas unitarias están en `app/src/test/`. La batería extendida de pruebas instrumentadas y los ZIP de referencia académica **no se copian a esta rama de entrega**.
 
-## Calidad verificada en la versión de origen
+## Verificación
 
-Esta rama parte del código productivo del commit [`9558431d`](https://github.com/Nicricht/APP-APP/commit/9558431de12b50e0547d05dffa3171ee1023190d).
+La rama `otro` utiliza las técnicas de la aplicación de referencia `MiRegistroAvatar`: Compose, ViewModel, StateFlow, navegación y SQLiteOpenHelper.
 
-La batería completa sigue disponible en [la rama de QA](https://github.com/Nicricht/APP-APP/tree/feature/qa-cobertura-real-20261024) y en la [PR #12](https://github.com/Nicricht/APP-APP/pull/12).
+Las pruebas JUnit se ejecutan separadamente de la aplicación. La compilación no incorpora instrumentación de cobertura ni configuración de firma de QA.
 
-- [Android instrumented QA](https://github.com/Nicricht/APP-APP/actions/runs/40157481013): **345/345 pruebas aprobadas** en el commit de origen.
-- [Android Kotlin QA](https://github.com/Nicricht/APP-APP/actions/runs/40157481003): compilación, pruebas unitarias e instalación/arranque APK en API 30 y API 35.
-- JaCoCo de origen: **100 % de líneas**, **99,53 % de ramas** (cinco rutas del código generado por Compose sin cubrir). No afirmar 100 % de ramas.
-- La evidencia automática no sustituye una demostración manual con cámara/galería en dispositivo real.
+El flujo Android Entrega compila la APK, ejecuta las pruebas unitarias y comprueba instalación y arranque en Android API 30 y 35. Cada resultado debe consultarse en la ejecución del commit correspondiente. Estas comprobaciones no sustituyen la demostración manual de cámara, galería y los recorridos de negocio.
+
+Los documentos antiguos de `docs/` conservan revisiones históricas; sus resultados y pendientes corresponden a las versiones indicadas en cada uno.
 
 ## Documentación para presentar
 

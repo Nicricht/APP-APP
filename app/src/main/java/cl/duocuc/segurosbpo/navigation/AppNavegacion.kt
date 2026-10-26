@@ -430,14 +430,14 @@ fun AppNavegacion(
                             onRegistroExitoso = siniestrosVm::registrar,
                             onPosibleDuplicado = siniestrosVm::buscarPosibleDuplicado,
                             onGuardarFoto = { tipo, bitmap ->
-                                siniestrosVm.ultimoRegistrado?.let {
-                                    siniestrosVm.guardarFoto(it, tipo, bitmap)
-                                } ?: "No se pudo identificar el siniestro"
+                                val id = siniestrosVm.ultimoRegistrado
+                                if (id == null) "No se pudo identificar el siniestro"
+                                else siniestrosVm.guardarFoto(id, tipo, bitmap)
                             },
                             onGuardarArchivo = { tipo, uri ->
-                                siniestrosVm.ultimoRegistrado?.let {
-                                    siniestrosVm.guardarArchivo(it, tipo, uri)
-                                } ?: "No se pudo identificar el siniestro"
+                                val id = siniestrosVm.ultimoRegistrado
+                                if (id == null) "No se pudo identificar el siniestro"
+                                else siniestrosVm.guardarArchivo(id, tipo, uri)
                             },
                             onVolver = { navController.navigateUp() },
                             onVerMisSiniestros = { yaAdjuntados ->

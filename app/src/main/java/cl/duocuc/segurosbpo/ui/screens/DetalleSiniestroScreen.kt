@@ -129,7 +129,7 @@ fun DetalleSiniestroScreen(
             val pendientes = solicitudes.filter { it.pendiente }
             val cerrado = siniestro.etapa == EtapaSiniestro.CERRADO
             val plazo = ControlPlazos.resumenEtapa(
-                siniestro.ultimaActualizacion,
+                siniestro.fechaCambioEtapa,
                 siniestro.compania.plazoDiasHabiles
             )
 
@@ -141,7 +141,10 @@ fun DetalleSiniestroScreen(
                 DatoDetalle("Tipo", siniestro.tipo.etiqueta)
                 DatoDetalle(
                     "Liquidador",
-                    siniestro.liquidadorNombre
+                    siniestro.liquidadorNombre?.let {
+                        cl.duocuc.segurosbpo.model.nombrePublicoLiquidador(it) +
+                            " · Equipo " + siniestro.liquidadorAsignado?.equipo.orEmpty()
+                    }
                         ?: siniestro.liquidadorAsignado?.let {
                             "Equipo " + it.equipo + ", por asignar"
                         }

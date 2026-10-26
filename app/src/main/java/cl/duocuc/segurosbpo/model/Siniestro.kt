@@ -24,7 +24,8 @@ data class Siniestro(
     val resultadoCierre: String? = null,
     val mensajeCierre: String? = null,
     val liquidadorId: String? = null,
-    val liquidadorNombre: String? = null
+    val liquidadorNombre: String? = null,
+    val fechaCambioEtapa: String = ultimaActualizacion
 )
 
 fun Siniestro.coincideCon(texto: String): Boolean {
@@ -35,4 +36,22 @@ fun Siniestro.coincideCon(texto: String): Boolean {
         comuna.lowercase().contains(buscado) ||
         asegurado.etiqueta.lowercase().contains(buscado) ||
         compania.etiqueta.lowercase().contains(buscado)
+}
+
+fun nombrePublicoLiquidador(nombre: String): String {
+    val partes = nombre.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+    val primero = partes.firstOrNull() ?: return ""
+    return if (partes.size > 1) primero + " " + partes[1].take(1) + "." else primero
+}
+
+fun textoPublicoAsignacion(texto: String): String {
+    val prefijo = listOf("Caso asignado a ", "Caso tomado por ", "Tu caso quedó a cargo de ")
+        .firstOrNull { texto.startsWith(it) } ?: return texto
+    val resto = texto.removePrefix(prefijo)
+    val nombre = nombrePublicoLiquidador(resto.substringBefore(", del equipo ").trimEnd('.'))
+    return if (resto.contains(", del equipo ")) {
+        prefijo + nombre + ", del equipo " + resto.substringAfter(", del equipo ")
+    } else {
+        prefijo + nombre
+    }
 }

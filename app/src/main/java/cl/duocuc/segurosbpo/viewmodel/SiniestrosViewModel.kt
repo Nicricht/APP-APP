@@ -36,6 +36,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     application: Application,
     private val db: SiniestroDbHelper = SiniestroDbHelper(application)
 ) : AndroidViewModel(application) {
+    private var identidadLiquidador: String? = null
     private val preferencias = application.getSharedPreferences("sesion_demo", 0)
     private val inicial = runCatching {
         Asegurado.valueOf(preferencias.getString("asegurado", Asegurado.CAMILA.name)!!)
@@ -55,9 +56,9 @@ class SiniestrosViewModel @JvmOverloads constructor(
     val gestiones = _gestiones.asStateFlow()
     private val _liquidador = MutableStateFlow(Liquidador.VEHICULOS)
     val liquidador = _liquidador.asStateFlow()
-    private val _casosLiquidador = MutableStateFlow(db.listarAsignados(Liquidador.VEHICULOS))
+    private val _casosLiquidador = MutableStateFlow(db.listarAsignados(Liquidador.VEHICULOS, ""))
     val casosLiquidador = _casosLiquidador.asStateFlow()
-    private val _seguimientosVencidos = MutableStateFlow(db.listarSeguimientosVencidos(Liquidador.VEHICULOS))
+    private val _seguimientosVencidos = MutableStateFlow(db.listarSeguimientosVencidos(Liquidador.VEHICULOS, personaId = identidadLiquidador.orEmpty()))
     val seguimientosVencidos = _seguimientosVencidos.asStateFlow()
     private val _disponiblesLiquidador = MutableStateFlow(db.listarDisponibles(Liquidador.VEHICULOS))
     val disponiblesLiquidador = _disponiblesLiquidador.asStateFlow()
@@ -89,7 +90,6 @@ class SiniestrosViewModel @JvmOverloads constructor(
     val tipos = _tipos.asStateFlow()
     private val _cargaPersonas = MutableStateFlow<Map<String, Int>>(emptyMap())
     val cargaPersonas = _cargaPersonas.asStateFlow()
-    private var identidadLiquidador: String? = null
     private var nombreLiquidador: String = ""
 
     private fun responsable(): String =
@@ -106,15 +106,16 @@ class SiniestrosViewModel @JvmOverloads constructor(
         _solicitudesLiquidador.value = emptyList()
         _consultasLiquidador.value = emptyList()
         _archivados.value = emptyList()
+        _evidenciasLiquidador.value = emptyList()
         refrescarAsignados()
         refrescarArchivados()
     }
 
     fun refrescarAsignados() {
-        _casosLiquidador.value = db.listarAsignados(_liquidador.value, identidadLiquidador)
+        _casosLiquidador.value = db.listarAsignados(_liquidador.value, identidadLiquidador.orEmpty())
         _disponiblesLiquidador.value = db.listarDisponibles(_liquidador.value)
-        _seguimientosVencidos.value = db.listarSeguimientosVencidos(_liquidador.value)
-        _novedades.value = db.novedadesPorCaso(_liquidador.value, identidadLiquidador)
+        _seguimientosVencidos.value = db.listarSeguimientosVencidos(_liquidador.value, personaId = identidadLiquidador.orEmpty())
+        _novedades.value = db.novedadesPorCaso(_liquidador.value, identidadLiquidador.orEmpty())
         _actualizadoEn.value = marcaDeTiempo()
     }
 
@@ -139,14 +140,14 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun cargarGestionesLiquidador(id: Long) {
-        _gestionesLiquidador.value = db.listarGestionesAsignadas(id, _liquidador.value)
-        _solicitudesLiquidador.value = db.listarSolicitudesAsignadas(id, _liquidador.value)
-        _consultasLiquidador.value = db.listarConsultasAsignadas(id, _liquidador.value)
+        _gestionesLiquidador.value = db.listarGestionesAsignadas(id, _liquidador.value, personaId = identidadLiquidador.orEmpty())
+        _solicitudesLiquidador.value = db.listarSolicitudesAsignadas(id, _liquidador.value, personaId = identidadLiquidador.orEmpty())
+        _consultasLiquidador.value = db.listarConsultasAsignadas(id, _liquidador.value, personaId = identidadLiquidador.orEmpty())
     }
 
     fun solicitarDocumentoLiquidador(id: Long, tipo: String, comentario: String): String? {
         val error = runCatching {
-            db.solicitarDocumento(id, _liquidador.value, tipo, comentario, responsable())
+            db.solicitarDocumento(id, _liquidador.value, tipo, comentario, responsable(), personaId = identidadLiquidador.orEmpty())
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo solicitar el documento") }
         if (error == null) {
             refrescarAsignados()
@@ -160,7 +161,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun registrarGestionLiquidador(id: Long, descripcion: String, visible: Boolean): String? {
         val error = runCatching {
             db.registrarGestionAsignada(
-                id, _liquidador.value, descripcion, visible, responsable()
+                id, _liquidador.value, descripcion, visible, responsable(),
+                personaId = identidadLiquidador.orEmpty()
             )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la gestión") }
         if (error == null) {
@@ -173,7 +175,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun avanzarLiquidador(id: Long, resultado: String, mensaje: String): String? {
         val error = runCatching {
             db.avanzarAsignado(
-                id, _liquidador.value, resultado, mensaje, null, responsable()
+                id, _liquidador.value, resultado, mensaje, null, responsable(),
+                personaId = identidadLiquidador.orEmpty()
             )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo avanzar de etapa") }
         if (error == null) {
@@ -189,7 +192,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
         val error = runCatching {
             db.avanzarAsignado(
                 id, _liquidador.value, resultado, mensaje,
-                EtapaSiniestro.CERRADO, responsable()
+                EtapaSiniestro.CERRADO, responsable(),
+                personaId = identidadLiquidador.orEmpty()
             )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo cerrar el siniestro") }
         if (error == null) {
@@ -262,7 +266,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
         val contexto = getApplication<Application>()
         return withContext(Dispatchers.IO) {
             runCatching {
-                val archivo = db.obtenerArchivoAsignado(evidenciaId, siniestroId, equipo)
+                val archivo = db.obtenerArchivoAsignado(evidenciaId, siniestroId, equipo, personaId = identidadLiquidador.orEmpty())
                     ?: return@runCatching "El documento no está disponible"
                 val salida = contexto.contentResolver.openOutputStream(destino)
                     ?: return@runCatching "No se pudo escribir el archivo"
@@ -283,7 +287,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
         val equipo = _liquidador.value
         return withContext(Dispatchers.IO) {
             runCatching {
-                db.obtenerImagenAsignada(evidenciaId, siniestroId, equipo, 240)
+                db.obtenerImagenAsignada(evidenciaId, siniestroId, equipo, 240, personaId = identidadLiquidador.orEmpty())
             }.getOrNull()
         }
     }
@@ -309,14 +313,14 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun cargarEvidenciasLiquidador(id: Long) {
         _evidenciasLiquidador.value =
-            runCatching { db.listarEvidenciasAsignadas(id, _liquidador.value) }
+            runCatching { db.listarEvidenciasAsignadas(id, _liquidador.value, personaId = identidadLiquidador.orEmpty()) }
                 .getOrDefault(emptyList())
     }
 
     suspend fun cargarImagenLiquidador(siniestroId: Long, evidenciaId: Long): Bitmap? {
         val equipo = _liquidador.value
         return withContext(Dispatchers.IO) {
-            runCatching { db.obtenerImagenAsignada(evidenciaId, siniestroId, equipo) }.getOrNull()
+            runCatching { db.obtenerImagenAsignada(evidenciaId, siniestroId, equipo, personaId = identidadLiquidador.orEmpty()) }.getOrNull()
         }
     }
 
@@ -325,7 +329,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
         val error = withContext(Dispatchers.IO) {
             runCatching {
                 db.guardarEvidenciaLiquidador(
-                    id, equipo, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap)
+                    id, equipo, tipoDocumento, ProcesadorEvidencia.desdeCamara(bitmap),
+                    personaId = identidadLiquidador.orEmpty()
                 )
             }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
         }
@@ -342,7 +347,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
         val error = withContext(Dispatchers.IO) {
             runCatching {
                 val archivo = ProcesadorEvidencia.desdeSelector(getApplication(), uri)
-                db.guardarEvidenciaLiquidador(id, equipo, tipoDocumento, archivo)
+                db.guardarEvidenciaLiquidador(id, equipo, tipoDocumento, archivo, personaId = identidadLiquidador.orEmpty())
             }.exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar el documento") }
         }
         if (error == null) {
@@ -383,7 +388,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun archivarCaso(id: Long): String? {
-        val error = runCatching { db.archivarCaso(id, _liquidador.value, responsable()) }
+        val error = runCatching { db.archivarCaso(id, _liquidador.value, responsable(), personaId = identidadLiquidador.orEmpty()) }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo archivar el caso") }
         if (error == null) {
             refrescarAsignados()
@@ -393,7 +398,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun restaurarCaso(id: Long): String? {
-        val error = runCatching { db.restaurarCaso(id, _liquidador.value) }
+        val error = runCatching { db.restaurarCaso(id, _liquidador.value, personaId = identidadLiquidador.orEmpty()) }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo restaurar el caso") }
         if (error == null) {
             refrescarAsignados()
@@ -404,7 +409,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun marcarSolicitudRecibida(siniestroId: Long, solicitudId: Long): String? {
         val error = runCatching {
-            db.marcarSolicitudRecibida(solicitudId, _liquidador.value, responsable())
+            db.marcarSolicitudRecibida(solicitudId, _liquidador.value, responsable(), personaId = identidadLiquidador.orEmpty())
         }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo confirmar la recepción") }
         if (error == null) {
@@ -417,7 +422,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun anularSolicitud(siniestroId: Long, solicitudId: Long): String? {
-        val error = runCatching { db.anularSolicitud(solicitudId, _liquidador.value, responsable()) }
+        val error = runCatching { db.anularSolicitud(solicitudId, _liquidador.value, responsable(), personaId = identidadLiquidador.orEmpty()) }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo anular la solicitud") }
         if (error == null) {
             cargarGestionesLiquidador(siniestroId)
@@ -452,7 +457,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
     }
 
     fun refrescarArchivados() {
-        _archivados.value = db.listarArchivados(_liquidador.value, identidadLiquidador)
+        _archivados.value = db.listarArchivados(_liquidador.value, identidadLiquidador.orEmpty())
     }
 
     fun refrescarAnalista() {
@@ -490,7 +495,7 @@ class SiniestrosViewModel @JvmOverloads constructor(
 
     fun responderConsulta(siniestroId: Long, consultaId: Long, respuesta: String): String? {
         val error = runCatching {
-            db.responderConsulta(consultaId, _liquidador.value, respuesta, responsable())
+            db.responderConsulta(consultaId, _liquidador.value, respuesta, responsable(), personaId = identidadLiquidador.orEmpty())
         }
             .exceptionOrNull()?.let { mensajeError(it, "No se pudo guardar la respuesta") }
         if (error == null) {
@@ -535,7 +540,8 @@ class SiniestrosViewModel @JvmOverloads constructor(
     fun eliminarEvidenciaLiquidador(siniestroId: Long, evidenciaId: Long): String? {
         val error = runCatching {
             db.eliminarEvidenciaLiquidador(
-                evidenciaId, siniestroId, _liquidador.value, responsable()
+                evidenciaId, siniestroId, _liquidador.value, responsable(),
+                personaId = identidadLiquidador.orEmpty()
             )
         }.exceptionOrNull()?.let { mensajeError(it, "No se pudo eliminar el documento") }
         if (error == null) {

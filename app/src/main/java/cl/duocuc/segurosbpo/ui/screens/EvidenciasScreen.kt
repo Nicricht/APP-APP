@@ -538,7 +538,7 @@ fun EvidenciasScreen(
                                     }
                                 }
                             },
-                            onEliminar = if (cerrado) null else { { porEliminar = evidencia } }
+                            onEliminar = null
                         )
                     }
                 }

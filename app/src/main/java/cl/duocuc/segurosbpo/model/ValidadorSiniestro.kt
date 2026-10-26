@@ -42,6 +42,9 @@ object ValidadorSiniestro {
     fun errorDescripcion(descripcion: String): String? =
         if (descripcion.trim().isEmpty()) "Cuéntanos qué pasó" else null
 
-    fun errorCompania(compania: Compania): String? =
-        if (!compania.activa) "No se pueden registrar casos nuevos con esta compañía" else null
+    fun errorCompania(compania: Compania, tipo: TipoSiniestro? = null): String? = when {
+        !compania.activa -> "No se pueden registrar casos nuevos con esta compañía"
+        tipo != null && !compania.admite(tipo) -> "La compañía no gestiona ese tipo de seguro"
+        else -> null
+    }
 }
