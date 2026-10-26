@@ -12,7 +12,7 @@ adb shell pidof "$paquete" | tee "evidencia-apk/proceso-$api.txt"
 for intento in 1 2 3; do
   adb shell uiautomator dump /sdcard/ventana.xml || true
   adb pull /sdcard/ventana.xml "evidencia-apk/ventana-$api.xml" || true
-  if grep -q 'Correo electrónico' "evidencia-apk/ventana-$api.xml" && ! grep -qi "isn.t responding" "evidencia-apk/ventana-$api.xml"; then
+  if grep -q 'Elige quién eres' "evidencia-apk/ventana-$api.xml" && ! grep -qi "isn.t responding" "evidencia-apk/ventana-$api.xml"; then
     break
   fi
   adb shell am force-stop com.google.android.apps.nexuslauncher || true
@@ -21,7 +21,7 @@ for intento in 1 2 3; do
   adb shell am start -n "$actividad"
   sleep 6
 done
-grep -q 'Correo electrónico' "evidencia-apk/ventana-$api.xml"
+grep -q 'Elige quién eres' "evidencia-apk/ventana-$api.xml"
 if grep -qi "isn.t responding" "evidencia-apk/ventana-$api.xml"; then
   exit 1
 fi
@@ -35,7 +35,7 @@ for intento in 1 2 3 4 5; do
   adb shell rm -f /sdcard/ventana-reinicio.xml
   if adb shell uiautomator dump /sdcard/ventana-reinicio.xml &&
      adb pull /sdcard/ventana-reinicio.xml "evidencia-apk/reinicio-$api.xml" &&
-     grep -q 'Correo electrónico' "evidencia-apk/reinicio-$api.xml"; then
+     grep -q 'Elige quién eres' "evidencia-apk/reinicio-$api.xml"; then
     reinicio_verificado=1
     break
   fi
